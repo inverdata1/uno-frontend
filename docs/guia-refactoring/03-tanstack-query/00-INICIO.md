@@ -80,4 +80,4 @@ TanStack Query **NO reemplaza** nuestros servicios de Firebase. Los **envuelve**
 
 ## 📖 Navegación
 
-**Anterior:** [Colecciones Firebase](../02-arquitectura/colecciones-firebase.md) | **Siguiente:** [Estrategia Query Keys](./01-estrategia-query-keys.md)
+**Anterior:** [Colecciones Firebase](../02-arquitectura/03-colecciones-firebase.md) | **Siguiente:** [Estrategia Query Keys](./01-estrategia-query-keys.md)

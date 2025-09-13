@@ -30,7 +30,7 @@ La base de datos usa Firestore con estructura NoSQL optimizada para la app unifi
   email: "user@example.com",
   firstName: "Juan",
   lastName: "Pérez",
-  phone: "+573001234567",
+  phone: "+584121234567",
   userRole: "client" | "business",   // Role unificado
   profileImage: {
     url: "https://firebase...",
@@ -38,13 +38,13 @@ La base de datos usa Firestore con estructura NoSQL optimizada para la app unifi
     uploadedAt: "2024-01-15T10:30:00Z"
   },
   address: {
-    street: "Calle 123 #45-67",
-    city: "Bogotá",
-    state: "Cundinamarca",
-    zipCode: "110111",
+    street: "Av. Francisco de Miranda, Edif. Torre Exa, Piso 15",
+    city: "Caracas",
+    state: "Distrito Capital",
+    zipCode: "1060",
     coordinates: {
-      lat: 4.6097,
-      lng: -74.0817
+      lat: 10.5019,
+      lng: -66.9143
     }
   },
   businessProfile: {               // Solo si userRole === 'business'
@@ -69,9 +69,9 @@ La base de datos usa Firestore con estructura NoSQL optimizada para la app unifi
 {
   id: "business456",
   ownerId: "user123",              // Referencia a Users
-  businessName: "Restaurante El Sabor",
+  businessName: "Arepa Gourmet Valencia",
   category: "restaurant",          // restaurant, store, service
-  description: "Comida tradicional colombiana",
+  description: "Arepas artesanales y comida tradicional venezolana",
   logo: {
     url: "https://firebase...",
     fileName: "logo_456.jpg",
@@ -83,18 +83,18 @@ La base de datos usa Firestore con estructura NoSQL optimizada para la app unifi
     uploadedAt: "2024-01-15T11:00:00Z"
   },
   contact: {
-    phone: "+573001234567",
-    email: "contacto@elsabor.com",
-    whatsapp: "+573001234567"
+    phone: "+584121234567",
+    email: "contacto@arepagourmet.ve",
+    whatsapp: "+584121234567"
   },
   address: {
-    street: "Carrera 15 #85-32",
-    city: "Bogotá",
-    state: "Cundinamarca",
-    zipCode: "110221",
+    street: "Av. Bolívar Norte, C.C. Crystal Plaza, Local 105",
+    city: "Valencia",
+    state: "Carabobo",
+    zipCode: "2001",
     coordinates: {
-      lat: 4.6764,
-      lng: -74.0478
+      lat: 10.1621,
+      lng: -68.0077
     }
   },
   businessHours: {
@@ -123,11 +123,11 @@ La base de datos usa Firestore con estructura NoSQL optimizada para la app unifi
 {
   id: "product789",
   businessId: "business456",       // Referencia a Businesses
-  name: "Bandeja Paisa",
-  description: "Plato tradicional con frijoles, arroz, carne...",
+  name: "Arepa Reina Pepiada",
+  description: "Arepa rellena de pollo desmechado con aguacate y mayonesa",
   category: "main-course",         // appetizer, main-course, dessert, beverage
-  price: 25000,                    // En centavos para evitar decimales
-  currency: "COP",
+  price: 800,                      // En centavos para evitar decimales (8.00 USD)
+  currency: "USD",
   images: [
     {
       url: "https://firebase...",
@@ -148,7 +148,7 @@ La base de datos usa Firestore con estructura NoSQL optimizada para la app unifi
       multiSelect: false
     }
   ],
-  tags: ["tradicional", "popular", "contundente"],
+  tags: ["venezolana", "popular", "tradicional"],
   stats: {
     totalOrders: 0,
     averageRating: 0,
@@ -170,34 +170,34 @@ La base de datos usa Firestore con estructura NoSQL optimizada para la app unifi
   items: [
     {
       productId: "product789",     // Referencia a Products
-      productName: "Bandeja Paisa", // Snapshot para historial
+      productName: "Arepa Reina Pepiada", // Snapshot para historial
       quantity: 2,
-      unitPrice: 25000,
+      unitPrice: 800,
       customizations: [
         {
           name: "Nivel de picante",
           selected: ["Medio"]
         }
       ],
-      subtotal: 50000
+      subtotal: 1600
     }
   ],
   pricing: {
-    subtotal: 50000,
-    deliveryFee: 3000,
-    tip: 2000,
+    subtotal: 1600,                // 16.00 USD
+    deliveryFee: 300,              // 3.00 USD
+    tip: 200,                      // 2.00 USD
     tax: 0,                        // Para futuro uso
-    total: 55000,
-    currency: "COP"
+    total: 2100,                   // 21.00 USD
+    currency: "USD"
   },
   delivery: {
     type: "delivery" | "pickup",
     address: {
-      street: "Calle 123 #45-67",
-      city: "Bogotá", 
+      street: "Urb. Los Naranjos, Calle 5 con Av. Principal",
+      city: "Maracay", 
       coordinates: {
-        lat: 4.6097,
-        lng: -74.0817
+        lat: 10.2353,
+        lng: -67.5911
       }
     },
     estimatedTime: "45-60 min",
@@ -223,7 +223,7 @@ La base de datos usa Firestore con estructura NoSQL optimizada para la app unifi
       note: "Orden confirmada por el restaurante"
     }
   ],
-  specialInstructions: "Sin cebolla en la ensalada",
+  specialInstructions: "Sin guasacaca adicional",
   createdAt: "2024-01-15T13:00:00Z",
   updatedAt: "2024-01-15T13:02:00Z"
 }
@@ -345,4 +345,4 @@ Esta estructura está diseñada para soportar la app unificada y escalar con nue
 
 ## 📖 Navegación
 
-**Anterior:** [Stack Tecnológico](./stack-tecnologico.md) | **Siguiente:** [TanStack Query - Inicio](../03-tanstack-query/00-INICIO.md)
+**Anterior:** [Stack Tecnológico](./02-stack-tecnologico.md) | **Siguiente:** [TanStack Query - Inicio](../03-tanstack-query/00-inicio.md)

@@ -13,7 +13,7 @@ Antes de escribir código, define:
 
 #### Nueva Colección
 ```javascript
-// 1. Definir schema en colecciones-firebase.md
+// 1. Definir schema en 03-colecciones-firebase.md
 // 2. Crear en shared/services/nueva-feature-service.js
 
 export class NuevaFeatureService extends BaseService {
@@ -523,7 +523,7 @@ describe('NuevaFeatureCard', () => {
 - `useCreateNuevaFeature()` - Crear nuevo item
 
 ## Database Schema
-Ver `colecciones-firebase.md` sección NuevaFeatures.
+Ver `03-colecciones-firebase.md` sección NuevaFeatures.
 ```
 
 ## Checklist de Nueva Feature
@@ -560,8 +560,14 @@ Ver `colecciones-firebase.md` sección NuevaFeatures.
 - [ ] Tests de integración
 
 ### Documentación
-- [ ] Actualizar colecciones-firebase.md
+- [ ] Actualizar 03-colecciones-firebase.md
 - [ ] Documentar API de la feature
 - [ ] Actualizar README principal
 
 Esta guía asegura que las nuevas features sigan los patrones establecidos y sean mantenibles a largo plazo.
+
+---
+
+## 📖 Navegación
+
+**Anterior:** [Testing y Validación](../04-migracion/07-testing.md) | **Inicio:** [Guía Principal](../00-inicio.md)

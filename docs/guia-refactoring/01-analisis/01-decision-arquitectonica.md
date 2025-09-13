@@ -186,4 +186,4 @@ Esta decisión simplifica dramaticamente el codebase mientras mejora la UX.
 
 ## 📖 Navegación
 
-**Anterior:** [Problemas Actuales](./problemas-actuales.md) | **Siguiente:** [Estructura de Carpetas](../02-arquitectura/estructura-carpetas.md)
+**Anterior:** [Problemas Actuales](./00-problemas-actuales.md) | **Siguiente:** [Estructura de Carpetas](../02-arquitectura/01-estructura-carpetas.md)

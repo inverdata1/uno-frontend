@@ -2,34 +2,57 @@
 
 ## Objetivo
 
-Preparar el proyecto para la migración instalando dependencias necesarias, configurando herramientas de desarrollo y creando el entorno base para la nueva arquitectura.
+Crear un nuevo proyecto Expo desde cero e implementar la arquitectura moderna con **Expo Router**, **TanStack Query**, **TanStack Form** y **Zustand**. El código existente será descartado excepto por referencia.
 
 ## Prerrequisitos
 
-- [ ] Backup completo del proyecto actual
-- [ ] Crear branch `refactor/new-architecture`
-- [ ] Team informado sobre la migración
-- [ ] Acceso a Firebase console del proyecto
+- [ ] Backup de la carpeta /screens existente a /backup/screens/
+- [ ] Crear branch `feature/fresh-implementation`
+- [ ] Team informado sobre el fresh start
+- [ ] Acceso a Firebase console (nuevo proyecto o limpieza del existente)
 
-## Paso 1: Instalación de Dependencias
+## Paso 1: Limpiar Proyecto Actual
+
+### Crear backup mínimo para referencia
+```bash
+# Solo hacer backup de screens por si necesitamos consultar algo
+mkdir -p backup
+mv screens/ backup/screens/ 2>/dev/null || echo "No hay carpeta screens/"
+
+# Limpiar todo el código viejo - vamos a empezar limpio
+rm -rf src/ components/ navigation/ services/ 2>/dev/null || true
+rm App.js 2>/dev/null || true
+```
+
+## Paso 2: Verificar Setup de Expo
+
+### Confirmar que tenemos Expo funcionando
+```bash
+# Verificar que Expo CLI esté instalado
+npm list -g expo-cli || npm install -g expo-cli
+
+# Verificar que el proyecto base de Expo funcione
+npm start
+```
+
+**IMPORTANTE**: Como ya tenemos un proyecto Expo inicializado, solo necesitamos asegurarnos que funcione correctamente después de la limpieza.
+
+## Paso 3: Instalación de Dependencias
 
 ### Dependencias Core
 ```bash
-# TanStack Query
+# Expo Router (File-based routing)
+npx expo install expo-router
+
+# TanStack Query (Server state)
 npm install @tanstack/react-query@latest
 
-# State Management
+# State Management (Client state)
 npm install zustand@latest
 
-# Navegación
-npm install @react-navigation/native@latest
-npm install @react-navigation/native-stack@latest
-npm install @react-navigation/bottom-tabs@latest
-npm install react-native-screens react-native-safe-area-context
-
-# Forms y Validación
-npm install react-hook-form@latest
-npm install @hookform/resolvers@latest
+# Forms y Validación (IMPORTANTE: TanStack Form, no React Hook Form)
+npm install @tanstack/react-form@latest
+npm install @tanstack/zod-form-adapter@latest
 npm install zod@latest
 
 # Styling
@@ -326,44 +349,41 @@ export * from './loading-spinner';
 // ... otros componentes UI
 ```
 
-## Paso 10: Migración del App.js Principal
+## Paso 10: Crear App.js Principal
 
-### Respaldar App.js actual
-```bash
-cp App.js App.js.backup
-```
-
-### Crear nuevo App.js
+### Crear nuevo App.js desde cero
 ```javascript
 // App.js
+import 'react-native-gesture-handler';
 import React from 'react';
+import { Text, View } from 'react-native';
 import { QueryClientProvider } from '@tanstack/react-query';
 import { ReactQueryDevtools } from '@tanstack/react-query-devtools';
-import { queryClient } from './src/shared/config/query-client';
-
-// Import del app anterior para mantener funcionando
-import OldApp from './App.js.backup';
-
-// TODO: Reemplazar con nueva navegación cuando esté lista
-// import AppNavigator from './src/navigation/app-navigator';
+import { GestureHandlerRootView } from 'react-native-gesture-handler';
+import { queryClient } from './shared/config/query-client';
 
 const App = () => {
   return (
-    <QueryClientProvider client={queryClient}>
-      {/* TEMPORAL: Usar app anterior mientras migramos */}
-      <OldApp />
-      
-      {/* TODO: Reemplazar con nueva arquitectura */}
-      {/* <AppNavigator /> */}
-      
-      {/* DevTools solo en desarrollo */}
-      {__DEV__ && (
-        <ReactQueryDevtools 
-          initialIsOpen={false}
-          position="bottom-right"
-        />
-      )}
-    </QueryClientProvider>
+    <GestureHandlerRootView style={{ flex: 1 }}>
+      <QueryClientProvider client={queryClient}>
+        <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center' }}>
+          <Text style={{ fontSize: 24, fontWeight: 'bold' }}>
+            Uno Delivery - Fresh Start 🚀
+          </Text>
+          <Text style={{ marginTop: 10, color: '#666' }}>
+            Arquitectura nueva funcionando correctamente
+          </Text>
+        </View>
+        
+        {/* DevTools solo en desarrollo */}
+        {__DEV__ && (
+          <ReactQueryDevtools 
+            initialIsOpen={false}
+            position="bottom-right"
+          />
+        )}
+      </QueryClientProvider>
+    </GestureHandlerRootView>
   );
 };
 
@@ -385,20 +405,21 @@ npm start
 ```
 
 3. **Verificar que carga sin errores**:
-   - App debe funcionar exactamente igual que antes
+   - App debe mostrar "Uno Delivery - Fresh Start 🚀"
    - No debe haber errores en console
    - DevTools de TanStack Query deben aparecer (solo en dev)
 
-4. **Verificar estructura de carpetas**:
+4. **Verificar estructura nueva**:
 ```bash
-ls -la src/
-# Debe mostrar: shared/, features/, navigation/, app/
+ls -la 
+# Debe mostrar: shared/, features/, app/
+# Ya no tenemos código viejo, solo backup/screens/
 ```
 
 5. **Probar utilidad cn()**:
 ```javascript
 // Test rápido en cualquier componente
-import { cn } from './src/shared/utils/cn';
+import { cn } from './shared/utils/cn';
 console.log(cn('bg-red-500', 'text-white')); // Debe imprimir clases
 ```
 
@@ -430,9 +451,13 @@ npx expo start --clear
 ## Próximos Pasos
 
 Una vez completada esta fase:
-1. El proyecto debe funcionar exactamente igual que antes
-2. Todas las nuevas dependencias están instaladas
-3. La estructura base de carpetas está creada
-4. Las herramientas de desarrollo están configuradas
+1. Tenemos un proyecto Expo completamente limpio y funcional
+2. Todas las dependencias nuevas están instaladas y configuradas
+3. La estructura base de carpetas está creada desde cero
+4. Las herramientas de desarrollo (TanStack Query DevTools, NativeWind) están configuradas
+5. Solo mantenemos /backup/screens/ como referencia mínima
+---
 
-**Continuar con**: [02 - Reestructuración de Carpetas](./02-reestructuracion.md)
+## 📖 Navegación
+
+**Anterior:** [Migración - Inicio](./00-inicio.md) | **Siguiente:** [Reestructuración de Carpetas](./02-reestructuracion.md)

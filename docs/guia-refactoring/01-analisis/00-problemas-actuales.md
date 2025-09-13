@@ -150,4 +150,4 @@ La refactorización propuesta resuelve todos estos issues con arquitectura moder
 
 ## 📖 Navegación
 
-**Anterior:** [00 - Inicio](../00-INICIO.md) | **Siguiente:** [Decisión Arquitectónica](./decision-arquitectonica.md)
+**Anterior:** [00 - Inicio](../00-inicio.md) | **Siguiente:** [Decisión Arquitectónica](./01-decision-arquitectonica.md)

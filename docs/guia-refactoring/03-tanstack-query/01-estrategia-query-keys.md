@@ -112,4 +112,4 @@ queryClient.invalidateQueries({
 
 ## 📖 Navegación
 
-**Anterior:** [TanStack Query - Inicio](./00-INICIO.md) | **Siguiente:** [Patrones Básicos](./02-patrones-basicos.md)
+**Anterior:** [TanStack Query - Inicio](./00-inicio.md) | **Siguiente:** [Patrones Básicos](./02-patrones-basicos.md)

@@ -514,3 +514,9 @@ export const cleanupStaleCache = () => {
 ```
 
 Esta configuración asegura que TanStack Query funcione de manera óptima en el proyecto, con manejo adecuado de errores, cache inteligente y performance optimizada.
+
+---
+
+## 📖 Navegación
+
+**Anterior:** [Implementación por Features](./03-implementacion-features.md) | **Siguiente:** [Migración - Inicio](../04-migracion/00-inicio.md)

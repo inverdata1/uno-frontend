@@ -1,60 +1,159 @@
-# Fase 2: Reestructuración de Carpetas
+# Fase 2: Estructura Base
 
 ## Objetivo
 
-Reorganizar el código existente en la nueva estructura feature-based sin romper la funcionalidad actual. Esta fase prepara el terreno para las siguientes migraciones.
+Implementar la estructura de carpetas feature-based completa desde cero. Crear todos los directorios y archivos base necesarios para la nueva arquitectura con Expo Router.
 
 ## Prerrequisitos
 
-- [ ] Fase 1 completada (dependencias instaladas)
-- [ ] App funcionando normalmente
-- [ ] Backup del proyecto actual
-- [ ] Branch `refactor/new-architecture` activo
+- [ ] Fase 1 completada (proyecto Expo limpio)
+- [ ] App mostrando "Fresh Start" sin errores
+- [ ] Dependencias instaladas correctamente
+- [ ] Branch `feature/fresh-implementation` activo
 
-## Estrategia de Migración
+## Estrategia de Implementación
 
-### Enfoque Gradual
-1. **Mantener funcionalidad**: El app sigue funcionando durante la migración
-2. **Dual import**: Temporalmente existirán archivos en ambas ubicaciones
-3. **Incremental**: Mover feature por feature, no todo de una vez
-4. **Testing continuo**: Probar después de cada movimiento importante
+### Enfoque Clean Slate
+1. **Estructura completa**: Crear toda la arquitectura de una vez
+2. **Expo Router**: Implementar file-based routing desde el inicio
+3. **Feature-based**: Organización por dominio desde día 1
+4. **Best practices**: Seguir convenciones modernas desde el principio
 
-## Paso 1: Mapear Código Existente
+## Paso 1: Crear Estructura de Carpetas Completa
 
-### Identificar archivos actuales
+### Crear estructura app/ (Expo Router)
 ```bash
-# Crear un mapa del código actual
-find . -name "*.js" -o -name "*.jsx" | grep -v node_modules > current_files.txt
+# Crear estructura principal de Expo Router
+mkdir -p app/{(auth),(main)/{business,orders,profile,social,stores,wallet}}
 
-# Separar por tipo de archivo
-grep -i component current_files.txt > components_current.txt
-grep -i screen current_files.txt > screens_current.txt
-grep -i service current_files.txt > services_current.txt
+# Crear layouts
+touch app/_layout.jsx
+touch app/(auth)/_layout.jsx
+touch app/(main)/_layout.jsx
+
+# Crear pantallas de auth
+touch app/(auth)/{onboarding,login,register,reset-password}.jsx
+
+# Crear pantallas principales
+touch app/(main)/{home,search}.jsx
+touch app/(main)/profile/{index,edit,addresses,preferences,business-application}.jsx
+touch app/(main)/orders/{index,history}.jsx
+touch app/(main)/social/{feed,create-post}.jsx
+touch app/(main)/stores/{index,categories}.jsx
+touch app/(main)/wallet/{index,add-funds,transactions}.jsx
+
+# Crear dashboard business (condicional)
+mkdir -p app/(main)/business/{products,orders,analytics,posts,settings}
+touch app/(main)/business/index.jsx
+touch app/(main)/business/products/{index,add}.jsx
+touch app/(main)/business/orders/{pending,active,history}.jsx
+touch app/(main)/business/analytics/{sales,customers,content}.jsx
+touch app/(main)/business/posts/{index,create,analytics}.jsx
+touch app/(main)/business/settings/{store-info,employees,branches}.jsx
+
+# Archivos especiales de Expo Router
+touch app/{+html.jsx,+not-found.jsx}
 ```
 
-### Clasificar por feature
-Crear un documento `migration_mapping.md`:
-```markdown
-# Mapeo de Migración
+### Crear estructura features/
+```bash
+# Crear features por dominio
+mkdir -p features/{auth,user,social-commerce,stores,products,orders,wallet}/{components,hooks,services,stores,schemas}
 
-## Auth Files
-- `src/components/LoginForm.js` → `src/features/auth/components/login-form.jsx`
-- `src/screens/LoginScreen.js` → `src/features/auth/screens/login-screen.jsx`
-- `src/services/AuthService.js` → `src/shared/services/user-service.js`
-
-## Business Files  
-- `src/components/BusinessCard.js` → `src/features/business/components/business-card.jsx`
-- `src/screens/BusinessList.js` → `src/features/business/screens/business-list-screen.jsx`
-
-## ... etc
+# Crear archivos index para exportaciones
+touch features/{auth,user,social-commerce,stores,products,orders,wallet}/index.js
 ```
 
-## Paso 2: Migrar Servicios (Shared)
+## Paso 2: Crear Estructura shared/
 
-### Identificar servicios actuales
-Los servicios van en `shared/services/` porque son reutilizables entre features.
+### Crear toda la estructura shared desde cero
+```bash
+# Crear estructura shared completa
+mkdir -p shared/{components/ui,config,services,hooks,utils,stores,types}
 
-### Crear BaseService
+# Crear archivos de configuración
+touch shared/config/{firebase.js,query-client.js,app-config.js,storage-config.js}
+
+# Crear servicios nuevos
+touch shared/services/{base-service.js,user-service.js,business-service.js,product-service.js,order-service.js,file-storage-service.js}
+
+# Crear hooks globales
+touch shared/hooks/{use-auth.js,use-permissions.js,use-media-picker.js}
+
+# Crear utilidades nuevas
+touch shared/utils/{constants.js,firebase-errors.js,cn.js,validation.js}
+
+# Crear stores con Zustand
+touch shared/stores/{auth-store.js,app-store.js}
+
+# Crear componentes UI desde cero
+mkdir -p shared/components/ui
+touch shared/components/ui/{button.jsx,input.jsx,loading-spinner.jsx,index.js}
+```
+
+## Paso 3: Implementar Archivos Base Iniciales
+
+### Implementar shared/utils/cn.js
+```javascript
+// shared/utils/cn.js
+import { clsx } from 'clsx';
+import { twMerge } from 'tailwind-merge';
+
+export function cn(...inputs) {
+  return twMerge(clsx(inputs));
+}
+```
+
+### Implementar shared/utils/constants.js
+```javascript
+// shared/utils/constants.js
+export const APP_CONFIG = {
+  name: 'Uno Delivery',
+  version: '2.0.0',
+  environment: __DEV__ ? 'development' : 'production',
+};
+
+export const QUERY_STALE_TIME = {
+  SHORT: 30 * 1000,      // 30 segundos
+  MEDIUM: 2 * 60 * 1000,  // 2 minutos  
+  LONG: 5 * 60 * 1000,    // 5 minutos
+  VERY_LONG: 10 * 60 * 1000, // 10 minutos
+};
+
+export const CACHE_TIME = {
+  SHORT: 1 * 60 * 1000,   // 1 minuto
+  MEDIUM: 5 * 60 * 1000,  // 5 minutos
+  LONG: 10 * 60 * 1000,   // 10 minutos
+  VERY_LONG: 30 * 60 * 1000, // 30 minutos
+};
+```
+
+### Implementar shared/config/query-client.js
+```javascript
+// shared/config/query-client.js
+import { QueryClient } from '@tanstack/react-query';
+
+export const queryClient = new QueryClient({
+  defaultOptions: {
+    queries: {
+      staleTime: 5 * 60 * 1000, // 5 minutos
+      cacheTime: 10 * 60 * 1000, // 10 minutos
+      retry: (failureCount, error) => {
+        if (error?.code === 'permission-denied') return false;
+        if (error?.code === 'not-found') return false;
+        return failureCount < 3;
+      },
+      refetchOnWindowFocus: true,
+      refetchOnReconnect: true,
+    },
+    mutations: {
+      retry: false,
+    },
+  },
+});
+```
+
+### Implementar BaseService
 ```javascript
 // shared/services/base-service.js
 import { 
@@ -179,7 +278,7 @@ export class BaseService {
 }
 ```
 
-### Migrar servicios específicos
+### Implementar servicios desde cero
 
 #### UserService
 ```javascript
@@ -210,18 +309,16 @@ export class UserService extends BaseService {
     ]);
   }
 
-  // Mantener métodos existentes del servicio actual
-  static async login(email, password) {
-    // TODO: Migrar lógica actual de login
-    // Temporalmente, delegar al servicio anterior
-    const OldAuthService = require('../path/to/old/AuthService');
-    return OldAuthService.login(email, password);
-  }
-
-  static async register(userData) {
-    // TODO: Migrar lógica actual de registro
-    const OldAuthService = require('../path/to/old/AuthService');
-    return OldAuthService.register(userData);
+  static async upgradeToBusinessRole(uid, businessData) {
+    const updates = {
+      userRole: 'business',
+      businessProfile: {
+        applicationStatus: 'pending',
+        appliedAt: new Date().toISOString(),
+        ...businessData
+      }
+    };
+    return this.updateUser(uid, updates);
   }
 
   static subscribeToUser(uid, callback) {
@@ -230,23 +327,10 @@ export class UserService extends BaseService {
 }
 ```
 
-### Crear archivo de transición
-```javascript
-// shared/services/legacy-bridge.js
-// Temporalmente mantener imports del código anterior
+## Paso 4: Implementar Componentes UI Base
 
-// Re-exportar servicios nuevos con nombres anteriores para compatibility
-export { UserService as AuthService } from './user-service';
-export { BusinessService as BusinessService } from './business-service';
-// ... otros servicios
-
-// Esta estrategia permite cambiar imports gradualmente
-```
-
-## Paso 3: Migrar Componentes UI Base
-
-### Identificar componentes reutilizables
-Componentes que se usan en múltiples features van a `shared/components/ui/`.
+### Crear componentes UI desde cero
+Vamos a construir un sistema de componentes limpio con NativeWind.
 
 ### Button Component
 ```javascript
@@ -586,54 +670,61 @@ npm start
 
 ### ✅ Checklist de validación
 
-- [ ] App funciona igual que antes
-- [ ] Nueva estructura de carpetas creada
-- [ ] Servicios migrados y funcionando
-- [ ] Componentes UI básicos funcionando
-- [ ] Al menos una feature (auth) parcialmente migrada
-- [ ] Tests pasan
-- [ ] No hay imports rotos
-- [ ] DevTools de TanStack Query funcionan
+- [ ] Estructura completa de carpetas creada desde cero
+- [ ] Archivos base implementados (cn.js, constants.js, query-client.js)
+- [ ] Componentes UI básicos (Button, Input) funcionando
+- [ ] App arranca sin errores con "Fresh Start" message
+- [ ] TanStack Query DevTools funcionan
+- [ ] NativeWind classes se aplican correctamente
 
-### 🔍 Revisión de archivos
+### 🔍 Revisión de archivos nuevos
 
-Verificar que estos archivos existen y funcionan:
-- `shared/services/base-service.js`
-- `shared/services/user-service.js`
-- `shared/components/ui/button.jsx`
-- `shared/components/ui/input.jsx`
-- `features/auth/components/login-form.jsx`
-- `features/auth/queries/user-query-keys.js`
+Verificar que estos archivos existen y tienen contenido implementado:
+- `app/` estructura completa con route groups (nueva)
+- `features/` estructura por dominio (nueva)
+- `shared/utils/cn.js` (nuevo)
+- `shared/utils/constants.js` (nuevo)
+- `shared/config/query-client.js` (nuevo)
+- `shared/components/ui/button.jsx` (nuevo)
+- `shared/components/ui/input.jsx` (nuevo)
+- `backup/screens/` (solo para referencia)
 
 ## Troubleshooting
 
-### Import errors
-```javascript
-// Si hay errores de import, crear más bridges temporales
-// shared/legacy-exports.js
-export * from './services/user-service';
-export * from './components/ui';
-export * from '../features/auth/components/login-form-bridge';
+### Missing touch command (Windows)
+```bash
+# En Windows usar:
+echo.> app/_layout.jsx
+echo.> app/(auth)/_layout.jsx
+# etc...
 ```
 
-### Path resolution issues
-```javascript
-// Si Metro no encuentra los nuevos paths, verificar:
-// metro.config.js resolver configuration
+### Structure creation issues
+```bash
+# Crear manualmente si los comandos no funcionan
+mkdir app
+mkdir "app/(auth)"
+mkdir "app/(main)"
+# etc...
 ```
 
-### Component not found errors
-- Verificar que los componentes están exportados correctamente
-- Verificar que los bridges temporales están en su lugar
-- Verificar que no hay typos en los nombres de archivos
+### Import path issues
+- Usar paths relativos correctos desde cada archivo
+- Verificar que las exportaciones existen en archivos index
 
 ## Próximos Pasos
 
 Una vez completada esta fase:
-1. El proyecto tiene la nueva estructura de carpetas
-2. Los servicios están migrados y funcionando
+1. Tenemos la estructura completa implementada desde cero
+2. Los archivos base están creados y funcionando
 3. Los componentes UI básicos están implementados
-4. Una feature (auth) está parcialmente migrada
-5. El app sigue funcionando normalmente
+4. El proyecto está listo para implementar features completas
+5. La app arranca correctamente con mensaje "Fresh Start"
 
-**Continuar con**: [03 - Migración de Servicios](./03-migracion-servicios.md)
+**Continuar con**: [03 - Testing y Deploy](./03-testing.md)
+
+---
+
+## 📖 Navegación
+
+**Anterior:** [Preparación del Entorno](./01-preparacion.md) | **Siguiente:** [Testing y Deploy](./03-testing.md)

@@ -5,17 +5,16 @@
 Esta guía está dividida en secciones lógicas para facilitar la comprensión y implementación:
 
 ### 1. Análisis del Estado Actual
-- **[Problemas Actuales](./01-analisis/problemas-actuales.md)** - 11 problemas críticos identificados
-- **[Decisión Arquitectónica](./01-analisis/decision-arquitectonica.md)** - Por qué app unificada vs dual
+- **[Problemas Actuales](./01-analisis/00-problemas-actuales.md)** - 11 problemas críticos identificados
+- **[Decisión Arquitectónica](./01-analisis/01-decision-arquitectonica.md)** - Por qué app unificada vs dual
 
 ### 2. Arquitectura Nueva
-- **[Visión General](./02-arquitectura/vision-general.md)** - Visión completa de la nueva arquitectura
-- **[Estructura de Carpetas](./02-arquitectura/estructura-carpetas.md)** - Organización feature-based
-- **[Stack Tecnológico](./02-arquitectura/stack-tecnologico.md)** - Decisiones técnicas y justificaciones
-- **[Colecciones Firebase](./02-arquitectura/colecciones-firebase.md)** - Estructura completa de la base de datos
+- **[Estructura de Carpetas](./02-arquitectura/01-estructura-carpetas.md)** - Organización feature-based
+- **[Stack Tecnológico](./02-arquitectura/02-stack-tecnologico.md)** - Decisiones técnicas y justificaciones
+- **[Colecciones Firebase](./02-arquitectura/03-colecciones-firebase.md)** - Estructura completa de la base de datos
 
 ### 3. TanStack Query
-- **[Introducción](./03-tanstack-query/00-INICIO.md)** - Qué es y por qué lo usamos
+- **[Introducción](./03-tanstack-query/00-inicio.md)** - Qué es y por qué lo usamos
 - **[Estrategia Query Keys](./03-tanstack-query/01-estrategia-query-keys.md)** - Organización distribuida por feature
 - **[Patrones Básicos](./03-tanstack-query/02-patrones-basicos.md)** - Queries, mutations y patterns comunes
 - **[Implementación por Feature](./03-tanstack-query/03-implementacion-features.md)** - Ejemplos específicos
@@ -27,7 +26,7 @@ Esta guía está dividida en secciones lógicas para facilitar la comprensión y
 
 ### 5. Desarrollo
 - **[Lista Completa](../LISTA-DESARROLLO-COMPLETA.md)** - Lista completa para app final
-- **[Agregar Features](./05-guia-desarrollo/agregar-nuevas-features.md)** - Guía para nuevas funcionalidades
+- **[Agregar Features](./05-guia-desarrollo/00-00-agregar-nuevas-features.md)** - Guía para nuevas funcionalidades
 
 ## Cómo Usar Esta Guía
 
@@ -56,4 +55,4 @@ Esta guía está diseñada para ser leída de forma secuencial, comenzando por e
 
 ## 📖 Navegación
 
-**Siguiente:** [01 - Análisis de Problemas Actuales](./01-analisis/problemas-actuales.md)
+**Siguiente:** [01 - Análisis de Problemas Actuales](./01-analisis/00-problemas-actuales.md)

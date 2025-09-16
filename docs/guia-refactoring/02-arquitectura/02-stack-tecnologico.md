@@ -82,29 +82,67 @@ app/
 
 ## Backend & Database
 
-### Firebase (Firestore + Auth + Storage)
-**Decisión**: Firebase como BaaS principal
+### Firebase Auth + FastAPI Data Layer
+**Decisión**: Firebase Auth directo + FastAPI backend para datos
+
+**Arquitectura Híbrida**:
+- **Auth**: Mobile App ↔ Firebase Auth (directo)
+- **Data**: Mobile App → FastAPI → Firebase Firestore
+- **Storage**: Mobile App → FastAPI → Firebase Storage
+- **Authorization**: Firebase ID tokens verificados por FastAPI
 
 **Justificaciones**:
-- **Tiempo real**: Actualizaciones en tiempo real de Firestore
-- **Autenticación**: Firebase Auth con múltiples proveedores
-- **Almacenamiento de archivos**: Firebase Storage integrado
-- **Soporte sin conexión**: Caché sin conexión de Firestore
-- **Escalabilidad**: Escalado automático sin configuración
-- **Seguridad**: Reglas de seguridad granulares
+
+#### **Firebase Auth Directo**:
+- **UX Superior**: Flows nativos de autenticación (Google, Apple, Facebook)
+- **Desarrollo Rápido**: Sin necesidad de implementar auth en backend
+- **Seguridad Probada**: Firebase Auth maneja todas las complejidades de seguridad
+- **Offline Support**: Estado de autenticación funciona sin conexión
+- **MFA Built-in**: Autenticación multifactor nativa
+
+#### **FastAPI para Datos**:
+- **Lógica de Negocio**: Control total sobre validaciones y reglas de negocio
+- **API Personalizada**: Endpoints optimizados para casos de uso específicos
+- **Seguridad de Datos**: Validación centralizada antes de escribir a Firebase
+- **Flexibilidad**: Cacheo, logging, integraciones externas
+- **Performance**: Queries optimizadas y operaciones batch
 
 **Configuración**:
 ```javascript
-// shared/config/firebase.js - Setup principal
-// shared/services/ - Servicios por dominio
-// Security rules en firestore.rules
+// shared/config/firebase-auth.js - Solo Firebase Auth
+// shared/config/api-client.js - Cliente Axios centralizado
+// api/ - Funciones fetch simples por recurso (users.js, businesses.js)
+// features/*/api/ - Custom hooks TanStack Query por feature
+```
+
+**Flujo de API Layer**:
+```javascript
+// 1. Global fetch functions
+// api/users.js
+export const getUser = (userId) => apiClient.get(`/users/${userId}`);
+export const updateUser = (userId, data) => apiClient.put(`/users/${userId}`, data);
+
+// 2. Feature hooks con TanStack Query
+// features/auth/api/use-user.js
+import { useQuery, useMutation } from '@tanstack/react-query';
+import * as usersApi from '../../../api/users';
+
+export const useUser = (userId) => useQuery({
+  queryKey: ['users', userId],
+  queryFn: () => usersApi.getUser(userId)
+});
+
+// 3. Components usan hooks directamente
+const { data: user, isLoading } = useUser(authUser?.uid);
 ```
 
 **Trade-offs**:
-- ❌ Dependencia del proveedor con Google
-- ❌ Los costos pueden aumentar
-- ✅ Tiempo al mercado muy rápido
-- ✅ No necesita desarrollo de backend
+- ❌ Dependencia dual (Firebase Auth + FastAPI)
+- ❌ Complejidad de token management
+- ✅ Mejor UX que auth custom
+- ✅ Desarrollo más rápido que auth desde cero
+- ✅ Control total sobre lógica de negocio
+- ✅ Seguridad máxima para datos
 
 ---
 
@@ -248,10 +286,12 @@ const LoginForm = ({ onSubmit }) => {
   "@tanstack/zod-form-adapter": "^0.33.0",
   "zustand": "^5.0.0",
   "firebase": "^11.9.1",
+  "axios": "^1.7.9",
   "nativewind": "^4.1.0",
   "zod": "^3.24.0",
   "expo-image-picker": "~16.1.4",
-  "react-native-gesture-handler": "~2.20.0"
+  "react-native-gesture-handler": "~2.20.0",
+  "@react-native-async-storage/async-storage": "^1.24.0"
 }
 ```
 

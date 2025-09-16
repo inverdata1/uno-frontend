@@ -213,7 +213,80 @@ export const CACHE_TIME = {
 };
 ```
 
-## Paso 6: Configuración del QueryClient
+## Paso 6: Configuración de Firebase Auth
+
+### Crear configuración de Firebase (solo Auth)
+```javascript
+// shared/config/firebase-auth.js
+import { initializeApp } from 'firebase/app';
+import { getAuth } from 'firebase/auth';
+
+const firebaseConfig = {
+  apiKey: process.env.EXPO_PUBLIC_FIREBASE_API_KEY,
+  authDomain: process.env.EXPO_PUBLIC_FIREBASE_AUTH_DOMAIN,
+  projectId: process.env.EXPO_PUBLIC_FIREBASE_PROJECT_ID,
+  // Solo config necesaria para Auth
+};
+
+const app = initializeApp(firebaseConfig);
+export const auth = getAuth(app);
+```
+
+### Crear cliente HTTP con interceptores
+```javascript
+// shared/config/api-client.js
+import axios from 'axios';
+import { auth } from './firebase-auth';
+import AsyncStorage from '@react-native-async-storage/async-storage';
+
+const apiClient = axios.create({
+  baseURL: process.env.EXPO_PUBLIC_API_BASE_URL,
+  timeout: 10000,
+  headers: {
+    'Content-Type': 'application/json',
+  },
+});
+
+// Interceptor para agregar Firebase ID token automáticamente
+apiClient.interceptors.request.use(async (config) => {
+  try {
+    const user = auth.currentUser;
+    if (user) {
+      const idToken = await user.getIdToken();
+      config.headers.Authorization = `Bearer ${idToken}`;
+    }
+  } catch (error) {
+    console.error('Error getting Firebase token:', error);
+  }
+  return config;
+});
+
+// Interceptor para manejar errores de auth
+apiClient.interceptors.response.use(
+  (response) => response,
+  async (error) => {
+    if (error.response?.status === 401) {
+      // Token expirado, intentar refresh
+      try {
+        const user = auth.currentUser;
+        if (user) {
+          const newToken = await user.getIdToken(true); // Force refresh
+          error.config.headers.Authorization = `Bearer ${newToken}`;
+          return apiClient.request(error.config);
+        }
+      } catch (refreshError) {
+        // Si falla el refresh, redirect a login
+        console.error('Token refresh failed:', refreshError);
+      }
+    }
+    return Promise.reject(error);
+  }
+);
+
+export { apiClient };
+```
+
+## Paso 7: Configuración del QueryClient
 
 ### Crear configuración básica
 ```javascript
@@ -226,12 +299,14 @@ export const queryClient = new QueryClient({
       staleTime: 5 * 60 * 1000, // 5 minutos
       cacheTime: 10 * 60 * 1000, // 10 minutos
       retry: (failureCount, error) => {
-        // No reintentar errores de permisos
-        if (error?.code === 'permission-denied') return false;
-        if (error?.code === 'not-found') return false;
-        
-        // Reintentar hasta 3 veces para errores de red
-        return failureCount < 3;
+        // No reintentar errores de permisos HTTP
+        if (error?.status === 401 || error?.status === 403) return false;
+        if (error?.status === 404 || error?.status === 422) return false;
+
+        // Reintentar hasta 3 veces para errores de red (5xx)
+        if (error?.status >= 500) return failureCount < 3;
+
+        return failureCount < 2;
       },
       refetchOnWindowFocus: true,
       refetchOnReconnect: true,
@@ -331,22 +406,69 @@ jest.mock('@tanstack/react-query', () => ({
 
 ## Paso 9: Estructura Base de Carpetas
 
-### Crear estructura nueva
+### Crear estructura nueva (Profy.dev API Layer)
 ```bash
-mkdir -p src/shared/{components/ui,config,services,hooks,utils,queries,types}
-mkdir -p src/features/{auth,business,products,orders,social,profile}/{components,screens,queries,utils}
-mkdir -p src/navigation
-mkdir -p src/app
+# Shared config y utilidades
+mkdir -p shared/{config,components/ui,hooks,utils,types}
+
+# Global API layer
+mkdir -p api
+
+# Features con API hooks
+mkdir -p features/{auth,business,products,orders,social,profile}/{api,components,screens,utils}
+
+# Navigation y app
+mkdir -p navigation app
 ```
 
-### Crear archivos index base
+### Crear archivos base de API layer
+
+**Global API client:**
 ```javascript
-// shared/components/ui/index.js
-// Placeholder para futuras exportaciones
-export * from './button';
-export * from './input';
-export * from './loading-spinner';
-// ... otros componentes UI
+// api/client.js
+import axios from 'axios';
+import { auth } from '../shared/config/firebase-auth';
+
+export const apiClient = axios.create({
+  baseURL: process.env.EXPO_PUBLIC_API_BASE_URL,
+  timeout: 10000,
+});
+
+// Auto-attach Firebase tokens
+apiClient.interceptors.request.use(async (config) => {
+  const user = auth.currentUser;
+  if (user) {
+    const token = await user.getIdToken();
+    config.headers.Authorization = `Bearer ${token}`;
+  }
+  return config;
+});
+```
+
+**Sample API functions:**
+```javascript
+// api/users.js
+import { apiClient } from './client';
+
+export const getProfile = () => apiClient.get('/users/profile');
+export const updateProfile = (data) => apiClient.put('/users/profile', data);
+export const getUser = (userId) => apiClient.get(`/users/${userId}`);
+```
+
+**Sample feature hooks:**
+```javascript
+// features/auth/api/use-user.js
+import { useQuery, useMutation } from '@tanstack/react-query';
+import * as usersApi from '../../../api/users';
+
+export const useProfile = () => useQuery({
+  queryKey: ['users', 'profile'],
+  queryFn: usersApi.getProfile
+});
+
+export const useUpdateProfile = () => useMutation({
+  mutationFn: usersApi.updateProfile
+});
 ```
 
 ## Paso 10: Crear App.js Principal

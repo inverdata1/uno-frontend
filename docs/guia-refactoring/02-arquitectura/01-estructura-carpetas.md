@@ -69,119 +69,90 @@ app/                              # Expo Router - File-based routing
 └── _layout.jsx                  # Root layout con providers
 
 features/                         # Funcionalidades por dominio
-├── auth/                         # Autenticación y registro
+├── auth/                         # Autenticación con Firebase Auth
+│   ├── api/                      # TanStack Query hooks (con axios calls incluidos)
+│   │   ├── use-user-profile.js   # getUserProfile() + useQuery hook
+│   │   └── use-business-upgrade.js # upgradeAccount() + useMutation hook
 │   ├── components/
-│   │   ├── login-form.jsx
-│   │   ├── register-form.jsx
-│   │   └── onboarding-flow.jsx
+│   │   ├── login-form.jsx        # Firebase Auth login
+│   │   ├── register-form.jsx     # Firebase Auth register
+│   │   └── social-login.jsx      # Google/Apple login
 │   ├── hooks/
-│   │   ├── use-auth.js
-│   │   └── use-onboarding.js
-│   ├── queries/
-│   │   ├── auth-query-keys.js    # TanStack Query keys
-│   │   └── use-auth-queries.js   # Auth queries y mutations
-│   ├── services/
-│   │   ├── auth-api.js
-│   │   └── social-auth.js
-│   ├── stores/
-│   │   └── auth-store.js
+│   │   └── use-auth-state.js     # Firebase Auth state listener
 │   └── schemas/
-│       ├── login-schema.js
+│       ├── login-schema.js       # Zod validation
 │       └── register-schema.js
-├── user/                         # Gestión unificada de usuarios
+├── businesses/                   # Negocios/tiendas
+│   ├── api/                      # TanStack Query hooks (con axios calls incluidos)
+│   │   ├── use-get-businesses.js # getBusinesses() + useQuery hook
+│   │   ├── use-create-business.js # createBusiness() + useMutation hook
+│   │   └── use-update-business.js # updateBusiness() + useMutation hook
 │   ├── components/
-│   ├── hooks/
-│   │   ├── use-user-role.js
-│   │   └── use-business-upgrade.js
-│   ├── queries/
-│   │   ├── user-query-keys.js    # TanStack Query keys
-│   │   └── use-user-queries.js   # User queries y mutations
-│   ├── services/
-│   ├── stores/
-│   │   ├── user-store.js
-│   │   └── role-store.js
+│   │   ├── business-card.jsx
+│   │   ├── business-form.jsx
+│   │   └── business-hours-form.jsx
 │   └── schemas/
-├── social-commerce/              # TikTok Shop functionality
-│   ├── components/
-│   │   ├── video-post.jsx
-│   │   ├── product-carousel.jsx
-│   │   └── social-feed.jsx
-│   ├── hooks/
-│   │   ├── use-feed.js
-│   │   └── use-posts.js
-│   ├── services/
-│   │   ├── content-api.js
-│   │   └── media-upload.js
-│   └── stores/
-│       ├── feed-store.js
-│       └── content-store.js
-├── stores/                       # Gestión de tiendas/negocios
-│   ├── components/
-│   │   ├── store-card.jsx
-│   │   ├── store-profile.jsx
-│   │   └── store-hours.jsx
-│   ├── hooks/
-│   │   ├── use-stores.js
-│   │   └── use-store-management.js
-│   ├── services/
-│   └── stores/
-├── products/                     # Gestión de productos
+│       └── business-schema.js
+├── products/                     # Productos
+│   ├── api/                      # TanStack Query hooks (con axios calls incluidos)
+│   │   ├── use-get-products.js   # getProducts() + useQuery hook
+│   │   ├── use-create-product.js # createProduct() + useMutation hook
+│   │   └── use-update-product.js # updateProduct() + useMutation hook
 │   ├── components/
 │   │   ├── product-card.jsx
 │   │   ├── product-form.jsx
 │   │   └── product-gallery.jsx
-│   ├── hooks/
-│   │   ├── use-products.js
-│   │   └── use-product-management.js
-│   ├── services/
-│   └── stores/
-├── orders/                       # Gestión de órdenes
+│   └── schemas/
+│       └── product-schema.js
+├── orders/                       # Órdenes/pedidos
+│   ├── api/                      # TanStack Query hooks (con axios calls incluidos)
+│   │   ├── use-get-orders.js     # getOrders() + useQuery hook
+│   │   ├── use-create-order.js   # createOrder() + useMutation hook
+│   │   └── use-update-order.js   # updateOrderStatus() + useMutation hook
 │   ├── components/
 │   │   ├── order-card.jsx
 │   │   ├── order-status.jsx
-│   │   └── order-tracking.jsx
-│   ├── hooks/
-│   │   ├── use-orders.js
-│   │   └── use-order-tracking.js
-│   ├── services/
-│   └── stores/
-└── wallet/                       # Gestión de pagos/wallet
+│   │   └── cart.jsx
+│   └── schemas/
+│       └── order-schema.js
+├── social/                       # Social commerce (TikTok Shop style)
+│   ├── api/                      # TanStack Query hooks (con axios calls incluidos)
+│   │   ├── use-get-feed.js       # getFeed() + useQuery hook
+│   │   ├── use-create-post.js    # createPost() + useMutation hook
+│   │   └── use-upload-media.js   # uploadMedia() + useMutation hook
+│   ├── components/
+│   │   ├── video-post.jsx
+│   │   ├── social-feed.jsx
+│   │   └── create-post-form.jsx
+│   └── schemas/
+│       └── post-schema.js
+└── wallet/                       # Pagos y wallet
+    ├── api/                      # TanStack Query hooks (con axios calls incluidos)
+    │   ├── use-get-wallet.js     # getWallet() + useQuery hook
+    │   └── use-process-payment.js # processPayment() + useMutation hook
     ├── components/
     │   ├── wallet-balance.jsx
-    │   ├── transaction-history.jsx
-    │   └── payment-methods.jsx
-    ├── hooks/
-    ├── services/
-    └── stores/
+    │   └── payment-form.jsx
+    └── schemas/
+        └── payment-schema.js
 
-shared/                           # Código compartido entre features
+shared/                           # Código compartido
 ├── components/                   # UI components reutilizables
 │   └── ui/                       # Componentes básicos (Button, Input, etc.)
 ├── config/                       # Configuraciones globales
-│   ├── firebase.js               # Setup de Firebase
-│   ├── query-client.js           # Configuración de TanStack Query
-│   ├── app-config.js             # Configuración de la app
-│   └── storage-config.js         # Configuración de almacenamiento
-├── services/                     # Servicios de acceso a datos
-│   ├── base-service.js           # Clase base para servicios
-│   ├── user-service.js           # Operaciones de usuarios
-│   ├── business-service.js       # Operaciones de negocios
-│   ├── product-service.js        # Operaciones de productos
-│   ├── order-service.js          # Operaciones de órdenes
-│   └── file-storage-service.js   # Manejo de archivos
+│   ├── firebase-auth.js          # Firebase Auth setup (solo auth)
+│   ├── api-client.js             # Axios instance con Firebase token interceptor
+│   └── query-client.js           # TanStack Query config
 ├── hooks/                        # Custom hooks globales
-│   ├── use-auth.js               # Hook de autenticación
-│   ├── use-permissions.js        # Hook de permisos
-│   └── use-media-picker.js       # Hook para selección de archivos
+│   ├── use-auth.js               # Firebase Auth hook
+│   └── use-media-picker.js       # File picker hook
 ├── utils/                        # Utilidades globales
 │   ├── constants.js              # Constantes de la app
-│   ├── firebase-errors.js        # Traducción de errores
-│   ├── cn.js                     # Utility función de clsx + tailwind-merge
-│   └── validation.js             # Helpers de validación
-├── stores/                       # Stores globales de Zustand
-│   ├── auth-store.js             # Store de autenticación
-│   └── app-store.js              # Store global de la app
-└── types/                        # Tipos/interfaces globales (futuro TS)
+│   ├── api-errors.js             # Traducción de errores HTTP
+│   └── cn.js                     # clsx + tailwind-merge utility
+├── stores/                       # Zustand stores (client state only)
+│   └── app-store.js              # UI state global
+└── types/                        # Tipos TypeScript (futuro)
 ```
 
 ## Diferencias Clave vs Estructura Tradicional
@@ -294,37 +265,74 @@ export default function MainLayout() {
 }
 ```
 
-### Feature Store Example
+### API Hook with Inline Fetch Function Example
 ```javascript
-// features/auth/stores/auth-store.js
-import { create } from 'zustand';
-import { persist } from 'zustand/middleware';
-import AsyncStorage from '@react-native-async-storage/async-storage';
+// features/auth/api/use-user-profile.js
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { apiClient } from '../../../shared/config/api-client';
 
-export const useAuthStore = create(
-  persist(
-    (set, get) => ({
-      user: null,
-      isAuthenticated: false,
-      
-      setUser: (user) => set({ user, isAuthenticated: !!user }),
-      logout: () => set({ user: null, isAuthenticated: false }),
-      
-      // Business upgrade functionality
-      upgradeToBusinessRole: async () => {
-        const user = get().user;
-        if (user) {
-          const updatedUser = { ...user, role: 'business' };
-          set({ user: updatedUser });
-        }
-      }
-    }),
-    {
-      name: 'auth-storage',
-      storage: AsyncStorage,
+// Simple fetch function inline
+const getProfile = () => apiClient.get('/users/profile');
+
+export const useProfile = () => useQuery({
+  queryKey: ['users', 'profile'],
+  queryFn: getProfile,
+  staleTime: 5 * 60 * 1000, // 5 minutes
+});
+
+// Another hook with inline fetch
+const updateProfile = (data) => apiClient.put('/users/profile', data);
+
+export const useUpdateProfile = () => {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: updateProfile,
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['users', 'profile'] });
     }
-  )
-);
+  });
+};
+```
+
+### Business Example
+```javascript
+// features/businesses/api/use-get-businesses.js
+import { useQuery } from '@tanstack/react-query';
+import { apiClient } from '../../../shared/config/api-client';
+
+// Simple fetch function inline
+const getBusinesses = (filters) =>
+  apiClient.get('/businesses', { params: filters });
+
+export const useGetBusinesses = (filters) => useQuery({
+  queryKey: ['businesses', filters],
+  queryFn: () => getBusinesses(filters),
+  staleTime: 2 * 60 * 1000, // 2 minutes
+});
+```
+
+### Firebase Auth Hook Example
+```javascript
+// features/auth/hooks/use-auth-state.js
+import { useEffect, useState } from 'react';
+import { onAuthStateChanged } from 'firebase/auth';
+import { auth } from '../../../shared/config/firebase-auth';
+
+export const useAuthState = () => {
+  const [user, setUser] = useState(null);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    const unsubscribe = onAuthStateChanged(auth, (firebaseUser) => {
+      setUser(firebaseUser);
+      setLoading(false);
+    });
+
+    return unsubscribe;
+  }, []);
+
+  return { user, loading };
+};
 ```
 
 ## Beneficios de Esta Estructura
@@ -353,18 +361,21 @@ export const useAuthStore = create(
 
 ### Stack Tecnológico Actualizado
 - **Expo Router**: File-based routing con route groups
-- **TanStack Query**: Server state management con cache inteligente y sincronización
-- **Zustand**: Client state management distribuido por feature
-- **TanStack Form + Zod**: Forms con validación robusta y type safety
+- **TanStack Query**: Server state management con cache inteligente
+- **Firebase Auth**: Direct authentication (Google, Apple, Email)
+- **FastAPI Backend**: Custom API layer for business logic
+- **Profy.dev API Pattern**: Global fetch functions + feature hooks
+- **Zustand**: Minimal client state management
+- **TanStack Form + Zod**: Forms con validación robusta
 - **NativeWind**: Styling con Tailwind CSS para React Native
-- **Firebase**: Backend con colecciones optimizadas para app unificada
+- **Axios**: HTTP client con Firebase token interceptors
 
 ### Próximos Pasos
-1. **Setup Expo Router**: Configurar routing con route groups
-2. **TanStack Query**: Configurar queries y mutations por feature
-3. **Feature stores**: Implementar Zustand stores para client state
-4. **Social commerce**: Implementar funcionalidad tipo TikTok Shop
-5. **Fresh implementation**: Plan de implementación desde cero
+1. **Global API Layer**: Crear funciones fetch simples en `/api/`
+2. **Firebase Auth Setup**: Configurar autenticación directa
+3. **Feature API Hooks**: Implementar TanStack Query hooks por feature
+4. **Expo Router**: Configurar routing con route groups
+5. **Social commerce**: Implementar funcionalidad tipo TikTok Shop
 
 ## Beneficios Clave
 

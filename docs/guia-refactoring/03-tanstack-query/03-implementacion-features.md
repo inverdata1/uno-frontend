@@ -6,68 +6,57 @@ Este documento muestra la implementación específica de TanStack Query para cad
 
 ## Feature: Authentication (auth/)
 
-### Query Keys
+### API Hook: User Profile
 ```javascript
-// features/auth/queries/user-query-keys.js
-export const userQueryKeys = {
-  all: ['users'],
-  lists: () => [...userQueryKeys.all, 'list'],
-  list: (filters) => [...userQueryKeys.lists(), { filters }],
-  details: () => [...userQueryKeys.all, 'detail'],
-  detail: (id) => [...userQueryKeys.details(), id],
-  profile: (id) => [...userQueryKeys.detail(id), 'profile'],
-  preferences: (id) => [...userQueryKeys.detail(id), 'preferences'],
-};
-```
-
-### Hooks Principales
-```javascript
-// features/auth/queries/use-user-queries.js
+// features/auth/api/use-user-profile.js
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { UserService } from '../../../shared/services/user-service';
-import { userQueryKeys } from './user-query-keys';
+import { apiClient } from '../../../shared/config/api-client';
 
-export const useUser = (userId) => {
+// Inline fetch functions
+const getUserProfile = () => apiClient.get('/users/profile');
+const updateUserProfile = (data) => apiClient.put('/users/profile', data);
+
+export const useUserProfile = () => {
   return useQuery({
-    queryKey: userQueryKeys.detail(userId),
-    queryFn: () => UserService.getUser(userId),
-    enabled: !!userId,
+    queryKey: ['users', 'profile'],
+    queryFn: getUserProfile,
     staleTime: 5 * 60 * 1000,
   });
 };
 
-export const useUpdateUser = () => {
+export const useUpdateUserProfile = () => {
   const queryClient = useQueryClient();
-  
+
   return useMutation({
-    mutationFn: ({ userId, updates }) => UserService.updateUser(userId, updates),
-    onSuccess: (updatedUser, { userId }) => {
-      queryClient.setQueryData(userQueryKeys.detail(userId), updatedUser);
-      queryClient.invalidateQueries({ queryKey: userQueryKeys.lists() });
+    mutationFn: updateUserProfile,
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['users', 'profile'] });
+    },
+  });
+};
+```
+
+### API Hook: Business Upgrade
+```javascript
+// features/auth/api/use-business-upgrade.js
+import { useMutation, useQueryClient } from '@tanstack/react-query';
+import { apiClient } from '../../../shared/config/api-client';
+
+// Inline fetch function
+const upgradeToBusinessAccount = (data) => apiClient.post('/users/business-upgrade', data);
+
+export const useBusinessUpgrade = () => {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: upgradeToBusinessAccount,
+    onSuccess: () => {
+      // Invalidate user profile to reflect role change
+      queryClient.invalidateQueries({ queryKey: ['users', 'profile'] });
     },
   });
 };
 
-export const useRegisterUser = () => {
-  return useMutation({
-    mutationFn: (userData) => UserService.register(userData),
-    onError: (error) => {
-      console.error('Error en registro:', error.message);
-    },
-  });
-};
-
-export const useLoginUser = () => {
-  const queryClient = useQueryClient();
-  
-  return useMutation({
-    mutationFn: ({ email, password }) => UserService.login(email, password),
-    onSuccess: (user) => {
-      // Cachear usuario logueado
-      queryClient.setQueryData(userQueryKeys.detail(user.uid), user);
-    },
-  });
-};
 ```
 
 ### Uso en Componentes
@@ -75,20 +64,17 @@ export const useLoginUser = () => {
 // features/auth/screens/profile-screen.jsx
 import React from 'react';
 import { View } from 'react-native';
-import { useAuth } from '../../../shared/hooks/use-auth';
-import { useUser, useUpdateUser } from '../queries/use-user-queries';
+import { useAuthState } from '../hooks/use-auth-state'; // Firebase Auth
+import { useUserProfile, useUpdateUserProfile } from '../api/use-user-profile';
 import ProfileForm from '../components/profile-form';
 
 const ProfileScreen = () => {
-  const { user: authUser } = useAuth();
-  const { data: user, isLoading } = useUser(authUser?.uid);
-  const updateUserMutation = useUpdateUser();
+  const { user: firebaseUser } = useAuthState(); // Firebase Auth state
+  const { data: userProfile, isLoading } = useUserProfile(); // FastAPI data
+  const updateProfileMutation = useUpdateUserProfile();
 
   const handleUpdateProfile = (updates) => {
-    updateUserMutation.mutate({
-      userId: authUser.uid,
-      updates
-    });
+    updateProfileMutation.mutate(updates);
   };
 
   if (isLoading) return <LoadingSpinner />;
@@ -131,7 +117,7 @@ export const businessQueryKeys = {
 export const useBusinessesByCategory = (category, location) => {
   return useQuery({
     queryKey: businessQueryKeys.byCategory(category),
-    queryFn: () => BusinessService.getByCategory(category, location),
+    queryFn: () => getBusinessesByCategory(category, location),
     enabled: !!category,
     staleTime: 2 * 60 * 1000,
   });

@@ -17,7 +17,7 @@ useEffect(() => {
   const fetchUser = async () => {
     try {
       setLoading(true);
-      const userData = await UserService.getUser(userId);
+      const userData = await UserService.getUser(userId); // HTTP call to FastAPI
       setUser(userData);
     } catch (err) {
       setError(err.message);
@@ -37,7 +37,7 @@ const { data: user, isLoading, error } = useUser(userId);
 
 ## Integración con Arquitectura Existente
 
-TanStack Query **NO reemplaza** nuestros servicios de Firebase. Los **envuelve** con funcionalidades adicionales:
+TanStack Query **NO reemplaza** nuestros servicios HTTP/API. Los **envuelve** con funcionalidades adicionales:
 
 - **Servicios existentes**: `UserService`, `BusinessService`, etc. → Se mantienen igual
 - **TanStack Query**: Agrega cache, loading states, error handling, optimistic updates
@@ -74,7 +74,7 @@ TanStack Query **NO reemplaza** nuestros servicios de Firebase. Los **envuelve**
 
 ## Antes de Continuar
 
-**Importante**: Esta implementación mantiene toda la arquitectura de servicios actual. Solo agrega una capa de cache inteligente encima. Los servicios de Firebase no cambian.
+**Importante**: Esta implementación mantiene toda la arquitectura de servicios actual. Solo agrega una capa de cache inteligente encima. Los servicios HTTP/API no cambian.
 
 ---
 

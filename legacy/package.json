@@ -1,0 +1,36 @@
+{
+  "name": "uno-delivery",
+  "version": "1.0.0",
+  "main": "index.js",
+  "scripts": {
+    "start": "expo start",
+    "android": "expo start --android",
+    "ios": "expo start --ios",
+    "web": "expo start --web"
+  },
+  "dependencies": {
+    "@react-native-async-storage/async-storage": "^1.24.0",
+    "@react-native-community/datetimepicker": "8.3.0",
+    "@react-navigation/native-stack": "^7.3.14",
+    "expo": "^53.0.10",
+    "expo-image-picker": "~16.1.4",
+    "expo-location": "~18.1.5",
+    "expo-splash-screen": "~0.30.9",
+    "expo-status-bar": "~2.2.3",
+    "expo-updates": "~0.28.14",
+    "firebase": "^11.9.1",
+    "react": "19.0.0",
+    "react-native": "^0.79.3",
+    "react-native-element-dropdown": "^2.12.4",
+    "react-native-international-phone-number": "^0.9.3",
+    "react-native-maps": "1.20.1",
+    "react-native-modal-datetime-picker": "^18.0.0",
+    "react-native-safe-area-context": "5.4.0",
+    "react-native-screens": "~4.11.1",
+    "expo-file-system": "~18.1.11"
+  },
+  "devDependencies": {
+    "@babel/core": "^7.20.0"
+  },
+  "private": true
+}

@@ -1,30 +1,42 @@
-# Colecciones Firebase - Estructura de Base de Datos
+# API Endpoints - Estructura de Datos
 
 ## Visión General
 
-La base de datos usa Firestore con estructura NoSQL optimizada para la app unificada. Cada colección está diseñada para escalabilidad y eficiencia de queries.
+El backend FastAPI expone endpoints REST para todas las operaciones de datos. La base de datos subyacente (Firebase Firestore) es manejada completamente por el backend, y la app móvil solo interactúa con la API HTTP.
 
-## Convenciones de Nombres
+## Convenciones de API
 
-### Colecciones
-- **PascalCase**: `Users`, `Businesses`, `Products`, `Orders`
-- **Singular/Plural**: Plural para colecciones (`Users` no `User`)
-- **Descriptivos**: Nombres claros que indican el contenido
+### Endpoints REST
+- **Recursos en plural**: `/api/users`, `/api/businesses`, `/api/products`, `/api/orders`
+- **RESTful**: `GET`, `POST`, `PUT`, `DELETE` para operaciones CRUD
+- **Versionado**: `/api/v1/` para futuras versiones
 
-### Documentos
+### Request/Response
 - **camelCase para campos**: `firstName`, `businessName`, `createdAt`
-- **IDs**: Auto-generados por Firebase o UIDs para usuarios
-- **Timestamps**: Siempre `createdAt` y `updatedAt`
+- **IDs**: UUIDs o Firebase UIDs para identificadores únicos
+- **Timestamps**: ISO 8601 format (`2024-01-15T10:30:00Z`)
+- **Paginación**: `page`, `limit`, `total` para listas grandes
 
-### Subcollections
-- **camelCase**: `orderItems`, `businessHours`, `socialPosts`
-- **Relación clara**: Nombre indica relación con documento padre
+### Autenticación
+- **Firebase ID Token**: `Authorization: Bearer <firebase_id_token>`
+- **User Context**: FastAPI extrae UID del token para operaciones
+- **Permissions**: Role-based access control en backend
 
-## Estructura de Colecciones
+## API Endpoints por Recurso
 
-### Users
+### Users API
+
+**Endpoints:**
+```
+GET    /api/users/profile           # Get current user profile
+PUT    /api/users/profile           # Update current user profile
+POST   /api/users/business-upgrade  # Upgrade to business account
+GET    /api/users/{userId}          # Get user by ID (admin only)
+POST   /api/users/upload-avatar     # Upload profile image
+```
+
+**User Schema:**
 ```javascript
-// Collection: Users/{userId}
 {
   uid: "user123",                    // Firebase Auth UID
   email: "user@example.com",
@@ -33,7 +45,7 @@ La base de datos usa Firestore con estructura NoSQL optimizada para la app unifi
   phone: "+584121234567",
   userRole: "client" | "business",   // Role unificado
   profileImage: {
-    url: "https://firebase...",
+    url: "https://api.example.com/uploads/profile_123.jpg",
     fileName: "profile_123.jpg",
     uploadedAt: "2024-01-15T10:30:00Z"
   },
@@ -48,7 +60,7 @@ La base de datos usa Firestore con estructura NoSQL optimizada para la app unifi
     }
   },
   businessProfile: {               // Solo si userRole === 'business'
-    businessId: "business456",     // Referencia a documento en Businesses
+    businessId: "business456",     // Referencia a Business
     applicationStatus: "approved" | "pending" | "rejected",
     appliedAt: "2024-01-15T10:30:00Z",
     approvedAt: "2024-01-16T14:20:00Z"
@@ -61,6 +73,59 @@ La base de datos usa Firestore con estructura NoSQL optimizada para la app unifi
   createdAt: "2024-01-15T10:30:00Z",
   updatedAt: "2024-01-15T10:30:00Z"
 }
+```
+
+**API Layer Implementation:**
+
+**Global fetch functions:**
+```javascript
+// api/users.js
+import { apiClient } from '../shared/config/api-client';
+
+export const getProfile = () => apiClient.get('/users/profile');
+export const updateProfile = (data) => apiClient.put('/users/profile', data);
+export const getUser = (userId) => apiClient.get(`/users/${userId}`);
+export const upgradeToBusinessAccount = (data) => apiClient.post('/users/business-upgrade', data);
+export const uploadAvatar = (formData) => apiClient.post('/users/upload-avatar', formData);
+```
+
+**Feature hooks:**
+```javascript
+// features/auth/api/use-user.js
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import * as usersApi from '../../../api/users';
+
+export const useProfile = () => useQuery({
+  queryKey: ['users', 'profile'],
+  queryFn: usersApi.getProfile
+});
+
+export const useUpdateProfile = () => {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: usersApi.updateProfile,
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['users', 'profile'] });
+    }
+  });
+};
+```
+
+**Component usage:**
+```javascript
+// features/auth/components/profile-form.jsx
+import { useProfile, useUpdateProfile } from '../api/use-user';
+
+const ProfileForm = () => {
+  const { data: profile, isLoading } = useProfile();
+  const updateProfile = useUpdateProfile();
+
+  const handleSubmit = (data) => {
+    updateProfile.mutate(data);
+  };
+
+  // ... rest of component
+};
 ```
 
 ### Businesses

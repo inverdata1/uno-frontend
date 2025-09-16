@@ -21,7 +21,7 @@ npm install @react-native-async-storage/async-storage
 ```javascript
 // shared/config/query-client.js
 import { QueryClient } from '@tanstack/react-query';
-import { translateFirebaseError } from '../utils/firebase-errors';
+import { translateAPIError } from '../utils/api-errors';
 
 export const queryClient = new QueryClient({
   defaultOptions: {
@@ -55,7 +55,7 @@ export const queryClient = new QueryClient({
     mutations: {
       // Error handling global para mutations
       onError: (error, variables, context) => {
-        const translatedError = translateFirebaseError(error);
+        const translatedError = translateAPIError(error);
         console.error('Mutation error:', translatedError);
         
         // Aquí podrías integrar sistema de notificaciones
@@ -317,27 +317,31 @@ export const useQueryDebug = (queryKey, enabled = __DEV__) => {
 
 ## Error Handling Global
 
-### Traducción de Errores Firebase
+### Traducción de Errores HTTP/API
 ```javascript
-// shared/utils/firebase-errors.js
+// shared/utils/api-errors.js
 const errorMessages = {
-  'permission-denied': 'No tienes permisos para realizar esta acción',
-  'not-found': 'El recurso solicitado no existe',
-  'already-exists': 'Este recurso ya existe',
-  'unavailable': 'Servicio temporalmente no disponible. Intenta de nuevo.',
-  'unauthenticated': 'Debes iniciar sesión para continuar',
-  'invalid-argument': 'Los datos proporcionados no son válidos',
-  'resource-exhausted': 'Has excedido el límite de uso. Intenta más tarde.',
+  400: 'Los datos proporcionados no son válidos',
+  401: 'Debes iniciar sesión para continuar',
+  403: 'No tienes permisos para realizar esta acción',
+  404: 'El recurso solicitado no existe',
+  409: 'Este recurso ya existe',
+  422: 'Los datos proporcionados contienen errores',
+  429: 'Has excedido el límite de uso. Intenta más tarde.',
+  500: 'Error interno del servidor. Intenta más tarde.',
+  502: 'Servicio temporalmente no disponible. Intenta de nuevo.',
+  503: 'Servicio temporalmente no disponible. Intenta de nuevo.',
 };
 
-export const translateFirebaseError = (error) => {
-  const code = error?.code || 'unknown';
-  const message = errorMessages[code] || error?.message || 'Ha ocurrido un error inesperado';
-  
+export const translateAPIError = (error) => {
+  const status = error?.response?.status || error?.status || 'unknown';
+  const message = errorMessages[status] || error?.message || 'Ha ocurrido un error inesperado';
+
   return {
-    code,
+    status,
     message,
     originalError: error,
+    details: error?.response?.data,
   };
 };
 ```

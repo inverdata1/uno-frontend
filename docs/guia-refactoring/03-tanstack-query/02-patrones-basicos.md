@@ -2,7 +2,7 @@
 
 ## Introducción
 
-Este documento cubre los patrones fundamentales para usar TanStack Query en el proyecto. Cada patrón está diseñado para integrarse perfectamente con nuestros servicios de Firebase existentes.
+Este documento cubre los patrones fundamentales para usar TanStack Query en el proyecto. Cada patrón está diseñado para integrarse perfectamente con nuestros servicios HTTP/REST que conectan con el backend FastAPI.
 
 ## Patrón 1: Query Simple (useQuery)
 
@@ -10,16 +10,25 @@ Este documento cubre los patrones fundamentales para usar TanStack Query en el p
 Obtener datos que se leen frecuentemente y pueden ser cacheados.
 
 ### Implementación
+
+**Global fetch function:**
 ```javascript
-// features/auth/queries/use-user-queries.js
+// api/users.js
+import { apiClient } from '../shared/config/api-client';
+
+export const getUser = (userId) => apiClient.get(`/users/${userId}`);
+```
+
+**Feature hook:**
+```javascript
+// features/auth/api/use-user.js
 import { useQuery } from '@tanstack/react-query';
-import { UserService } from '../../../shared/services/user-service';
-import { userQueryKeys } from './user-query-keys';
+import * as usersApi from '../../../api/users';
 
 export const useUser = (userId) => {
   return useQuery({
-    queryKey: userQueryKeys.detail(userId),
-    queryFn: () => UserService.getUser(userId),
+    queryKey: ['users', userId],
+    queryFn: () => usersApi.getUser(userId),
     enabled: !!userId,
     staleTime: 5 * 60 * 1000, // 5 minutos
     cacheTime: 10 * 60 * 1000, // 10 minutos
@@ -32,8 +41,8 @@ export const useUser = (userId) => {
 // features/profile/screens/profile-screen.jsx
 import React from 'react';
 import { View, Text } from 'react-native';
-import { useAuth } from '../../../shared/hooks/use-auth';
-import { useUser } from '../../auth/queries/use-user-queries';
+import { useAuth } from '../../../shared/hooks/use-auth'; // Firebase Auth
+import { useUser } from '../../auth/api/use-user';
 
 const ProfileScreen = () => {
   const { user: authUser } = useAuth();
@@ -58,12 +67,21 @@ const ProfileScreen = () => {
 Queries que dependen de filtros o búsquedas del usuario.
 
 ### Implementación
+
+**Global fetch function:**
 ```javascript
-// features/business/queries/use-business-queries.js
+// api/businesses.js
+export const getBusinessesByCategory = (category, location) =>
+  apiClient.get('/businesses', { params: { category, location } });
+```
+
+**Feature hook:**
+```javascript
+// features/business/api/use-businesses.js
 export const useBusinessesByCategory = (category, location) => {
   return useQuery({
-    queryKey: businessQueryKeys.byCategory(category, location),
-    queryFn: () => BusinessService.getByCategory(category, location),
+    queryKey: ['businesses', 'category', { category, location }],
+    queryFn: () => businessesApi.getBusinessesByCategory(category, location),
     enabled: !!category && !!location,
     staleTime: 2 * 60 * 1000, // 2 minutos
   });
@@ -92,17 +110,26 @@ export const businessQueryKeys = {
 Operaciones que modifican datos en el servidor.
 
 ### Implementación
+
+**Global fetch function:**
 ```javascript
-// features/auth/queries/use-user-queries.js
+// api/users.js
+export const updateUser = (userId, updates) =>
+  apiClient.put(`/users/${userId}`, updates);
+```
+
+**Feature hook:**
+```javascript
+// features/auth/api/use-user.js
 export const useUpdateUser = () => {
   const queryClient = useQueryClient();
-  
+
   return useMutation({
-    mutationFn: ({ userId, updates }) => UserService.updateUser(userId, updates),
+    mutationFn: ({ userId, updates }) => usersApi.updateUser(userId, updates),
     onSuccess: (updatedUser, { userId }) => {
       // Actualizar cache inmediatamente
       queryClient.setQueryData(
-        userQueryKeys.detail(userId),
+        ['users', userId],
         updatedUser
       );
       

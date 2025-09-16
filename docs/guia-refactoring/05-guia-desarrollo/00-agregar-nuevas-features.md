@@ -9,45 +9,47 @@ Antes de escribir código, define:
 - **Dependencias**: ¿Qué otras features o servicios necesita?
 - **Database**: ¿Necesita nuevas colecciones o campos?
 
-### 2. Estructura de Base de Datos
+### 2. API Layer
 
-#### Nueva Colección
+#### Agregar API Hook
 ```javascript
-// 1. Definir schema en 03-colecciones-firebase.md
-// 2. Crear en shared/services/nueva-feature-service.js
+// features/nueva-feature/api/use-get-nueva-features.js
+import { useQuery } from '@tanstack/react-query';
+import { apiClient } from '../../../shared/config/api-client';
 
-export class NuevaFeatureService extends BaseService {
-  static collectionName = 'NuevaFeatures';
-  
-  static async create(data) {
-    const dataWithDefaults = {
-      ...data,
-      status: 'active',
-      createdAt: new Date().toISOString(),
-      updatedAt: new Date().toISOString()
-    };
-    return this.createDocument(this.collectionName, dataWithDefaults);
-  }
-  
-  static async getById(id) {
-    return this.getDocument(this.collectionName, id);
-  }
-  
-  static async update(id, updates) {
-    return this.updateDocument(this.collectionName, id, {
-      ...updates,
-      updatedAt: new Date().toISOString()
-    });
-  }
-  
-  static async getByUser(userId) {
-    return this.queryDocuments(this.collectionName, [
-      where('userId', '==', userId),
-      where('status', '==', 'active'),
-      orderBy('createdAt', 'desc')
-    ]);
-  }
-}
+// Inline fetch function
+const getNuevaFeatures = (filters) =>
+  apiClient.get('/nueva-features', { params: filters });
+
+export const useGetNuevaFeatures = (filters = {}) => {
+  return useQuery({
+    queryKey: ['nueva-features', filters],
+    queryFn: () => getNuevaFeatures(filters),
+    staleTime: 2 * 60 * 1000,
+  });
+};
+```
+
+#### Agregar Mutation Hook
+```javascript
+// features/nueva-feature/api/use-create-nueva-feature.js
+import { useMutation, useQueryClient } from '@tanstack/react-query';
+import { apiClient } from '../../../shared/config/api-client';
+
+// Inline fetch function
+const createNuevaFeature = (data) =>
+  apiClient.post('/nueva-features', data);
+
+export const useCreateNuevaFeature = () => {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: createNuevaFeature,
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['nueva-features'] });
+    },
+  });
+};
 ```
 
 #### Agregar Campo a Colección Existente

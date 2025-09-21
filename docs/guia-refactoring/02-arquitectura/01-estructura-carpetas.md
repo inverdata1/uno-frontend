@@ -265,28 +265,22 @@ export default function MainLayout() {
 }
 ```
 
-### API Hook with Inline Fetch Function Example
+### API Hook with Inline queryFn Example
 ```javascript
 // features/auth/api/use-user-profile.js
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { apiClient } from '../../../shared/config/api-client';
 
-// Simple fetch function inline
-const getProfile = () => apiClient.get('/users/profile');
-
 export const useProfile = () => useQuery({
   queryKey: ['users', 'profile'],
-  queryFn: getProfile,
+  queryFn: () => apiClient.get('/users/profile').then(res => res.data),
   staleTime: 5 * 60 * 1000, // 5 minutes
 });
-
-// Another hook with inline fetch
-const updateProfile = (data) => apiClient.put('/users/profile', data);
 
 export const useUpdateProfile = () => {
   const queryClient = useQueryClient();
   return useMutation({
-    mutationFn: updateProfile,
+    mutationFn: (data) => apiClient.put('/users/profile', data).then(res => res.data),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['users', 'profile'] });
     }
@@ -300,13 +294,9 @@ export const useUpdateProfile = () => {
 import { useQuery } from '@tanstack/react-query';
 import { apiClient } from '../../../shared/config/api-client';
 
-// Simple fetch function inline
-const getBusinesses = (filters) =>
-  apiClient.get('/businesses', { params: filters });
-
 export const useGetBusinesses = (filters) => useQuery({
   queryKey: ['businesses', filters],
-  queryFn: () => getBusinesses(filters),
+  queryFn: () => apiClient.get('/businesses', { params: filters }).then(res => res.data),
   staleTime: 2 * 60 * 1000, // 2 minutes
 });
 ```

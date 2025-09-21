@@ -9,9 +9,9 @@ export const Input = ({
   return (
     <TextInput
       className={cn(
-        'bg-bg-primary border border-border-medium rounded-md px-3 py-3',
-        'text-text-primary placeholder:text-text-tertiary',
-        'focus:border-primary-500',
+        'border-input rounded-md px-3 py-3',
+        'text-foreground placeholder:text-muted-foreground',
+        'focus:border-ring',
         className
       )}
       {...props}

@@ -12,13 +12,13 @@ export const Text = ({
     <RNText
       className={cn(
         // Base styles
-        'text-text-primary',
+        'text-foreground',
 
         // Variant styles
         variant === 'heading' && 'text-2xl font-bold',
         variant === 'subheading' && 'text-xl font-semibold',
         variant === 'body' && 'text-base',
-        variant === 'caption' && 'text-sm text-text-secondary',
+        variant === 'caption' && 'text-sm text-muted-foreground',
         variant === 'label' && 'text-sm font-medium',
 
         className

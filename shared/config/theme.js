@@ -1,18 +1,18 @@
-// Theme configuration - single source of truth
+// Theme configuration - UNO Delivery brand colors
 export const theme = {
   colors: {
-    // Primary brand colors with full scale
+    // Primary brand colors - UNO Red
     primary: {
-      50: '#eff6ff',
-      100: '#dbeafe',
-      200: '#bfdbfe',
-      300: '#93c5fd',
-      400: '#60a5fa',
-      500: '#3b82f6',
-      600: '#2563eb',
-      700: '#1d4ed8',
-      800: '#1e40af',
-      900: '#1e3a8a',
+      50: '#fef2f2',
+      100: '#fee2e2',
+      200: '#fecaca',
+      300: '#fca5a5',
+      400: '#f87171',
+      500: '#ef4444',  // Main UNO red
+      600: '#dc2626',  // Darker red for interactions
+      700: '#b91c1c',
+      800: '#991b1b',
+      900: '#7f1d1d',
     },
 
     // Semantic colors with scales
@@ -32,27 +32,27 @@ export const theme = {
       700: '#b91c1c',
     },
 
-    // Text colors
+    // Text colors - UNO palette
     text: {
-      primary: '#111827',    // Dark text
-      secondary: '#6b7280',  // Medium text
-      tertiary: '#9ca3af',   // Light text
+      primary: '#1a202c',    // Dark text (from PDF)
+      secondary: '#4a5568',  // Medium gray text
+      tertiary: '#a0aec0',   // Light gray text
       inverse: '#ffffff',    // White text
     },
 
-    // Background colors
+    // Background colors - UNO palette
     bg: {
-      primary: '#ffffff',    // White
-      secondary: '#f9fafb',  // Light gray
-      tertiary: '#f3f4f6',   // Lighter gray
-      dark: '#111827',       // Dark mode
+      primary: '#ffffff',    // White (from PDF)
+      secondary: '#f7fafc',  // Very light gray (from PDF)
+      tertiary: '#edf2f7',   // Subtle gray
+      dark: '#1a202c',       // Dark mode
     },
 
-    // Border colors
+    // Border colors - UNO palette
     border: {
-      light: '#e5e7eb',
-      medium: '#d1d5db',
-      dark: '#9ca3af',
+      light: '#e2e8f0',      // Soft borders (from PDF)
+      medium: '#cbd5e0',     // Medium borders
+      dark: '#a0aec0',       // Dark borders
     }
   },
 

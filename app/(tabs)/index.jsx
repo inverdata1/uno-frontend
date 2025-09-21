@@ -4,7 +4,7 @@ import { Button, Card, Text, Input } from '../../shared/components/ui';
 
 export default function HomeScreen() {
   return (
-    <ScrollView className="flex-1 bg-bg-secondary">
+    <ScrollView className="flex-1 bg-secondary">
       <View className="p-4 space-y-4">
 
         {/* Header */}
@@ -32,8 +32,8 @@ export default function HomeScreen() {
             <Button variant="success" size="sm">
               Success Button
             </Button>
-            <Button variant="danger">
-              Danger Button
+            <Button variant="destructive">
+              Destructive Button
             </Button>
             <Button variant="ghost">
               Ghost Button
@@ -78,8 +78,8 @@ export default function HomeScreen() {
             <View className="w-12 h-12 bg-primary-500 rounded" />
             <View className="w-12 h-12 bg-success rounded" />
             <View className="w-12 h-12 bg-warning rounded" />
-            <View className="w-12 h-12 bg-danger rounded" />
-            <View className="w-12 h-12 bg-border-medium rounded" />
+            <View className="w-12 h-12 bg-destructive rounded" />
+            <View className="w-12 h-12 bg-muted rounded" />
           </View>
         </Card>
 

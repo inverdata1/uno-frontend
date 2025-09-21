@@ -12,25 +12,30 @@ module.exports = {
   theme: {
     extend: {
       colors: {
-        // Use our theme colors
-        primary: theme.colors.primary,
-        success: theme.colors.success,
-        warning: theme.colors.warning,
-        danger: theme.colors.danger,
+        // Clean semantic colors (no redundant background token)
+        foreground: theme.colors.text.primary,      // Primary text
 
-        // Semantic color mapping
-        'text-primary': theme.colors.text.primary,
-        'text-secondary': theme.colors.text.secondary,
-        'text-tertiary': theme.colors.text.tertiary,
-        'text-inverse': theme.colors.text.inverse,
+        card: theme.colors.bg.primary,              // Card background
+        'card-foreground': theme.colors.text.primary, // Card text
 
-        'bg-primary': theme.colors.bg.primary,
-        'bg-secondary': theme.colors.bg.secondary,
-        'bg-tertiary': theme.colors.bg.tertiary,
+        primary: theme.colors.primary,              // Primary brand colors
+        'primary-foreground': theme.colors.text.inverse, // Text on primary
 
-        'border-light': theme.colors.border.light,
-        'border-medium': theme.colors.border.medium,
-        'border-dark': theme.colors.border.dark,
+        secondary: theme.colors.bg.secondary,       // Secondary background
+        'secondary-foreground': theme.colors.text.primary, // Secondary text
+
+        muted: theme.colors.bg.tertiary,            // Muted background
+        'muted-foreground': theme.colors.text.secondary, // Muted text
+
+        destructive: theme.colors.danger,           // Destructive/danger colors
+        'destructive-foreground': theme.colors.text.inverse, // Text on destructive
+
+        border: theme.colors.border.light,          // Default borders
+        input: theme.colors.border.medium,          // Input borders
+        ring: theme.colors.primary[500],            // Focus rings
+
+        success: theme.colors.success,              // Success colors
+        warning: theme.colors.warning,              // Warning colors
       },
       spacing: theme.spacing,
       fontSize: theme.fontSize,

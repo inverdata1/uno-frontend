@@ -9,10 +9,10 @@ export const buttonVariants = cva(
     variants: {
       variant: {
         primary: 'bg-primary-500 active:bg-primary-600',
-        secondary: 'bg-bg-tertiary border border-border-medium active:bg-bg-secondary',
+        secondary: 'bg-secondary border active:bg-muted',
         success: 'bg-success-500 active:bg-success-600',
-        danger: 'bg-danger-500 active:bg-danger-600',
-        ghost: 'bg-transparent active:bg-bg-secondary',
+        destructive: 'bg-destructive-500 active:bg-destructive-600',
+        ghost: 'bg-transparent active:bg-secondary',
         outline: 'border border-primary-500 bg-transparent active:bg-primary-50',
       },
       size: {
@@ -38,10 +38,10 @@ export const buttonTextVariants = cva(
   {
     variants: {
       variant: {
-        primary: 'text-text-inverse',
-        secondary: 'text-text-primary',
-        success: 'text-text-inverse',
-        danger: 'text-text-inverse',
+        primary: 'text-primary-foreground',
+        secondary: 'text-secondary-foreground',
+        success: 'text-primary-foreground',
+        destructive: 'text-destructive-foreground',
         ghost: 'text-primary-500',
         outline: 'text-primary-500',
       },
@@ -57,13 +57,13 @@ export const buttonTextVariants = cva(
 
 // Input variants
 export const inputVariants = cva(
-  'border rounded-md px-3 py-3 text-text-primary placeholder:text-text-tertiary transition-colors',
+  'border-input rounded-md px-3 py-3 text-foreground placeholder:text-muted-foreground transition-colors',
   {
     variants: {
       variant: {
-        default: 'bg-bg-primary border-border-medium focus:border-primary-500',
-        error: 'bg-bg-primary border-danger-500 focus:border-danger-500',
-        success: 'bg-bg-primary border-success-500 focus:border-success-500',
+        default: 'focus:border-ring',
+        error: 'border-destructive-500 focus:border-destructive-500',
+        success: 'border-success-500 focus:border-success-500',
       },
       size: {
         sm: 'px-2 py-2 text-sm',
@@ -84,9 +84,9 @@ export const cardVariants = cva(
   {
     variants: {
       variant: {
-        default: 'bg-bg-primary border border-border-light',
-        elevated: 'bg-bg-primary shadow-sm',
-        outline: 'border border-border-medium',
+        default: 'bg-card border',
+        elevated: 'bg-card shadow-sm',
+        outline: 'border',
       },
       padding: {
         none: '',

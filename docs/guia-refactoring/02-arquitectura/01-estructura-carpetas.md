@@ -140,7 +140,7 @@ shared/                           # Código compartido
 ├── components/                   # UI components reutilizables
 │   └── ui/                       # Componentes básicos (Button, Input, etc.)
 ├── config/                       # Configuraciones globales
-│   ├── firebase-auth.js          # Firebase Auth setup (solo auth)
+│   ├── firebase.js               # Firebase Auth setup (solo auth)
 │   ├── api-client.js             # Axios instance con Firebase token interceptor
 │   └── query-client.js           # TanStack Query config
 ├── hooks/                        # Custom hooks globales
@@ -150,8 +150,9 @@ shared/                           # Código compartido
 │   ├── constants.js              # Constantes de la app
 │   ├── api-errors.js             # Traducción de errores HTTP
 │   └── cn.js                     # clsx + tailwind-merge utility
-├── stores/                       # Zustand stores (client state only)
-│   └── app-store.js              # UI state global
+├── stores/                       # Zustand stores (global client state)
+│   ├── app-store.js              # UI state global (theme, language, etc.)
+│   └── auth-store.js             # Auth state global (used across features)
 └── types/                        # Tipos TypeScript (futuro)
 ```
 
@@ -205,7 +206,7 @@ const getUserRole = () => { ... }
 - **Reutilización** de código entre features
 
 ### ✅ Zustand para State Management
-- **Stores distribuidos** por feature
+- **Stores organizados** según alcance (global en shared/, feature-específicos en features/)
 - **Persistencia** con AsyncStorage
 - **DevTools** para debugging
 
@@ -306,7 +307,7 @@ export const useGetBusinesses = (filters) => useQuery({
 // features/auth/hooks/use-auth-state.js
 import { useEffect, useState } from 'react';
 import { onAuthStateChanged } from 'firebase/auth';
-import { auth } from '../../../shared/config/firebase-auth';
+import { auth } from '../../../shared/config/firebase';
 
 export const useAuthState = () => {
   const [user, setUser] = useState(null);

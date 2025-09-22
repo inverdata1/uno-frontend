@@ -217,7 +217,7 @@ export const CACHE_TIME = {
 
 ### Crear configuración de Firebase (solo Auth)
 ```javascript
-// shared/config/firebase-auth.js
+// shared/config/firebase.js
 import { initializeApp } from 'firebase/app';
 import { getAuth } from 'firebase/auth';
 
@@ -236,7 +236,7 @@ export const auth = getAuth(app);
 ```javascript
 // shared/config/api-client.js
 import axios from 'axios';
-import { auth } from './firebase-auth';
+import { auth } from './firebase';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 
 const apiClient = axios.create({
@@ -389,8 +389,6 @@ jest.mock('@react-native-async-storage/async-storage', () =>
 // Mock Firebase
 jest.mock('../shared/config/firebase', () => ({
   auth: {},
-  db: {},
-  storage: {},
 }));
 
 // Mock TanStack Query
@@ -427,7 +425,7 @@ mkdir -p navigation app
 ```javascript
 // api/client.js
 import axios from 'axios';
-import { auth } from '../shared/config/firebase-auth';
+import { auth } from '../shared/config/firebase';
 
 export const apiClient = axios.create({
   baseURL: process.env.EXPO_PUBLIC_API_BASE_URL,

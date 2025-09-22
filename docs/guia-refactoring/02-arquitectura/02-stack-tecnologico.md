@@ -109,7 +109,7 @@ app/
 
 **Configuración**:
 ```javascript
-// shared/config/firebase-auth.js - Solo Firebase Auth
+// shared/config/firebase.js - Solo Firebase Auth
 // shared/config/api-client.js - Cliente Axios centralizado
 // api/ - Funciones fetch simples por recurso (users.js, businesses.js)
 // features/*/api/ - Custom hooks TanStack Query por feature

@@ -1,5 +1,6 @@
 import React from 'react';
 import { View, Image } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import { Link } from 'expo-router';
 import { Text, Button } from '../../shared/components/ui';
 import { useAppStore } from '../../shared/stores/app-store';
@@ -18,7 +19,8 @@ export default function OnboardingScreen() {
   };
 
   return (
-    <View className="flex-1 bg-card px-6 justify-center">
+    <SafeAreaView className="flex-1 bg-card" edges={['top', 'bottom']}>
+      <View className="flex-1 px-6 justify-center">
       {/* Logo and branding */}
       <View className="items-center mb-8">
         <View className="w-32 h-32 bg-primary-500 rounded-full items-center justify-center mb-6">
@@ -87,6 +89,7 @@ export default function OnboardingScreen() {
           </Link>
         </View>
       </View>
-    </View>
+      </View>
+    </SafeAreaView>
   );
 }

@@ -1,5 +1,6 @@
 import React from 'react';
 import { View, KeyboardAvoidingView, Platform, ScrollView } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import { Link } from 'expo-router';
 import { Text, Button, Input, Checkbox } from '../../shared/components/ui';
 import { useForm } from '@tanstack/react-form';
@@ -48,10 +49,11 @@ export default function RegisterScreen() {
   });
 
   return (
-    <KeyboardAvoidingView
-      className="flex-1 bg-card"
-      behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
-    >
+    <SafeAreaView className="flex-1 bg-card" edges={['top']}>
+      <KeyboardAvoidingView
+        className="flex-1"
+        behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+      >
       <ScrollView className="flex-1" contentContainerStyle={{ flexGrow: 1 }}>
         <View className="flex-1 px-6 justify-center py-8">
           {/* Logo */}
@@ -68,92 +70,82 @@ export default function RegisterScreen() {
           </View>
 
           {/* Register Form */}
-          <View className="space-y-4 mb-6">
+          <View className="mb-6">
             <form.Field
               name="name"
               children={(field) => (
-                <View>
-                  <Input
-                    placeholder="Nombre completo"
-                    value={field.state.value}
-                    onChangeText={field.handleChange}
-                    onBlur={field.handleBlur}
-                    autoCapitalize="words"
-                    autoComplete="name"
-                    error={field.state.meta.errors?.[0]}
-                  />
-                </View>
+                <Input
+                  placeholder="Nombre completo"
+                  value={field.state.value}
+                  onChangeText={field.handleChange}
+                  onBlur={field.handleBlur}
+                  autoCapitalize="words"
+                  autoComplete="name"
+                  error={field.state.meta.errors?.[0]}
+                />
               )}
             />
 
             <form.Field
               name="email"
               children={(field) => (
-                <View>
-                  <Input
-                    placeholder="Correo electrónico"
-                    value={field.state.value}
-                    onChangeText={field.handleChange}
-                    onBlur={field.handleBlur}
-                    keyboardType="email-address"
-                    autoCapitalize="none"
-                    autoComplete="email"
-                    error={field.state.meta.errors?.[0]}
-                  />
-                </View>
+                <Input
+                  placeholder="Correo electrónico"
+                  value={field.state.value}
+                  onChangeText={field.handleChange}
+                  onBlur={field.handleBlur}
+                  keyboardType="email-address"
+                  autoCapitalize="none"
+                  autoComplete="email"
+                  error={field.state.meta.errors?.[0]}
+                />
               )}
             />
 
             <form.Field
               name="phone"
               children={(field) => (
-                <View>
-                  <Input
-                    placeholder="+584XXXXXXXX"
-                    value={field.state.value}
-                    onChangeText={field.handleChange}
-                    onBlur={field.handleBlur}
-                    keyboardType="phone-pad"
-                    autoComplete="tel"
-                    error={field.state.meta.errors?.[0]}
-                  />
-                </View>
+                <Input
+                  placeholder="+584XXXXXXXX"
+                  value={field.state.value}
+                  onChangeText={field.handleChange}
+                  onBlur={field.handleBlur}
+                  keyboardType="phone-pad"
+                  autoComplete="tel"
+                  error={field.state.meta.errors?.[0]}
+                />
               )}
             />
 
             <form.Field
               name="password"
               children={(field) => (
-                <View>
-                  <Input
-                    placeholder="Contraseña"
-                    value={field.state.value}
-                    onChangeText={field.handleChange}
-                    onBlur={field.handleBlur}
-                    secureTextEntry
-                    autoCapitalize="none"
-                    autoComplete="new-password"
-                    error={field.state.meta.errors?.[0]}
-                  />
-                </View>
+                <Input
+                  placeholder="Contraseña"
+                  value={field.state.value}
+                  onChangeText={field.handleChange}
+                  onBlur={field.handleBlur}
+                  secureTextEntry
+                  autoCapitalize="none"
+                  autoComplete="new-password"
+                  error={field.state.meta.errors?.[0]}
+                />
               )}
             />
 
             <form.Field
               name="confirmPassword"
               children={(field) => (
-                <View>
-                  <Input
-                    placeholder="Confirmar contraseña"
-                    value={field.state.value}
-                    onChangeText={field.handleChange}
-                    onBlur={field.handleBlur}
-                    secureTextEntry
-                    autoCapitalize="none"
-                    autoComplete="new-password"
-                    error={field.state.meta.errors?.[0]}
-                  />
-                </View>
+                <Input
+                  placeholder="Confirmar contraseña"
+                  value={field.state.value}
+                  onChangeText={field.handleChange}
+                  onBlur={field.handleBlur}
+                  secureTextEntry
+                  autoCapitalize="none"
+                  autoComplete="new-password"
+                  error={field.state.meta.errors?.[0]}
+                />
               )}
             />
 
@@ -161,29 +153,25 @@ export default function RegisterScreen() {
             <form.Field
               name="acceptTerms"
               children={(field) => (
-                <View className="flex-row items-start space-x-3 mt-4">
+                <View className="mt-4">
                   <Checkbox
                     checked={field.state.value}
                     onCheckedChange={field.handleChange}
                     error={field.state.meta.errors?.[0]}
-                  />
-                  <View className="flex-1">
-                    <Text variant="caption" className="text-muted-foreground leading-5">
-                      Acepto los{' '}
-                      <Text className="text-primary-500 underline">
-                        términos y condiciones
+                  >
+                    <View className="flex-1">
+                      <Text variant="caption" className="text-muted-foreground leading-5">
+                        Acepto los{' '}
+                        <Text className="text-primary-500 underline">
+                          términos y condiciones
+                        </Text>
+                        {' '}y la{' '}
+                        <Text className="text-primary-500 underline">
+                          política de privacidad
+                        </Text>
                       </Text>
-                      {' '}y la{' '}
-                      <Text className="text-primary-500 underline">
-                        política de privacidad
-                      </Text>
-                    </Text>
-                    {field.state.meta.errors?.[0] && (
-                      <Text variant="caption" className="text-destructive mt-1">
-                        {field.state.meta.errors[0]}
-                      </Text>
-                    )}
-                  </View>
+                    </View>
+                  </Checkbox>
                 </View>
               )}
             />
@@ -213,6 +201,7 @@ export default function RegisterScreen() {
           </View>
         </View>
       </ScrollView>
-    </KeyboardAvoidingView>
+      </KeyboardAvoidingView>
+    </SafeAreaView>
   );
 }

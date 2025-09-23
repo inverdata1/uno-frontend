@@ -1,5 +1,6 @@
 import React from 'react';
 import { View, KeyboardAvoidingView, Platform, ScrollView } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import { Link } from 'expo-router';
 import { Text, Button, Input } from '../../shared/components/ui';
 import { useForm } from '@tanstack/react-form';
@@ -31,10 +32,11 @@ export default function LoginScreen() {
   });
 
   return (
-    <KeyboardAvoidingView
-      className="flex-1 bg-card"
-      behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
-    >
+    <SafeAreaView className="flex-1 bg-card" edges={['top']}>
+      <KeyboardAvoidingView
+        className="flex-1"
+        behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+      >
       <ScrollView className="flex-1" contentContainerStyle={{ flexGrow: 1 }}>
         <View className="flex-1 px-6 justify-center">
           {/* Logo */}
@@ -51,40 +53,36 @@ export default function LoginScreen() {
           </View>
 
           {/* Login Form */}
-          <View className="space-y-4 mb-6">
+          <View className="mb-6">
             <form.Field
               name="email"
               children={(field) => (
-                <View>
-                  <Input
-                    placeholder="Correo electrónico"
-                    value={field.state.value}
-                    onChangeText={field.handleChange}
-                    onBlur={field.handleBlur}
-                    keyboardType="email-address"
-                    autoCapitalize="none"
-                    autoComplete="email"
-                    error={field.state.meta.errors?.[0]}
-                  />
-                </View>
+                <Input
+                  placeholder="Correo electrónico"
+                  value={field.state.value}
+                  onChangeText={field.handleChange}
+                  onBlur={field.handleBlur}
+                  keyboardType="email-address"
+                  autoCapitalize="none"
+                  autoComplete="email"
+                  error={field.state.meta.errors?.[0]}
+                />
               )}
             />
 
             <form.Field
               name="password"
               children={(field) => (
-                <View>
-                  <Input
-                    placeholder="Contraseña"
-                    value={field.state.value}
-                    onChangeText={field.handleChange}
-                    onBlur={field.handleBlur}
-                    secureTextEntry
-                    autoCapitalize="none"
-                    autoComplete="password"
-                    error={field.state.meta.errors?.[0]}
-                  />
-                </View>
+                <Input
+                  placeholder="Contraseña"
+                  value={field.state.value}
+                  onChangeText={field.handleChange}
+                  onBlur={field.handleBlur}
+                  secureTextEntry
+                  autoCapitalize="none"
+                  autoComplete="password"
+                  error={field.state.meta.errors?.[0]}
+                />
               )}
             />
           </View>
@@ -120,6 +118,7 @@ export default function LoginScreen() {
           </View>
         </View>
       </ScrollView>
-    </KeyboardAvoidingView>
+      </KeyboardAvoidingView>
+    </SafeAreaView>
   );
 }

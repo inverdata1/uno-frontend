@@ -4,6 +4,7 @@ import { Stack } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
 import { QueryClientProvider } from '@tanstack/react-query';
 import { Platform, View } from 'react-native';
+import { SafeAreaProvider } from 'react-native-safe-area-context';
 import 'react-native-reanimated';
 import "../global.css";
 import { queryClient } from '../shared/config/query-client';
@@ -55,6 +56,7 @@ function AppNavigator() {
     <Stack screenOptions={{ headerShown: false }}>
       <Stack.Screen name="(auth)" />
       <Stack.Screen name="(main)" />
+      <Stack.Screen name="index" />
     </Stack>
   );
 }
@@ -64,16 +66,18 @@ export default function RootLayout() {
   useAuthState();
 
   return (
-    <QueryClientProvider client={queryClient}>
-      <ThemeProvider value={DefaultTheme}>
-        <AppNavigator />
-        <StatusBar style="auto" />
+    <SafeAreaProvider>
+      <QueryClientProvider client={queryClient}>
+        <ThemeProvider value={DefaultTheme}>
+          <AppNavigator />
+          <StatusBar style="auto" />
 
-        {/* DevTools only in development and web platform */}
-        {__DEV__ && Platform.OS === 'web' && ReactQueryDevtools && (
-          <ReactQueryDevtools initialIsOpen={false} />
-        )}
-      </ThemeProvider>
-    </QueryClientProvider>
+          {/* DevTools only in development and web platform */}
+          {__DEV__ && Platform.OS === 'web' && ReactQueryDevtools && (
+            <ReactQueryDevtools initialIsOpen={false} />
+          )}
+        </ThemeProvider>
+      </QueryClientProvider>
+    </SafeAreaProvider>
   );
 }

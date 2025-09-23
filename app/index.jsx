@@ -30,6 +30,7 @@ export default function IndexScreen() {
 
     console.log('Routing decision:', { isAuthenticated, isOnboardingCompleted });
 
+    // Only navigate once on app start, then let individual screens handle their own navigation
     if (!isAuthenticated) {
       // User not authenticated - go to auth flow
       if (!isOnboardingCompleted) {
@@ -41,7 +42,7 @@ export default function IndexScreen() {
       // User authenticated - go to main app
       router.replace('/(main)');
     }
-  }, [isAuthenticated, authLoading, isOnboardingCompleted, router]);
+  }, [isAuthenticated, authLoading, router]); // Removed isOnboardingCompleted dependency
 
   // Show loading screen while determining route
   return <LoadingScreen />;

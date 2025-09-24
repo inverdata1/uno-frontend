@@ -1,61 +1,91 @@
-import React, { useState, useRef } from 'react';
-import { TextInput, View, Animated } from 'react-native';
+import React, { useState, useRef, useEffect } from 'react';
+import { TextInput, View, Keyboard, TouchableOpacity } from 'react-native';
+import { Feather } from '@expo/vector-icons';
 import { cn } from '../../utils/cn';
 import { Text } from './text';
 
 export const Input = ({
   className,
   error,
+  secureTextEntry,
   ...props
 }) => {
   const [isFocused, setIsFocused] = useState(false);
-  const borderOpacity = useRef(new Animated.Value(0)).current;
+  const [showPassword, setShowPassword] = useState(false);
+  const inputRef = useRef(null);
+
+  useEffect(() => {
+    const keyboardDidHideListener = Keyboard.addListener('keyboardDidHide', () => {
+      setIsFocused(false);
+    });
+
+    return () => {
+      keyboardDidHideListener.remove();
+    };
+  }, []);
 
   const handleFocus = (e) => {
     setIsFocused(true);
-    Animated.timing(borderOpacity, {
-      toValue: 1,
-      duration: 200,
-      useNativeDriver: false,
-    }).start();
     props.onFocus?.(e);
   };
 
   const handleBlur = (e) => {
     setIsFocused(false);
-    Animated.timing(borderOpacity, {
-      toValue: 0,
-      duration: 200,
-      useNativeDriver: false,
-    }).start();
     props.onBlur?.(e);
   };
+
+  const isPasswordField = secureTextEntry === true;
 
   return (
     <View className="mb-3">
       <View className="relative">
         <TextInput
+          ref={inputRef}
           className={cn(
-            'border border-input rounded-md px-3 py-3',
-            'text-foreground placeholder:text-muted-foreground',
-            error && 'border-destructive',
+            'border rounded-xl px-4 py-4',
+            'text-foreground placeholder:text-gray-400 text-base',
+            'bg-gray-50 border-gray-200',
+            error && 'border-red-300 bg-red-50',
+            isFocused && !error && 'border-primary-500 bg-white',
+            isPasswordField && 'pr-12', // Add padding for eye icon
             className
           )}
           onFocus={handleFocus}
           onBlur={handleBlur}
+          secureTextEntry={isPasswordField ? !showPassword : false}
           {...props}
         />
-        <Animated.View
-          className="absolute inset-0 rounded-md border-2 border-ring pointer-events-none"
-          style={{
-            opacity: borderOpacity,
-          }}
-        />
+
+        {/* Password visibility toggle */}
+        {isPasswordField && (
+          <TouchableOpacity
+            onPress={() => setShowPassword(!showPassword)}
+            className="absolute right-4 top-4 bottom-4 justify-center"
+          >
+            <Feather
+              name={showPassword ? 'eye' : 'eye-off'}
+              size={20}
+              color="#6b7280"
+            />
+          </TouchableOpacity>
+        )}
       </View>
+
       {error && (
-        <Text variant="caption" className="text-destructive mt-1">
-          {typeof error === 'string' ? error : error.message || 'Error'}
-        </Text>
+        <View className="flex-row items-center mt-2">
+          <Text className="text-red-500 text-xs mr-1">⚠</Text>
+          <Text className="text-red-500 text-xs font-medium flex-1">
+            {(() => {
+              if (typeof error === 'string') return error;
+              if (error && typeof error === 'object') {
+                if (error.message) return error.message;
+                if (error.code) return error.code;
+                return JSON.stringify(error);
+              }
+              return 'Invalid input';
+            })()}
+          </Text>
+        </View>
       )}
     </View>
   );

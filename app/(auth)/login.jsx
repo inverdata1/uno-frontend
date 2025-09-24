@@ -23,7 +23,7 @@ export default function LoginScreen() {
     },
     validatorAdapter: zodValidator(),
     validators: {
-      onChange: loginSchema,
+      onSubmit: loginSchema,
     },
     onSubmit: async ({ value }) => {
       console.log('Login attempt:', value);
@@ -56,6 +56,9 @@ export default function LoginScreen() {
           <View className="mb-6">
             <form.Field
               name="email"
+              validators={{
+                onBlur: z.string().min(1, 'El email es requerido').email('Email inválido'),
+              }}
               children={(field) => (
                 <Input
                   placeholder="Correo electrónico"
@@ -72,6 +75,9 @@ export default function LoginScreen() {
 
             <form.Field
               name="password"
+              validators={{
+                onBlur: z.string().min(6, 'La contraseña debe tener al menos 6 caracteres'),
+              }}
               children={(field) => (
                 <Input
                   placeholder="Contraseña"

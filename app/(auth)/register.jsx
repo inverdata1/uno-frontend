@@ -1,23 +1,28 @@
-import React from 'react';
-import { View, KeyboardAvoidingView, Platform, ScrollView } from 'react-native';
+import React, { useState } from 'react';
+import { View, KeyboardAvoidingView, Platform, ScrollView, TouchableOpacity } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Link } from 'expo-router';
-import { Text, Button, Input, Checkbox } from '../../shared/components/ui';
+import { Text, Button, Input, PhoneInput, Checkbox } from '../../shared/components/ui';
 import { useForm } from '@tanstack/react-form';
 import { zodValidator } from '@tanstack/zod-form-adapter';
 import { z } from 'zod';
 
 const registerSchema = z.object({
-  name: z.string()
+  firstName: z.string()
     .min(2, 'Mínimo 2 caracteres')
-    .max(50, 'Máximo 50 caracteres')
+    .max(30, 'Máximo 30 caracteres')
+    .regex(/^[a-zA-ZÀ-ÿ\s]+$/, 'Solo letras y espacios'),
+  lastName: z.string()
+    .min(2, 'Mínimo 2 caracteres')
+    .max(30, 'Máximo 30 caracteres')
     .regex(/^[a-zA-ZÀ-ÿ\s]+$/, 'Solo letras y espacios'),
   email: z.string()
     .min(1, 'El email es requerido')
     .email('Email inválido'),
   phone: z.string()
-    .min(1, 'El teléfono es requerido')
-    .regex(/^\+?584\d{8}$/, 'Formato: +584XXXXXXXX'),
+    .min(11, 'Ingresa 11 dígitos')
+    .max(11, 'Solo 11 dígitos')
+    .regex(/^04(12|14|16|24|26)\d{7}$/, 'Formato: 04XX XXX XXXX'),
   password: z.string()
     .min(6, 'Mínimo 6 caracteres')
     .regex(/^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)/, 'Debe tener mayúscula, minúscula y número'),
@@ -31,16 +36,17 @@ const registerSchema = z.object({
 export default function RegisterScreen() {
   const form = useForm({
     defaultValues: {
-      name: '',
+      firstName: '',
+      lastName: '',
       email: '',
-      phone: '+584',
+      phone: '',
       password: '',
       confirmPassword: '',
       acceptTerms: false,
     },
     validatorAdapter: zodValidator(),
     validators: {
-      onChange: registerSchema,
+      onSubmit: registerSchema,
     },
     onSubmit: async ({ value }) => {
       console.log('Register attempt:', value);
@@ -71,23 +77,56 @@ export default function RegisterScreen() {
 
           {/* Register Form */}
           <View className="mb-6">
-            <form.Field
-              name="name"
-              children={(field) => (
-                <Input
-                  placeholder="Nombre completo"
-                  value={field.state.value}
-                  onChangeText={field.handleChange}
-                  onBlur={field.handleBlur}
-                  autoCapitalize="words"
-                  autoComplete="name"
-                  error={field.state.meta.errors?.[0]}
+            {/* First Name and Last Name in same row */}
+            <View className="flex-row mb-3">
+              <View className="flex-1 mr-2">
+                <form.Field
+                  name="firstName"
+                  validators={{
+                    onBlur: z.string().min(2, 'Mínimo 2 caracteres').max(30, 'Máximo 30 caracteres').regex(/^[a-zA-ZÀ-ÿ\s]+$/, 'Solo letras y espacios'),
+                  }}
+                  children={(field) => (
+                    <Input
+                      placeholder="Nombre"
+                      value={field.state.value}
+                      onChangeText={field.handleChange}
+                      onBlur={field.handleBlur}
+                      autoCapitalize="words"
+                      autoComplete="given-name"
+                      error={field.state.meta.errors?.[0]}
+                      className="mb-0"
+                    />
+                  )}
                 />
-              )}
-            />
+              </View>
+
+              <View className="flex-1 ml-2">
+                <form.Field
+                  name="lastName"
+                  validators={{
+                    onBlur: z.string().min(2, 'Mínimo 2 caracteres').max(30, 'Máximo 30 caracteres').regex(/^[a-zA-ZÀ-ÿ\s]+$/, 'Solo letras y espacios'),
+                  }}
+                  children={(field) => (
+                    <Input
+                      placeholder="Apellido"
+                      value={field.state.value}
+                      onChangeText={field.handleChange}
+                      onBlur={field.handleBlur}
+                      autoCapitalize="words"
+                      autoComplete="family-name"
+                      error={field.state.meta.errors?.[0]}
+                      className="mb-0"
+                    />
+                  )}
+                />
+              </View>
+            </View>
 
             <form.Field
               name="email"
+              validators={{
+                onBlur: z.string().min(1, 'El email es requerido').email('Email inválido'),
+              }}
               children={(field) => (
                 <Input
                   placeholder="Correo electrónico"
@@ -104,14 +143,14 @@ export default function RegisterScreen() {
 
             <form.Field
               name="phone"
+              validators={{
+                onBlur: z.string().min(11, 'Ingresa 11 dígitos').max(11, 'Solo 11 dígitos').regex(/^04(12|14|16|24|26)\d{7}$/, 'Formato: 04XX XXX XXXX'),
+              }}
               children={(field) => (
-                <Input
-                  placeholder="+584XXXXXXXX"
+                <PhoneInput
                   value={field.state.value}
                   onChangeText={field.handleChange}
                   onBlur={field.handleBlur}
-                  keyboardType="phone-pad"
-                  autoComplete="tel"
                   error={field.state.meta.errors?.[0]}
                 />
               )}
@@ -119,6 +158,9 @@ export default function RegisterScreen() {
 
             <form.Field
               name="password"
+              validators={{
+                onBlur: z.string().min(6, 'Mínimo 6 caracteres').regex(/^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)/, 'Debe tener mayúscula, minúscula y número'),
+              }}
               children={(field) => (
                 <Input
                   placeholder="Contraseña"
@@ -135,6 +177,9 @@ export default function RegisterScreen() {
 
             <form.Field
               name="confirmPassword"
+              validators={{
+                onBlur: z.string().min(1, 'Confirma tu contraseña'),
+              }}
               children={(field) => (
                 <Input
                   placeholder="Confirmar contraseña"
@@ -152,6 +197,9 @@ export default function RegisterScreen() {
             {/* Terms and Conditions */}
             <form.Field
               name="acceptTerms"
+              validators={{
+                onChange: z.boolean().refine(val => val === true, 'Debes aceptar los términos y condiciones'),
+              }}
               children={(field) => (
                 <View className="mt-4">
                   <Checkbox

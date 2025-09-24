@@ -27,9 +27,14 @@ export function Checkbox({ checked = false, onCheckedChange, error, children, ..
       </Pressable>
 
       {error && (
-        <Text variant="caption" className="text-destructive mt-1 ml-8">
-          {error}
-        </Text>
+        <View className="flex-row items-center mt-2 ml-8">
+          <Text className="text-red-500 text-xs mr-1">⚠</Text>
+          <Text className="text-red-500 text-xs font-medium flex-1">
+            {typeof error === 'string' ? error :
+             typeof error === 'object' && error.message ? error.message :
+             'Invalid input'}
+          </Text>
+        </View>
       )}
     </View>
   );

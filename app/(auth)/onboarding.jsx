@@ -1,13 +1,13 @@
 import React, { useState } from 'react';
 import { View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { OnboardingHeader, OnboardingCarousel, OnboardingActions } from '../../features/onboarding/components';
+import { OnboardingActions, OnboardingCarousel, OnboardingHeader } from '../../features/onboarding/components';
 import { useAppStore } from '../../shared/stores/app-store';
 
 export default function OnboardingScreen() {
   const setOnboardingCompleted = useAppStore(state => state.setOnboardingCompleted);
   const [currentSlide, setCurrentSlide] = useState({
-    backgroundColor: '#FFE4CC' // Default to first slide color
+    backgroundColor: '#f7fafc' // Default to first slide color
   });
 
   // For testing - reset onboarding state when this screen loads

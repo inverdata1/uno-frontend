@@ -10,10 +10,8 @@ export default function OnboardingScreen() {
     backgroundColor: '#f7fafc' // Default to first slide color
   });
 
-  // For testing - reset onboarding state when this screen loads
-  React.useEffect(() => {
-    setOnboardingCompleted(false);
-  }, [setOnboardingCompleted]);
+  // Note: We don't reset onboarding state here anymore
+  // Once completed, it should stay completed
 
   const handleGetStarted = () => {
     setOnboardingCompleted(true);

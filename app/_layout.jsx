@@ -1,17 +1,19 @@
-import 'react-native-get-random-values'; // Must be first import for crypto polyfill
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import { DefaultTheme, ThemeProvider } from '@react-navigation/native';
+import { QueryClientProvider } from '@tanstack/react-query';
 import { Stack } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
-import { QueryClientProvider } from '@tanstack/react-query';
+import React from 'react';
 import { Platform, View } from 'react-native';
-import { SafeAreaProvider } from 'react-native-safe-area-context';
+import 'react-native-get-random-values'; // Must be first import for crypto polyfill
 import 'react-native-reanimated';
-import "../global.css";
-import { queryClient } from '../shared/config/query-client';
+import { SafeAreaProvider } from 'react-native-safe-area-context';
 import { useAuthState } from '../features/auth/hooks/use-auth-state';
-import { useAuthStore } from '../shared/stores/auth-store';
-import { useAppStore } from '../shared/stores/app-store';
+import "../global.css";
 import { Text } from '../shared/components/ui';
+import { queryClient } from '../shared/config/query-client';
+import { useAppStore } from '../shared/stores/app-store';
+import { useAuthStore } from '../shared/stores/auth-store';
 
 // Conditionally import ReactQuery DevTools only for web
 let ReactQueryDevtools = null;
@@ -64,6 +66,29 @@ function AppNavigator() {
 export default function RootLayout() {
   // Initialize auth state on app start
   useAuthState();
+
+  // One-time migration: Clear persisted onboarding state if needed
+  const { setOnboardingCompleted } = useAppStore();
+  React.useEffect(() => {
+    const resetOnboardingIfNeeded = async () => {
+      try {
+        const persistedState = await AsyncStorage.getItem('uno-delivery-app-storage');
+        if (persistedState) {
+          const parsed = JSON.parse(persistedState);
+          // If persisted state has isOnboardingCompleted as false, clear it to use code default (true)
+          if (parsed.state?.isOnboardingCompleted === false) {
+            console.log('🔧 Clearing old onboarding state from AsyncStorage');
+            await AsyncStorage.removeItem('uno-delivery-app-storage');
+            // Force reload the store to use code defaults
+            setOnboardingCompleted(true);
+          }
+        }
+      } catch (error) {
+        console.error('Error checking onboarding migration:', error);
+      }
+    };
+    resetOnboardingIfNeeded();
+  }, [setOnboardingCompleted]);
 
   return (
     <SafeAreaProvider>

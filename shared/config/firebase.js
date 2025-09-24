@@ -13,6 +13,17 @@ const firebaseConfig = {
   measurementId: process.env.EXPO_PUBLIC_FIREBASE_MEASUREMENT_ID,
 };
 
+// Validate Firebase configuration
+const requiredKeys = ['apiKey', 'authDomain', 'projectId', 'appId'];
+const missingKeys = requiredKeys.filter(key => !firebaseConfig[key]);
+
+if (missingKeys.length > 0) {
+  throw new Error(
+    `Missing Firebase configuration keys: ${missingKeys.join(', ')}\n` +
+    'Please check your .env file and make sure all EXPO_PUBLIC_FIREBASE_* variables are set.'
+  );
+}
+
 // Initialize Firebase
 const app = initializeApp(firebaseConfig);
 

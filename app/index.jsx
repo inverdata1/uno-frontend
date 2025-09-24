@@ -1,4 +1,4 @@
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import { useRouter } from 'expo-router';
 import { View } from 'react-native';
 import { useAuthStore } from '../shared/stores/auth-store';
@@ -19,30 +19,66 @@ function LoadingScreen() {
 }
 
 export default function IndexScreen() {
+  console.log('🟢 INDEX SCREEN RENDERED');
   const router = useRouter();
   const { isAuthenticated, isLoading: authLoading } = useAuthStore();
   const { isOnboardingCompleted } = useAppStore();
+  const [hasNavigated, setHasNavigated] = useState(false);
+
+  // Track when this component mounts and unmounts
+  useEffect(() => {
+    console.log('🎬 INDEX SCREEN MOUNTED');
+    return () => {
+      console.log('💀 INDEX SCREEN UNMOUNTED');
+    };
+  }, []);
 
   useEffect(() => {
-    if (authLoading) {
-      return; // Still loading, don't navigate yet
+    console.log('🚀 Index useEffect triggered - hasNavigated:', hasNavigated);
+
+    // Don't do anything if we already navigated
+    if (hasNavigated) {
+      console.log('🚫 Already navigated, NEVER routing again');
+      return;
     }
 
-    console.log('Routing decision:', { isAuthenticated, isOnboardingCompleted });
+    console.log('📊 Current state:', {
+      authLoading,
+      isAuthenticated,
+      isOnboardingCompleted
+    });
 
-    // Only navigate once on app start, then let individual screens handle their own navigation
+    // Don't do anything if auth is still loading
+    if (authLoading) {
+      console.log('⏳ Still loading auth, waiting...');
+      return;
+    }
+
+    console.log('✅ Making FIRST AND ONLY routing decision');
+
+    // Make routing decision with EXPLICIT logging
     if (!isAuthenticated) {
-      // User not authenticated - go to auth flow
+      console.log('🔍 User not authenticated');
       if (!isOnboardingCompleted) {
+        console.log('🔍 Onboarding NOT completed');
+        console.log('🎯 ROUTING TO: onboarding');
         router.replace('/(auth)/onboarding');
       } else {
+        console.log('🔍 Onboarding IS completed');
+        console.log('🎯 ROUTING TO: login');
         router.replace('/(auth)/login');
       }
     } else {
-      // User authenticated - go to main app
+      console.log('🔍 User IS authenticated');
+      console.log('🎯 ROUTING TO: main app');
       router.replace('/(main)');
     }
-  }, [isAuthenticated, authLoading, router]); // Removed isOnboardingCompleted dependency
+
+    // Mark as navigated to prevent future routing
+    setHasNavigated(true);
+    console.log('✅ Navigation completed - hasNavigated set to TRUE, NEVER routing again');
+
+  }, [hasNavigated]); // ONLY depend on hasNavigated
 
   // Show loading screen while determining route
   return <LoadingScreen />;

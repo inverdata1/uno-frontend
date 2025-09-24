@@ -1,11 +1,13 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { View, KeyboardAvoidingView, Platform, ScrollView, TouchableOpacity } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { Link } from 'expo-router';
+import { Link, useRouter } from 'expo-router';
 import { Text, Button, Input, PhoneInput, Checkbox } from '../../shared/components/ui';
 import { useForm } from '@tanstack/react-form';
 import { zodValidator } from '@tanstack/zod-form-adapter';
 import { z } from 'zod';
+import { useAuthStore } from '../../shared/stores/auth-store';
+import * as Haptics from 'expo-haptics';
 
 const registerSchema = z.object({
   firstName: z.string()
@@ -34,6 +36,9 @@ const registerSchema = z.object({
 });
 
 export default function RegisterScreen() {
+  const router = useRouter();
+  const { signUp, isLoading } = useAuthStore();
+
   const form = useForm({
     defaultValues: {
       firstName: '',
@@ -49,10 +54,18 @@ export default function RegisterScreen() {
       onSubmit: registerSchema,
     },
     onSubmit: async ({ value }) => {
-      console.log('Register attempt:', value);
-      // TODO: Implement Firebase Auth registration
+      const result = await signUp(value);
+
+      // Check if sign up was successful
+      if (result && !result.error) {
+        // Success - navigate to main app
+        router.replace('/(main)');
+      }
+      // If there's an error, it's already in the store state and will be displayed
+      // No navigation happens, user stays on register screen with error message
     },
   });
+
 
   return (
     <SafeAreaView className="flex-1 bg-card" edges={['top']}>
@@ -74,6 +87,7 @@ export default function RegisterScreen() {
               Únete a UNO Delivery
             </Text>
           </View>
+
 
           {/* Register Form */}
           <View className="mb-6">
@@ -231,9 +245,9 @@ export default function RegisterScreen() {
             size="lg"
             className="w-full mb-6"
             onPress={form.handleSubmit}
-            disabled={!form.state.canSubmit}
+            disabled={!form.state.canSubmit || isLoading}
           >
-            Crear Cuenta
+            {isLoading ? 'Creando cuenta...' : 'Crear Cuenta'}
           </Button>
 
           {/* Login Link */}

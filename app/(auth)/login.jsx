@@ -1,11 +1,11 @@
-import React from 'react';
-import { View, KeyboardAvoidingView, Platform, ScrollView } from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
-import { Link } from 'expo-router';
-import { Text, Button, Input } from '../../shared/components/ui';
 import { useForm } from '@tanstack/react-form';
 import { zodValidator } from '@tanstack/zod-form-adapter';
+import { Link, useRouter } from 'expo-router';
+import { KeyboardAvoidingView, Platform, ScrollView, View } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import { z } from 'zod';
+import { Button, Input, Text } from '../../shared/components/ui';
+import { useAuthStore } from '../../shared/stores/auth-store';
 
 const loginSchema = z.object({
   email: z.string()
@@ -16,6 +16,9 @@ const loginSchema = z.object({
 });
 
 export default function LoginScreen() {
+  const router = useRouter();
+  const { signIn, isSubmitting, error, clearError } = useAuthStore();
+
   const form = useForm({
     defaultValues: {
       email: '',
@@ -26,10 +29,23 @@ export default function LoginScreen() {
       onSubmit: loginSchema,
     },
     onSubmit: async ({ value }) => {
-      console.log('Login attempt:', value);
-      // TODO: Implement Firebase Auth login
+      console.log('📝 Login form submitted');
+      const result = await signIn(value);
+      console.log('📝 Login result:', { hasError: !!result?.error });
+
+      // Check if sign in was successful
+      if (result && !result.error) {
+        // Success - navigate to main app
+        console.log('📝 Login successful, navigating to main');
+        router.replace('/(main)');
+      } else {
+        console.log('📝 Login failed, staying on login screen');
+      }
+      // If there's an error, it's already in the store state and will be displayed
+      // No navigation happens, user stays on login screen with error message
     },
   });
+
 
   return (
     <SafeAreaView className="flex-1 bg-card" edges={['top']}>
@@ -52,6 +68,7 @@ export default function LoginScreen() {
             </Text>
           </View>
 
+
           {/* Login Form */}
           <View className="mb-6">
             <form.Field
@@ -63,7 +80,10 @@ export default function LoginScreen() {
                 <Input
                   placeholder="Correo electrónico"
                   value={field.state.value}
-                  onChangeText={field.handleChange}
+                  onChangeText={(text) => {
+                    field.handleChange(text);
+                    if (error) clearError(); // Clear auth error when user types
+                  }}
                   onBlur={field.handleBlur}
                   keyboardType="email-address"
                   autoCapitalize="none"
@@ -93,6 +113,20 @@ export default function LoginScreen() {
             />
           </View>
 
+          {/* Error Message - Clean & Minimal */}
+          {error && (
+            <View className="mb-4 p-3 bg-red-50 rounded-lg border border-red-200">
+              <View className="flex-row items-center">
+                <View className="w-5 h-5 rounded-full bg-red-400 items-center justify-center mr-3">
+                  <Text className="text-white text-xs font-bold">!</Text>
+                </View>
+                <Text className="text-red-700 text-sm font-medium flex-1">
+                  {error}
+                </Text>
+              </View>
+            </View>
+          )}
+
           {/* Forgot Password */}
           <View className="items-end mb-6">
             <Text variant="caption" className="text-primary-500">
@@ -106,9 +140,9 @@ export default function LoginScreen() {
             size="lg"
             className="w-full mb-6"
             onPress={form.handleSubmit}
-            disabled={!form.state.canSubmit}
+            disabled={isSubmitting}
           >
-            Iniciar Sesión
+            {isSubmitting ? 'Iniciando sesión...' : 'Iniciar Sesión'}
           </Button>
 
           {/* Register Link */}

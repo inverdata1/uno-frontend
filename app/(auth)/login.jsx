@@ -102,7 +102,10 @@ export default function LoginScreen() {
                 <Input
                   placeholder="Contraseña"
                   value={field.state.value}
-                  onChangeText={field.handleChange}
+                  onChangeText={(text) => {
+                    field.handleChange(text);
+                    if (error) clearError(); // Clear auth error when user types
+                  }}
                   onBlur={field.handleBlur}
                   secureTextEntry
                   autoCapitalize="none"

@@ -1,49 +1,38 @@
 import { useEffect } from 'react';
-import { onAuthStateChanged, signOut as firebaseSignOut } from 'firebase/auth';
-import { auth } from '../../../shared/config/firebase';
 import { useAuthStore } from '../../../shared/stores/auth-store';
+import { useRoleStore } from '../../../shared/stores/role-store';
 
-// Custom hook that bridges Firebase Auth with Zustand store
+// Custom hook that initializes auth state on app start
 export const useAuthState = () => {
-  const { user, isLoading, isAuthenticated, setUser, setLoading, signOut } = useAuthStore();
+  const { initializeAuth } = useAuthStore();
+  const { initializeRoles, reset: resetRoles } = useRoleStore();
 
   useEffect(() => {
-    setLoading(true);
-
-    const unsubscribe = onAuthStateChanged(auth, (firebaseUser) => {
-      if (firebaseUser) {
-        // User is signed in
-        setUser({
-          uid: firebaseUser.uid,
-          email: firebaseUser.email,
-          displayName: firebaseUser.displayName,
-          photoURL: firebaseUser.photoURL,
-          emailVerified: firebaseUser.emailVerified,
-        });
-      } else {
-        // User is signed out
-        setUser(null);
-      }
-    });
+    // Initialize auth listener - this will handle auth state changes
+    const unsubscribe = initializeAuth();
 
     // Cleanup subscription on unmount
     return unsubscribe;
-  }, [setUser, setLoading]);
+  }, [initializeAuth]);
 
-  const signOutUser = async () => {
-    try {
-      await firebaseSignOut(auth);
-      signOut(); // Update Zustand store
-    } catch (error) {
-      console.error('Error signing out:', error);
-      throw error;
+  // Subscribe to user changes to initialize roles
+  const { user } = useAuthStore();
+
+  useEffect(() => {
+    if (user?.roles) {
+      // Initialize roles from user data
+      initializeRoles(user.roles);
+    } else if (!user) {
+      // Reset roles when user signs out
+      resetRoles();
     }
-  };
+  }, [user, initializeRoles, resetRoles]);
 
   return {
-    user,
-    isLoading,
-    isAuthenticated,
-    signOut: signOutUser,
+    // Return auth store values for compatibility
+    user: useAuthStore(state => state.user),
+    isLoading: useAuthStore(state => state.isLoading),
+    isAuthenticated: useAuthStore(state => state.isAuthenticated),
+    signOut: useAuthStore(state => state.signOut),
   };
 };

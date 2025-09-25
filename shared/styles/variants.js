@@ -4,16 +4,16 @@ import { cva } from 'class-variance-authority';
 // Button variants
 export const buttonVariants = cva(
   // Base styles
-  'items-center justify-center rounded-md active:opacity-80 transition-opacity',
+  'items-center justify-center rounded-md',
   {
     variants: {
       variant: {
-        primary: 'bg-primary-500 active:bg-primary-600',
-        secondary: 'bg-secondary border active:bg-muted',
-        success: 'bg-success-500 active:bg-success-600',
-        destructive: 'bg-destructive-500 active:bg-destructive-600',
-        ghost: 'bg-transparent active:bg-secondary',
-        outline: 'border border-primary-500 bg-transparent active:bg-primary-50',
+        primary: 'bg-primary-500',
+        secondary: 'bg-secondary border',
+        success: 'bg-success-500',
+        destructive: 'bg-destructive-500',
+        ghost: 'bg-transparent',
+        outline: 'border border-primary-500 bg-transparent',
       },
       size: {
         sm: 'px-3 py-2',
@@ -22,7 +22,7 @@ export const buttonVariants = cva(
         xl: 'px-8 py-5',
       },
       disabled: {
-        true: 'opacity-50 active:opacity-50',
+        true: 'opacity-50',
       }
     },
     defaultVariants: {
@@ -57,13 +57,13 @@ export const buttonTextVariants = cva(
 
 // Input variants
 export const inputVariants = cva(
-  'border-input rounded-md px-3 py-3 text-foreground placeholder:text-muted-foreground transition-colors',
+  'border-input rounded-md px-3 py-3 text-foreground placeholder:text-muted-foreground',
   {
     variants: {
       variant: {
-        default: 'focus:border-ring',
-        error: 'border-destructive-500 focus:border-destructive-500',
-        success: 'border-success-500 focus:border-success-500',
+        default: 'border-input',
+        error: 'border-destructive-500',
+        success: 'border-success-500',
       },
       size: {
         sm: 'px-2 py-2 text-sm',

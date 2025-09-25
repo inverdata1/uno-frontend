@@ -13,11 +13,12 @@ export const apiClient = axios.create({
   },
 });
 
-// Request interceptor to add auth token
+// Request interceptor - Handle auth tokens
 apiClient.interceptors.request.use(
   async (config) => {
     try {
-      // Get Firebase Auth token when available
+
+      // Get Firebase Auth token when available (for real backend)
       // TODO: Integrate with Firebase Auth when implemented
       // const user = auth.currentUser;
       // if (user) {
@@ -38,7 +39,7 @@ apiClient.interceptors.request.use(
   }
 );
 
-// Response interceptor for error handling
+// Response interceptor - Handle responses and errors
 apiClient.interceptors.response.use(
   (response) => {
     console.log(`✅ API Response: ${response.status} ${response.config.url}`);

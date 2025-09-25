@@ -19,6 +19,9 @@ export const Button = ({
         className
       )}
       disabled={disabled}
+      style={({ pressed }) => [{
+        opacity: pressed ? 0.8 : 1,
+      }]}
       {...props}
     >
       <Text className={cn(

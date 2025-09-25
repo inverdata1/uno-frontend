@@ -1,13 +1,13 @@
-import { create } from 'zustand';
-import { persist, createJSONStorage } from 'zustand/middleware';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import { create } from 'zustand';
+import { createJSONStorage, persist } from 'zustand/middleware';
 
 // Global app state store
 export const useAppStore = create(
   persist(
     (set, get) => ({
       // UI State
-      isOnboardingCompleted: false,
+      isOnboardingCompleted: true,
       theme: 'light',
 
       // User preferences

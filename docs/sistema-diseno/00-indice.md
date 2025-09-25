@@ -21,18 +21,21 @@ Esta documentación describe la arquitectura completa del sistema UNO Delivery m
 - **[06 - Arquitectura Base de Datos](./06-arquitectura-base-datos.md)** - Firestore collections y schemas
 - **[07 - Estrategias de Datos](./07-estrategias-datos.md)** - Optimización, indexing y scaling
 
-#### 5. System Integration
+#### 5. User Experience
+- **[09 - Sistema de Modos de Usuario](./09-sistema-modos-usuario.md)** - Arquitectura multi-modo y cambio de contexto
+
+#### 6. System Integration
 - **[08 - Integración del Sistema](./08-integracion-sistema.md)** - Data flows y comunicación entre servicios
-- **[09 - Tiempo Real](./09-tiempo-real.md)** - WebSockets y notificaciones
+- **[10 - Tiempo Real](./10-tiempo-real.md)** - WebSockets y notificaciones
 
-#### 6. Operations & Security
-- **[10 - Performance y Escalabilidad](./10-performance-escalabilidad.md)** - Optimizaciones y estrategias de scaling
-- **[11 - Seguridad](./11-seguridad.md)** - Autenticación, autorización y privacidad
-- **[12 - Monitoreo y Operaciones](./12-monitoreo-operaciones.md)** - Monitoring, logging y DevOps
+#### 7. Operations & Security
+- **[11 - Performance y Escalabilidad](./11-performance-escalabilidad.md)** - Optimizaciones y estrategias de scaling
+- **[12 - Seguridad](./12-seguridad.md)** - Autenticación, autorización y privacidad
+- **[13 - Monitoreo y Operaciones](./13-monitoreo-operaciones.md)** - Monitoring, logging y DevOps
 
-#### 7. Future Planning
-- **[13 - Extensibilidad](./13-extensibilidad.md)** - Plan para nuevos roles y features
-- **[14 - Roadmap](./14-roadmap.md)** - Timeline y próximos pasos
+#### 8. Future Planning
+- **[14 - Extensibilidad](./14-extensibilidad.md)** - Plan para nuevos modos y features
+- **[15 - Roadmap](./15-roadmap.md)** - Timeline y próximos pasos
 
 ## Cómo Usar Esta Documentación
 
@@ -55,36 +58,38 @@ Esta documentación describe la arquitectura completa del sistema UNO Delivery m
 
 ## Principios del Sistema
 
-1. **Single App, Multiple Contexts**: Una aplicación que se transforma según el rol activo
-2. **Role-Based Everything**: UI, datos, permisos y navegación basados en rol
-3. **Multi-Business Management**: Gestión de múltiples negocios desde una cuenta
-4. **Context-Aware Data**: Información filtrada por contexto activo
-5. **Real-time Operations**: Actualizaciones en tiempo real
-6. **Extensible Architecture**: Fácil agregar nuevos roles y features
+1. **Single App, Multiple Modes**: Una aplicación que se transforma según el modo de usuario activo
+2. **Mode-Based Everything**: UI, datos, permisos y navegación basados en modo de usuario
+3. **Multi-Business Management**: Gestión de múltiples negocios y sucursales desde una cuenta
+4. **Context-Aware Data**: Información filtrada por contexto de modo activo
+5. **Persistent Context**: Contexto de usuario persistente entre sesiones
+6. **Real-time Operations**: Actualizaciones en tiempo real
+7. **Extensible Architecture**: Fácil agregar nuevos modos de usuario y features
 
 ## Estado del Proyecto
 
 ### ✅ Completado
-- [x] Arquitectura multi-roles definida
-- [x] Estructura de base de datos diseñada
-- [x] Sistema de permisos especificado
-- [x] Frontend strategy con Zustand
+- [x] Arquitectura de modos de usuario definida
+- [x] Estructura de base de datos para multi-modo diseñada
+- [x] Sistema de permisos basado en modos especificado
+- [x] Frontend strategy con Zustand y almacenamiento persistente
 - [x] API design patterns establecidos
+- [x] Hook de gestión de focus para formularios implementado
 
 ### 🔄 En Desarrollo
-- [ ] Implementación de role switching
-- [ ] Sistema de branches
-- [ ] Multi-business management
-- [ ] Real-time notifications
+- [ ] Implementación de cambio de modos de usuario
+- [ ] Sistema de sucursales multi-negocio
+- [ ] UI adaptativa por modo de usuario
+- [ ] Gestión de contexto persistente
 
 ### 📋 Planeado
-- [ ] Delivery role integration
-- [ ] Advanced analytics
-- [ ] Mobile optimization
-- [ ] Performance monitoring
+- [ ] Modo delivery con perfiles de repartidor
+- [ ] Sistema de notificaciones en tiempo real
+- [ ] Analytics por modo de usuario
+- [ ] Optimización mobile por contexto
 
 ---
 
-**Última actualización:** ${new Date().toLocaleDateString('es-VE')}
-**Versión del sistema:** 2.0 (Multi-roles)
+**Última actualización:** 25/09/2024
+**Versión del sistema:** 2.0 (Sistema de Modos de Usuario)
 **Contacto:** Equipo de desarrollo UNO Delivery

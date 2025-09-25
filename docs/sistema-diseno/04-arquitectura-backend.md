@@ -1,8 +1,8 @@
-# Arquitectura Backend - UNO Delivery
+# 04 - Arquitectura Backend
 
 ## Overview del Backend
 
-El backend está construido con **FastAPI** y diseñado para manejar la complejidad del sistema multi-roles con alta performance y escalabilidad.
+El backend está construido con **FastAPI** y diseñado para manejar la complejidad del sistema de modos de usuario con alta performance y escalabilidad. Soporta base de datos relacional y context-aware API endpoints.
 
 ### Technology Stack
 

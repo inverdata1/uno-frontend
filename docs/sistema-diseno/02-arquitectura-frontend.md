@@ -1,8 +1,12 @@
-# Arquitectura Frontend - UNO Delivery
+# 02 - Arquitectura Frontend
 
 ## Overview Tecnológico
 
-La arquitectura frontend está diseñada para manejar la complejidad de múltiples roles con una experiencia de usuario fluida y performante.
+> ⚠️ **CÓDIGO LEGACY**: Este documento contiene ejemplos con `activeRole` y sistema de roles legacy.
+>
+> **Nueva implementación**: Ver **[09 - Sistema de Modos de Usuario](./09-sistema-modos-usuario.md)** para la arquitectura actualizada con `useFocusManager`, store persistente de modos y context switching.
+
+La arquitectura frontend está diseñada para manejar la complejidad de múltiples modos de usuario con una experiencia fluida y performante. Incluye gestión de contexto persistente y componentes adaptativos por modo.
 
 ### Core Technologies Stack
 

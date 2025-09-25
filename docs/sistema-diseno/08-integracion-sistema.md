@@ -1,8 +1,12 @@
-# Integración del Sistema - UNO Delivery
+# 08 - Integración del Sistema
 
 ## Overview de Integración
 
-El sistema de integración maneja la comunicación entre frontend y backend, sincronización de datos, flujos de trabajo complejos y coordinación entre diferentes servicios y roles.
+> ⚠️ **CÓDIGO LEGACY**: Este documento contiene ejemplos con `role_switch` endpoints y sistema de roles legacy.
+>
+> **Nueva implementación**: Ver **[09 - Sistema de Modos de Usuario](./09-sistema-modos-usuario.md)** para APIs context-aware con sistema de modos de usuario.
+
+El sistema de integración maneja la comunicación entre frontend y backend, sincronización de datos, flujos de trabajo complejos y coordinación entre diferentes servicios y modos de usuario. Incluye context-aware API calls y persistent state management.
 
 ### Arquitectura de Integración
 

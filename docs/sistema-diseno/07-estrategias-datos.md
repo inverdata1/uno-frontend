@@ -1,8 +1,12 @@
-# Estrategias de Datos - UNO Delivery
+# 07 - Estrategias de Datos
 
 ## Overview de Estrategias de Optimización
 
-Las estrategias de datos están diseñadas para maximizar performance, minimizar costos de Firestore y proporcionar escalabilidad horizontal para el crecimiento del sistema.
+> ⚠️ **MIGRACIÓN EN PROCESO**: Este documento describe estrategias para Firestore.
+>
+> **Nueva arquitectura**: Ver **[09 - Sistema de Modos de Usuario](./09-sistema-modos-usuario.md)** para estrategias con base de datos relacional.
+
+Las estrategias actuales están diseñadas para Firestore, pero se están migrating a un enfoque relacional optimizado para consultas por modo de usuario y contexto de sucursales.
 
 ### Principios de Optimización
 

@@ -1,8 +1,12 @@
-# Sistema UI Dinámico - UNO Delivery
+# 03 - Sistema UI Dinámico
 
 ## Overview del Sistema UI
 
-El sistema UI dinámico permite que una sola aplicación se transforme completamente según el rol activo del usuario, proporcionando experiencias nativas y optimizadas para cada contexto.
+> ⚠️ **CÓDIGO LEGACY**: Este documento contiene ejemplos con `RoleSwitcherModal` y sistema de roles legacy.
+>
+> **Nueva implementación**: Ver **[09 - Sistema de Modos de Usuario](./09-sistema-modos-usuario.md)** para el nuevo `ModeSwitcher` y UI adaptativa por modo.
+
+El sistema UI dinámico permite que una sola aplicación se transforme completamente según el modo de usuario activo, proporcionando experiencias nativas y optimizadas para cada contexto. Incluye el Mode Switcher y componentes adaptativos.
 
 ### Principios de Diseño UI
 

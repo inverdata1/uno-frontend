@@ -1,8 +1,12 @@
-# Arquitectura Base de Datos - UNO Delivery
+# 06 - Arquitectura Base de Datos
 
 ## Overview de la Arquitectura de Datos
 
-La arquitectura utiliza **Firebase Firestore** como base de datos principal, diseñada para soportar múltiples roles, escalabilidad horizontal y consultas eficientes en tiempo real.
+> ⚠️ **NOTA IMPORTANTE**: Este documento describe la arquitectura legacy con Firebase Firestore.
+>
+> **Nueva arquitectura**: Ver **[09 - Sistema de Modos de Usuario](./09-sistema-modos-usuario.md)** para el diseño actualizado con base de datos relacional y sistema de modos de usuario.
+
+La arquitectura actual utiliza **Firebase Firestore** como base de datos principal, pero está siendo migrada a un sistema relacional con soporte para múltiples modos de usuario, escalabilidad horizontal y consultas eficientes.
 
 ### Principios de Diseño
 

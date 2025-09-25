@@ -1,8 +1,12 @@
-# Sistema de Permisos - UNO Delivery
+# 05 - Sistema de Permisos
 
 ## Overview del Sistema RBAC
 
-El sistema de permisos utiliza **Role-Based Access Control (RBAC)** con capacidades extendidas para manejar múltiples roles por usuario, contextos de negocio y permisos granulares.
+> ⚠️ **ACTUALIZACIÓN DEL SISTEMA**: Este documento describe el sistema RBAC legacy.
+>
+> **Nueva arquitectura**: Ver **[09 - Sistema de Modos de Usuario](./09-sistema-modos-usuario.md)** para el enfoque simplificado basado en modos de usuario para MVP.
+
+El sistema actual utiliza **Role-Based Access Control (RBAC)**, pero está siendo simplificado a un sistema basado en **modos de usuario** (client, business, delivery) sin permisos granulares para el MVP.
 
 ### Arquitectura de Permisos
 

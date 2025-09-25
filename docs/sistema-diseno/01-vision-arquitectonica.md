@@ -1,13 +1,13 @@
-# Visión Arquitectónica - UNO Delivery
+# 01 - Visión Arquitectónica
 
 ## Visión General
 
-UNO Delivery es una **plataforma unificada de delivery multi-roles** que permite a los usuarios alternar dinámicamente entre diferentes contextos (Cliente, Negocio, Delivery) desde una sola aplicación. El sistema está diseñado para **escalabilidad**, **flexibilidad de roles** y **experiencia de usuario premium**.
+UNO Delivery es una **plataforma unificada de delivery con múltiples modos de usuario** que permite a los usuarios alternar dinámicamente entre diferentes contextos (Cliente, Negocio, Delivery) desde una sola aplicación. El sistema está diseñado para **escalabilidad**, **flexibilidad de modos** y **experiencia de usuario premium**.
 
 ## Principios de Diseño
 
-### 1. Single App, Multiple Contexts
-Una aplicación que se transforma completamente según el rol activo del usuario, proporcionando experiencias nativas para cada contexto.
+### 1. Single App, Multiple User Modes
+Una aplicación que se transforma completamente según el modo de usuario activo, proporcionando experiencias nativas para cada contexto.
 
 ### 2. Role-Based Everything
 - **UI Components**: Adaptativos según rol activo

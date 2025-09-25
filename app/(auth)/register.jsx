@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { View, KeyboardAvoidingView, Platform, ScrollView, TouchableOpacity } from 'react-native';
+import { View, KeyboardAvoidingView, Platform, ScrollView, TouchableOpacity, TouchableWithoutFeedback, Keyboard } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Link, useRouter } from 'expo-router';
 import { Text, Button, Input, PhoneInput, Checkbox } from '../../shared/components/ui';
@@ -7,6 +7,7 @@ import { useForm } from '@tanstack/react-form';
 import { zodValidator } from '@tanstack/zod-form-adapter';
 import { z } from 'zod';
 import { useAuthStore } from '../../shared/stores/auth-store';
+import { useFocusManager } from '../../shared/hooks';
 import * as Haptics from 'expo-haptics';
 
 const registerSchema = z.object({
@@ -38,6 +39,7 @@ const registerSchema = z.object({
 export default function RegisterScreen() {
   const router = useRouter();
   const { signUp, isLoading } = useAuthStore();
+  const { createFieldProps, clearFocus } = useFocusManager();
 
   const form = useForm({
     defaultValues: {
@@ -74,7 +76,11 @@ export default function RegisterScreen() {
         behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
       >
       <ScrollView className="flex-1" contentContainerStyle={{ flexGrow: 1 }}>
-        <View className="flex-1 px-6 justify-center py-8">
+        <TouchableWithoutFeedback onPress={() => {
+          Keyboard.dismiss();
+          clearFocus();
+        }}>
+          <View className="flex-1 px-6 justify-center py-8">
           {/* Logo */}
           <View className="items-center mb-8">
             <View className="w-20 h-20 bg-primary-500 rounded-full items-center justify-center mb-4">
@@ -104,7 +110,7 @@ export default function RegisterScreen() {
                       placeholder="Nombre"
                       value={field.state.value}
                       onChangeText={field.handleChange}
-                      onBlur={field.handleBlur}
+                      {...createFieldProps('firstName', { onBlur: field.handleBlur })}
                       autoCapitalize="words"
                       autoComplete="given-name"
                       error={field.state.meta.errors?.[0]}
@@ -125,7 +131,7 @@ export default function RegisterScreen() {
                       placeholder="Apellido"
                       value={field.state.value}
                       onChangeText={field.handleChange}
-                      onBlur={field.handleBlur}
+                      {...createFieldProps('lastName', { onBlur: field.handleBlur })}
                       autoCapitalize="words"
                       autoComplete="family-name"
                       error={field.state.meta.errors?.[0]}
@@ -146,7 +152,7 @@ export default function RegisterScreen() {
                   placeholder="Correo electrónico"
                   value={field.state.value}
                   onChangeText={field.handleChange}
-                  onBlur={field.handleBlur}
+                  {...createFieldProps('email', { onBlur: field.handleBlur })}
                   keyboardType="email-address"
                   autoCapitalize="none"
                   autoComplete="email"
@@ -180,7 +186,7 @@ export default function RegisterScreen() {
                   placeholder="Contraseña"
                   value={field.state.value}
                   onChangeText={field.handleChange}
-                  onBlur={field.handleBlur}
+                  {...createFieldProps('password', { onBlur: field.handleBlur })}
                   secureTextEntry
                   autoCapitalize="none"
                   autoComplete="new-password"
@@ -199,7 +205,7 @@ export default function RegisterScreen() {
                   placeholder="Confirmar contraseña"
                   value={field.state.value}
                   onChangeText={field.handleChange}
-                  onBlur={field.handleBlur}
+                  {...createFieldProps('confirmPassword', { onBlur: field.handleBlur })}
                   secureTextEntry
                   autoCapitalize="none"
                   autoComplete="new-password"
@@ -262,6 +268,7 @@ export default function RegisterScreen() {
             </Link>
           </View>
         </View>
+        </TouchableWithoutFeedback>
       </ScrollView>
       </KeyboardAvoidingView>
     </SafeAreaView>

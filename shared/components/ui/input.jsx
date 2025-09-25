@@ -8,11 +8,15 @@ export const Input = ({
   className,
   error,
   secureTextEntry,
+  _isExternallyFocused,
   ...props
 }) => {
   const [isFocused, setIsFocused] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
   const inputRef = useRef(null);
+
+  // Use external focus state if provided, otherwise use internal state
+  const actuallyFocused = _isExternallyFocused !== undefined ? _isExternallyFocused : isFocused;
 
   useEffect(() => {
     const keyboardDidHideListener = Keyboard.addListener('keyboardDidHide', () => {
@@ -44,9 +48,12 @@ export const Input = ({
           className={cn(
             'border rounded-xl px-4 py-4',
             'text-foreground placeholder:text-gray-400 text-base',
+            // Base state
             'bg-gray-50 border-gray-200',
+            // Focused state (overrides base)
+            actuallyFocused && 'border-primary-500 bg-white',
+            // Error state (overrides both base and focused)
             error && 'border-red-300 bg-red-50',
-            isFocused && !error && 'border-primary-500 bg-white',
             isPasswordField && 'pr-12', // Add padding for eye icon
             className
           )}

@@ -1,11 +1,13 @@
 import { useForm } from '@tanstack/react-form';
 import { zodValidator } from '@tanstack/zod-form-adapter';
 import { Link, useRouter } from 'expo-router';
-import { KeyboardAvoidingView, Platform, ScrollView, View } from 'react-native';
+import React from 'react';
+import { KeyboardAvoidingView, Platform, ScrollView, TouchableWithoutFeedback, View, Keyboard } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { z } from 'zod';
 import { Button, Input, Text } from '../../shared/components/ui';
 import { useAuthStore } from '../../shared/stores/auth-store';
+import { useFocusManager } from '../../shared/hooks';
 
 const loginSchema = z.object({
   email: z.string()
@@ -18,6 +20,7 @@ const loginSchema = z.object({
 export default function LoginScreen() {
   const router = useRouter();
   const { signIn, isSubmitting, error, clearError } = useAuthStore();
+  const { createFieldProps, clearFocus } = useFocusManager();
 
   const form = useForm({
     defaultValues: {
@@ -54,7 +57,11 @@ export default function LoginScreen() {
         behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
       >
       <ScrollView className="flex-1" contentContainerStyle={{ flexGrow: 1 }}>
-        <View className="flex-1 px-6 justify-center">
+        <TouchableWithoutFeedback onPress={() => {
+          Keyboard.dismiss();
+          clearFocus();
+        }}>
+          <View className="flex-1 px-6 justify-center">
           {/* Logo */}
           <View className="items-center mb-8">
             <View className="w-20 h-20 bg-primary-500 rounded-full items-center justify-center mb-4">
@@ -84,7 +91,7 @@ export default function LoginScreen() {
                     field.handleChange(text);
                     if (error) clearError(); // Clear auth error when user types
                   }}
-                  onBlur={field.handleBlur}
+                  {...createFieldProps('email', { onBlur: field.handleBlur })}
                   keyboardType="email-address"
                   autoCapitalize="none"
                   autoComplete="email"
@@ -106,7 +113,7 @@ export default function LoginScreen() {
                     field.handleChange(text);
                     if (error) clearError(); // Clear auth error when user types
                   }}
-                  onBlur={field.handleBlur}
+                  {...createFieldProps('password', { onBlur: field.handleBlur })}
                   secureTextEntry
                   autoCapitalize="none"
                   autoComplete="password"
@@ -160,6 +167,7 @@ export default function LoginScreen() {
             </Link>
           </View>
         </View>
+        </TouchableWithoutFeedback>
       </ScrollView>
       </KeyboardAvoidingView>
     </SafeAreaView>

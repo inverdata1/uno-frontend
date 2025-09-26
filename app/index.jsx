@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
 import { useRouter } from 'expo-router';
 import { View } from 'react-native';
-import { useAuthStore } from '../shared/stores/auth-store';
+import { useAuthStore } from '../auth/stores/auth-store';
 import { useAppStore } from '../shared/stores/app-store';
 import { Text } from '../shared/components/ui';
 

@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { OnboardingActions, OnboardingCarousel, OnboardingHeader } from '../../features/onboarding/components';
+import { OnboardingActions, OnboardingCarousel, OnboardingHeader } from '../../auth/onboarding/components';
 import { useAppStore } from '../../shared/stores/app-store';
 
 export default function OnboardingScreen() {

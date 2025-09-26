@@ -1,6 +1,6 @@
 import React from 'react';
 import { View, ScrollView } from 'react-native';
-import { BusinessDashboard } from '../../../features/business/components';
+import { BusinessDashboard } from '../../../modes/business/components';
 
 export default function BusinessDashboardScreen() {
   return (

@@ -1,8 +1,9 @@
 import { Ionicons } from '@expo/vector-icons';
 import { Tabs } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { useCurrentMode } from '../../features/auth/shared/hooks/use-user-modes';
+import { useCurrentMode } from '../../shared/hooks/use-user-modes';
 import { theme } from '../../shared/config/theme';
+import { getTabConfig } from '../../modes/core/mode-config';
 
 export default function TabLayout() {
   const { currentMode, isLoading } = useCurrentMode();
@@ -17,24 +18,19 @@ export default function TabLayout() {
     );
   }
 
-  // Define tab icons
-  const getTabIcon = (name, focused = false) => {
-    const iconMap = {
-      // Common
-      index: focused ? 'home' : 'home-outline',
-      profile: focused ? 'person' : 'person-outline',
-      // Client mode
-      'client/restaurants': focused ? 'basket' : 'basket-outline',
-      'client/orders': focused ? 'receipt' : 'receipt-outline',
-      // Business mode
-      'business/dashboard': focused ? 'analytics' : 'analytics-outline',
-      'business/products': focused ? 'storefront' : 'storefront-outline',
-      // Delivery mode
-      'delivery/dashboard': focused ? 'bicycle' : 'bicycle-outline'
-    };
+  // Get tabs configuration for current mode
+  const tabsConfig = getTabConfig(currentMode);
 
-    const iconName = iconMap[name] || (focused ? 'apps' : 'apps-outline');
-    return <Ionicons name={iconName} size={24} color={focused ? theme.colors.primary[500] : theme.colors.text.secondary} />;
+  // Define tab icons with fallbacks
+  const getTabIcon = (iconName, focused = false) => {
+    const finalIconName = focused ? iconName : `${iconName}-outline`;
+    return (
+      <Ionicons
+        name={finalIconName}
+        size={24}
+        color={focused ? theme.colors.primary[500] : theme.colors.text.secondary}
+      />
+    );
   };
 
   return (
@@ -50,12 +46,14 @@ export default function TabLayout() {
         }
       }}>
 
-      {/* Home tab - always visible */}
+      {/* Render all possible tabs, showing only current mode's tabs */}
+
+      {/* Common tabs */}
       <Tabs.Screen
         name="index"
         options={{
           title: 'Inicio',
-          tabBarIcon: ({ focused }) => getTabIcon('index', focused),
+          tabBarIcon: ({ focused }) => getTabIcon('home', focused),
         }}
       />
 
@@ -64,14 +62,14 @@ export default function TabLayout() {
         name="client/restaurants"
         options={currentMode === 'client' ? {
           title: 'Productos',
-          tabBarIcon: ({ focused }) => getTabIcon('client/restaurants', focused),
+          tabBarIcon: ({ focused }) => getTabIcon('basket', focused),
         } : { href: null }}
       />
       <Tabs.Screen
         name="client/orders"
         options={currentMode === 'client' ? {
           title: 'Pedidos',
-          tabBarIcon: ({ focused }) => getTabIcon('client/orders', focused),
+          tabBarIcon: ({ focused }) => getTabIcon('receipt', focused),
         } : { href: null }}
       />
 
@@ -80,14 +78,14 @@ export default function TabLayout() {
         name="business/dashboard"
         options={currentMode === 'business' ? {
           title: 'Dashboard',
-          tabBarIcon: ({ focused }) => getTabIcon('business/dashboard', focused),
+          tabBarIcon: ({ focused }) => getTabIcon('analytics', focused),
         } : { href: null }}
       />
       <Tabs.Screen
         name="business/products"
         options={currentMode === 'business' ? {
           title: 'Productos',
-          tabBarIcon: ({ focused }) => getTabIcon('business/products', focused),
+          tabBarIcon: ({ focused }) => getTabIcon('storefront', focused),
         } : { href: null }}
       />
 
@@ -96,7 +94,7 @@ export default function TabLayout() {
         name="delivery/dashboard"
         options={currentMode === 'delivery' ? {
           title: 'Entregas',
-          tabBarIcon: ({ focused }) => getTabIcon('delivery/dashboard', focused),
+          tabBarIcon: ({ focused }) => getTabIcon('bicycle', focused),
         } : { href: null }}
       />
 
@@ -105,7 +103,7 @@ export default function TabLayout() {
         name="profile"
         options={{
           title: 'Perfil',
-          tabBarIcon: ({ focused }) => getTabIcon('profile', focused),
+          tabBarIcon: ({ focused }) => getTabIcon('person', focused),
         }}
       />
 

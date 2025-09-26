@@ -1,6 +1,6 @@
 import React from 'react';
 import { View, ScrollView } from 'react-native';
-import { OrdersList } from '../../../features/orders/components';
+import { OrdersList } from '../../../modes/client/components';
 
 export default function OrdersScreen() {
   return (

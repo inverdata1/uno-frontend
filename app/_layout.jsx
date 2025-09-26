@@ -13,7 +13,7 @@ import "../global.css";
 import { Text } from '../shared/components/ui';
 import { queryClient } from '../shared/config/query-client';
 import { useAppStore } from '../shared/stores/app-store';
-import { useAuthStore } from '../shared/stores/auth-store';
+import { useAuthStore } from '../auth/stores/auth-store';
 
 // Conditionally import ReactQuery DevTools only for web
 let ReactQueryDevtools = null;

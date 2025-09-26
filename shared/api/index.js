@@ -1,7 +1,7 @@
 import { FirebaseClient } from './firebase-client';
-import { UsersResource } from './resources/users';
-import { UserModesResource } from './resources/user-modes';
-import { BusinessesResource } from './resources/businesses';
+import { UsersResource } from './users';
+import { UserModesResource } from './user-modes';
+import { BusinessesResource } from './businesses';
 
 /**
  * Initialize Firebase API system

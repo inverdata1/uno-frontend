@@ -1,6 +1,6 @@
 import React from 'react';
 import { View, ScrollView } from 'react-native';
-import { DeliveryDashboard } from '../../../features/delivery/components';
+import { DeliveryDashboard } from '../../../modes/delivery/components';
 
 export default function DeliveryDashboardScreen() {
   return (

@@ -4,11 +4,11 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import BottomSheet, { BottomSheetView } from '@gorhom/bottom-sheet';
 import { Button, Card, Text } from '../../shared/components/ui';
-import { ModeSwitcher } from '../../shared/components/mode-switcher';
-import { ModeSwitcherModal } from '../../shared/components/mode-switcher/mode-switcher-modal';
-import { useAuthStore } from '../../shared/stores/auth-store';
-import { useCurrentMode } from '../../features/auth/shared/hooks/use-user-modes';
-import { getModeConfig } from '../../shared/config/modes';
+import { ModeSwitcher } from '../../shared/components/layout/mode-switcher';
+import { ModeSwitcherModal } from '../../shared/components/layout/mode-switcher/mode-switcher-modal';
+import { useAuthStore } from '../../auth/stores/auth-store';
+import { useCurrentMode } from '../../shared/hooks/use-user-modes';
+import { getModeConfig } from '../../modes/core/mode-config';
 import { cn } from '../../shared/utils/cn';
 
 export default function ProfileScreen() {
@@ -62,7 +62,7 @@ export default function ProfileScreen() {
     );
   };
 
-  const SettingsItem = ({ icon, title, onPress, danger = false }) => (
+  const SettingsItem = ({ icon, title, subtitle, onPress, danger = false, highlight = false, showBorder = false }) => (
     <TouchableOpacity
       onPress={onPress}
       style={{
@@ -71,45 +71,53 @@ export default function ProfileScreen() {
         paddingVertical: 16,
         paddingHorizontal: 20,
         backgroundColor: '#ffffff',
-        borderRadius: 16,
-        marginBottom: 12,
-        shadowColor: '#000',
-        shadowOffset: { width: 0, height: 2 },
-        shadowOpacity: 0.05,
-        shadowRadius: 8,
-        elevation: 2,
+        borderBottomWidth: showBorder ? 1 : 0,
+        borderBottomColor: '#f1f5f9',
       }}
       activeOpacity={0.7}
     >
       <View style={{
-        width: 40,
-        height: 40,
-        borderRadius: 12,
-        backgroundColor: danger ? '#fef2f2' : '#f8fafc',
+        width: 36,
+        height: 36,
+        borderRadius: 10,
+        backgroundColor: danger ? '#fef2f2' : highlight ? '#f0f9ff' : '#f8fafc',
         alignItems: 'center',
         justifyContent: 'center',
         marginRight: 16
       }}>
         <Ionicons
           name={icon}
-          size={20}
-          color={danger ? '#ef4444' : '#64748b'}
+          size={18}
+          color={danger ? '#ef4444' : highlight ? '#0ea5e9' : '#64748b'}
         />
       </View>
-      <Text
-        variant="body"
-        style={{
-          flex: 1,
-          fontWeight: '500',
-          color: danger ? '#ef4444' : '#1f2937'
-        }}
-      >
-        {title}
-      </Text>
+      <View style={{ flex: 1 }}>
+        <Text
+          variant="body"
+          style={{
+            fontWeight: '500',
+            color: danger ? '#ef4444' : highlight ? '#0ea5e9' : '#1f2937',
+            fontSize: 16
+          }}
+        >
+          {title}
+        </Text>
+        {subtitle && (
+          <Text
+            style={{
+              fontSize: 13,
+              color: '#64748b',
+              marginTop: 2
+            }}
+          >
+            {subtitle}
+          </Text>
+        )}
+      </View>
       <Ionicons
         name="chevron-forward-outline"
-        size={18}
-        color="#9ca3af"
+        size={16}
+        color="#cbd5e0"
       />
     </TouchableOpacity>
   );
@@ -245,73 +253,26 @@ export default function ProfileScreen() {
 
         <View style={{ paddingHorizontal: 24, paddingTop: 24 }}>
 
-          {/* Quick Stats */}
+          {/* Subtle Stats - Small badge */}
           <View style={{
             flexDirection: 'row',
-            marginBottom: 32,
-            gap: 12
+            justifyContent: 'center',
+            marginBottom: 32
           }}>
             <View style={{
-              flex: 1,
-              backgroundColor: '#ffffff',
-              borderRadius: 20,
-              padding: 20,
+              flexDirection: 'row',
               alignItems: 'center',
-              shadowColor: '#000',
-              shadowOffset: { width: 0, height: 4 },
-              shadowOpacity: 0.08,
-              shadowRadius: 12,
-              elevation: 4
+              backgroundColor: 'rgba(59, 130, 246, 0.1)',
+              paddingHorizontal: 12,
+              paddingVertical: 6,
+              borderRadius: 12
             }}>
-              <Ionicons name="time-outline" size={24} color="#10b981" style={{ marginBottom: 8 }} />
-              <Text style={{ fontSize: 18, fontWeight: '700', color: '#1f2937', marginBottom: 4 }}>
-                {(() => {
-                  if (!user?.createdAt) return 0;
-
-                  // Handle both Firestore Timestamp and regular date
-                  let createdDate;
-                  if (user.createdAt.toDate) {
-                    // Firestore Timestamp
-                    createdDate = user.createdAt.toDate();
-                  } else if (user.createdAt.seconds) {
-                    // Firestore Timestamp object
-                    createdDate = new Date(user.createdAt.seconds * 1000);
-                  } else {
-                    // Regular date string or Date object
-                    createdDate = new Date(user.createdAt);
-                  }
-
-                  const daysDiff = Math.floor((new Date() - createdDate) / (1000 * 60 * 60 * 24));
-                  return isNaN(daysDiff) ? 0 : daysDiff;
-                })()}
-              </Text>
-              <Text variant="caption" className="text-muted-foreground text-center">
-                Días como miembro
-              </Text>
-            </View>
-
-            <View style={{
-              flex: 1,
-              backgroundColor: '#ffffff',
-              borderRadius: 20,
-              padding: 20,
-              alignItems: 'center',
-              shadowColor: '#000',
-              shadowOffset: { width: 0, height: 4 },
-              shadowOpacity: 0.08,
-              shadowRadius: 12,
-              elevation: 4
-            }}>
-              <Ionicons name="shield-checkmark" size={24} color="#3b82f6" style={{ marginBottom: 8 }} />
-              <Text style={{ fontSize: 18, fontWeight: '700', color: '#1f2937', marginBottom: 4 }}>
-                100%
-              </Text>
-              <Text variant="caption" className="text-muted-foreground text-center">
-                Perfil completado
+              <Ionicons name="shield-checkmark" size={14} color="#3b82f6" style={{ marginRight: 6 }} />
+              <Text style={{ fontSize: 13, fontWeight: '600', color: '#3b82f6' }}>
+                Verificado
               </Text>
             </View>
           </View>
-
 
           {/* Essential Settings - Clean List */}
           <View style={{ marginBottom: 32 }}>

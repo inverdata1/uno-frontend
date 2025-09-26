@@ -1,6 +1,6 @@
 import React from 'react';
 import { View, ScrollView } from 'react-native';
-import { BusinessProducts } from '../../../features/business/components';
+import { BusinessProducts } from '../../../modes/business/components';
 
 export default function ProductsScreen() {
   return (

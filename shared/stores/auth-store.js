@@ -96,31 +96,17 @@ export const useAuthStore = create((set, get) => ({
     }
   },
 
-  // Initialize auth state listener - TEMPORARILY DISABLED
+  // Initialize auth state listener
   initializeAuth: () => {
-    console.log('🚫 Firebase auth state listener DISABLED for testing');
-    // Manually set initial auth state without listener
-    console.log('🔧 Setting initial auth state manually');
-    set({
-      user: null,
-      isAuthenticated: false,
-      isLoading: false,
-    });
-    // Return a dummy unsubscribe function
-    return () => {};
-
-    /* ORIGINAL CODE - TEMPORARILY COMMENTED OUT
     return authService.onAuthStateChanged((user) => {
       console.log('🔥 Firebase auth state changed:', { user: !!user, uid: user?.uid });
-      console.log('⚠️  Auth state listener is setting store state');
       set({
         user,
         isAuthenticated: !!user,
         isLoading: false,
       });
-      console.log('✅ Auth state listener finished setting store state');
+      console.log('✅ Auth state listener set store state:', { isAuthenticated: !!user });
     });
-    */
   },
 
   // Getters

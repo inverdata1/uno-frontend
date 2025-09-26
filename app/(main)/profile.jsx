@@ -8,10 +8,12 @@ import { ModeSwitcher } from '../../shared/components/mode-switcher';
 import { ModeSwitcherModal } from '../../shared/components/mode-switcher/mode-switcher-modal';
 import { useAuthStore } from '../../shared/stores/auth-store';
 import { useCurrentMode } from '../../features/auth/shared/hooks/use-user-modes';
+import { getModeConfig } from '../../shared/config/modes';
+import { cn } from '../../shared/utils/cn';
 
 export default function ProfileScreen() {
   const { user, signOut } = useAuthStore();
-  const { currentMode } = useCurrentMode();
+  const { currentMode, availableModes = [] } = useCurrentMode();
 
   // Bottom sheet for mode switcher
   const bottomSheetRef = useRef(null);
@@ -34,32 +36,7 @@ export default function ProfileScreen() {
     setModalVisible(false);
   };
 
-  const getModeInfo = () => {
-    const modeConfig = {
-      client: {
-        title: 'Cliente',
-        icon: 'basket',
-        description: 'Compra productos y recibe entregas',
-        color: '#ef4444',
-        gradient: ['#ef4444', '#dc2626']
-      },
-      business: {
-        title: 'Negocio',
-        icon: 'briefcase',
-        description: 'Gestiona tu tienda y productos',
-        color: '#10b981',
-        gradient: ['#10b981', '#059669']
-      },
-      delivery: {
-        title: 'Delivery',
-        icon: 'bicycle',
-        description: 'Entrega productos y gana dinero',
-        color: '#f59e0b',
-        gradient: ['#f59e0b', '#d97706']
-      }
-    };
-    return modeConfig[currentMode] || modeConfig.client;
-  };
+  const getModeInfo = () => getModeConfig(currentMode);
 
   const handleLogout = () => {
     Alert.alert(
@@ -150,13 +127,13 @@ export default function ProfileScreen() {
         {/* Hero Profile Section */}
         <View style={{
           background: `linear-gradient(135deg, ${modeInfo.gradient[0]} 0%, ${modeInfo.gradient[1]} 100%)`,
-          backgroundColor: modeInfo.color,
+          backgroundColor: modeInfo.primary,
           paddingTop: 32,
           paddingBottom: 40,
           paddingHorizontal: 24,
           borderBottomLeftRadius: 32,
           borderBottomRightRadius: 32,
-          shadowColor: modeInfo.color,
+          shadowColor: modeInfo.primary,
           shadowOffset: { width: 0, height: 8 },
           shadowOpacity: 0.2,
           shadowRadius: 24,
@@ -203,10 +180,42 @@ export default function ProfileScreen() {
               {user?.email}
             </Text>
 
-            {/* Active Mode Badge - Pressable */}
-            <TouchableOpacity
-              onPress={handleOpenModeSwitcher}
-              style={{
+            {/* Active Mode Badge - Conditional Pressable */}
+            {availableModes.length > 1 ? (
+              <TouchableOpacity
+                onPress={handleOpenModeSwitcher}
+                style={{
+                  backgroundColor: 'rgba(255, 255, 255, 0.9)',
+                  paddingHorizontal: 20,
+                  paddingVertical: 10,
+                  borderRadius: 20,
+                  borderWidth: 1,
+                  borderColor: 'rgba(255, 255, 255, 1)',
+                  flexDirection: 'row',
+                  alignItems: 'center',
+                  shadowColor: '#000',
+                  shadowOffset: { width: 0, height: 2 },
+                  shadowOpacity: 0.15,
+                  shadowRadius: 6,
+                  elevation: 3
+                }}
+                activeOpacity={0.8}
+              >
+                <Ionicons name={modeInfo.icon} size={16} color={modeInfo.primary} style={{ marginRight: 8 }} />
+                <Text style={{
+                  color: modeInfo.primary,
+                  fontSize: 14,
+                  fontWeight: '600',
+                  marginRight: 8
+                }}>
+                  {modeInfo.title}
+                </Text>
+                {/* Visual indicator that it's pressable */}
+                <Ionicons name="chevron-down" size={14} color={modeInfo.primary} opacity={0.7} />
+              </TouchableOpacity>
+            ) : (
+              /* Static mode badge when only one mode */
+              <View style={{
                 backgroundColor: 'rgba(255, 255, 255, 0.9)',
                 paddingHorizontal: 20,
                 paddingVertical: 10,
@@ -220,21 +229,17 @@ export default function ProfileScreen() {
                 shadowOpacity: 0.15,
                 shadowRadius: 6,
                 elevation: 3
-              }}
-              activeOpacity={0.8}
-            >
-              <Ionicons name={modeInfo.icon} size={16} color={modeInfo.color} style={{ marginRight: 8 }} />
-              <Text style={{
-                color: modeInfo.color,
-                fontSize: 14,
-                fontWeight: '600',
-                marginRight: 8
               }}>
-                {modeInfo.title}
-              </Text>
-              {/* Visual indicator that it's pressable */}
-              <Ionicons name="chevron-down" size={14} color={modeInfo.color} opacity={0.7} />
-            </TouchableOpacity>
+                <Ionicons name={modeInfo.icon} size={16} color={modeInfo.primary} style={{ marginRight: 8 }} />
+                <Text style={{
+                  color: modeInfo.primary,
+                  fontSize: 14,
+                  fontWeight: '600'
+                }}>
+                  {modeInfo.title}
+                </Text>
+              </View>
+            )}
           </View>
         </View>
 
@@ -308,85 +313,110 @@ export default function ProfileScreen() {
           </View>
 
 
-          {/* Settings Section */}
-          <View style={{
-            backgroundColor: '#ffffff',
-            borderRadius: 24,
-            padding: 24,
-            marginBottom: 24,
-            shadowColor: '#000',
-            shadowOffset: { width: 0, height: 4 },
-            shadowOpacity: 0.08,
-            shadowRadius: 12,
-            elevation: 4
-          }}>
+          {/* Essential Settings - Clean List */}
+          <View style={{ marginBottom: 32 }}>
             <Text style={{
-              fontSize: 18,
+              fontSize: 20,
               fontWeight: '700',
               color: '#1f2937',
-              marginBottom: 20
+              marginBottom: 16,
+              paddingHorizontal: 4
             }}>
-              Configuración
+              Cuenta
             </Text>
 
-            <View>
+            <View style={{
+              backgroundColor: '#ffffff',
+              borderRadius: 16,
+              overflow: 'hidden',
+              shadowColor: '#000',
+              shadowOffset: { width: 0, height: 2 },
+              shadowOpacity: 0.05,
+              shadowRadius: 8,
+              elevation: 2
+            }}>
               <SettingsItem
                 icon="person-outline"
                 title="Editar Perfil"
                 onPress={() => console.log('Edit profile')}
-              />
-              <SettingsItem
-                icon="notifications-outline"
-                title="Notificaciones"
-                onPress={() => console.log('Notifications')}
+                showBorder={true}
               />
               <SettingsItem
                 icon="card-outline"
                 title="Métodos de Pago"
                 onPress={() => console.log('Payment methods')}
+                showBorder={!availableModes.includes('business') && !availableModes.includes('delivery')}
               />
+
+              {/* Business and Delivery Mode Options - Only show if not already active */}
+              {!availableModes.includes('business') && (
+                <SettingsItem
+                  icon="briefcase-outline"
+                  title="Vende con UNO"
+                  onPress={() => console.log('Apply for business mode')}
+                  showBorder={!availableModes.includes('delivery')}
+                  highlight={true}
+                />
+              )}
+              {!availableModes.includes('delivery') && (
+                <SettingsItem
+                  icon="bicycle-outline"
+                  title="Entrega con UNO"
+                  onPress={() => console.log('Apply for delivery mode')}
+                  showBorder={false}
+                  highlight={true}
+                />
+              )}
+            </View>
+          </View>
+
+          {/* Secondary Options - Compact */}
+          <View style={{ marginBottom: 32 }}>
+            <View style={{
+              backgroundColor: '#ffffff',
+              borderRadius: 16,
+              overflow: 'hidden',
+              shadowColor: '#000',
+              shadowOffset: { width: 0, height: 2 },
+              shadowOpacity: 0.05,
+              shadowRadius: 8,
+              elevation: 2
+            }}>
               <SettingsItem
-                icon="location-outline"
-                title="Direcciones"
-                onPress={() => console.log('Addresses')}
-              />
-              <SettingsItem
-                icon="shield-outline"
-                title="Privacidad y Seguridad"
-                onPress={() => console.log('Privacy')}
-              />
-              <SettingsItem
-                icon="help-circle-outline"
-                title="Ayuda y Soporte"
-                onPress={() => console.log('Help')}
+                icon="ellipsis-horizontal"
+                title="Más opciones"
+                subtitle="Notificaciones, privacidad, ayuda"
+                onPress={() => console.log('More options')}
+                showBorder={false}
               />
             </View>
           </View>
 
-          {/* Danger Zone */}
+          {/* Logout - Standalone */}
           <View style={{
             backgroundColor: '#ffffff',
-            borderRadius: 24,
-            padding: 24,
+            borderRadius: 16,
+            overflow: 'hidden',
             shadowColor: '#000',
-            shadowOffset: { width: 0, height: 4 },
-            shadowOpacity: 0.08,
-            shadowRadius: 12,
-            elevation: 4
+            shadowOffset: { width: 0, height: 2 },
+            shadowOpacity: 0.05,
+            shadowRadius: 8,
+            elevation: 2
           }}>
             <SettingsItem
               icon="log-out-outline"
               title="Cerrar Sesión"
               onPress={handleLogout}
               danger={true}
+              showBorder={false}
             />
           </View>
 
         </View>
       </ScrollView>
 
-      {/* Mode Switcher Bottom Sheet */}
-      {modalVisible && (
+      {/* Mode Switcher Bottom Sheet - Only when user has multiple modes */}
+      {modalVisible && availableModes.length > 1 && (
         <ModeSwitcherModal
           visible={modalVisible}
           onClose={() => setModalVisible(false)}

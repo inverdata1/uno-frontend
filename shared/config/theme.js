@@ -32,6 +32,28 @@ export const theme = {
       700: '#b91c1c',
     },
 
+    // Mode-specific colors
+    modes: {
+      client: {
+        primary: '#ef4444',
+        secondary: '#dc2626',
+        light: '#fef2f2',
+        background: '#ef444415', // 15% opacity
+      },
+      business: {
+        primary: '#10b981',
+        secondary: '#059669',
+        light: '#f0fdf4',
+        background: '#10b98115', // 15% opacity
+      },
+      delivery: {
+        primary: '#f59e0b',
+        secondary: '#d97706',
+        light: '#fffbeb',
+        background: '#f59e0b15', // 15% opacity
+      },
+    },
+
     // Text colors - UNO palette
     text: {
       primary: '#1a202c',    // Dark text (from PDF)

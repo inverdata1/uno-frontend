@@ -72,16 +72,27 @@ const getCurrentUserId = () => {
 };
 
 /**
+ * Check if operation requires authentication
+ */
+const requiresAuth = (url, method) => {
+  // User creation endpoint doesn't require current authentication
+  if (method.toLowerCase() === 'post' && url === '/users') {
+    return false;
+  }
+  return true;
+};
+
+/**
  * Main API client - switches between Firebase and HTTP based on USE_FIREBASE flag
  */
 export const apiClient = {
   async get(url, config = {}) {
     if (USE_FIREBASE) {
-      // Add userId to params for Firebase operations
-      const params = {
-        ...config.params,
-        userId: getCurrentUserId()
-      };
+      // Add userId to params for Firebase operations (only if auth required)
+      const params = { ...config.params };
+      if (requiresAuth(url, 'get')) {
+        params.userId = getCurrentUserId();
+      }
 
       const data = await firebaseClient.get(url, params);
       return { data };
@@ -92,10 +103,11 @@ export const apiClient = {
 
   async post(url, data, config = {}) {
     if (USE_FIREBASE) {
-      const params = {
-        ...config.params,
-        userId: getCurrentUserId()
-      };
+      const params = { ...config.params };
+      // Only add userId if authentication is required for this endpoint
+      if (requiresAuth(url, 'post')) {
+        params.userId = getCurrentUserId();
+      }
 
       const responseData = await firebaseClient.post(url, data, params);
       return { data: responseData };
@@ -106,10 +118,10 @@ export const apiClient = {
 
   async put(url, data, config = {}) {
     if (USE_FIREBASE) {
-      const params = {
-        ...config.params,
-        userId: getCurrentUserId()
-      };
+      const params = { ...config.params };
+      if (requiresAuth(url, 'put')) {
+        params.userId = getCurrentUserId();
+      }
 
       const responseData = await firebaseClient.put(url, data, params);
       return { data: responseData };
@@ -120,10 +132,10 @@ export const apiClient = {
 
   async patch(url, data, config = {}) {
     if (USE_FIREBASE) {
-      const params = {
-        ...config.params,
-        userId: getCurrentUserId()
-      };
+      const params = { ...config.params };
+      if (requiresAuth(url, 'patch')) {
+        params.userId = getCurrentUserId();
+      }
 
       const responseData = await firebaseClient.patch(url, data, params);
       return { data: responseData };
@@ -134,10 +146,10 @@ export const apiClient = {
 
   async delete(url, config = {}) {
     if (USE_FIREBASE) {
-      const params = {
-        ...config.params,
-        userId: getCurrentUserId()
-      };
+      const params = { ...config.params };
+      if (requiresAuth(url, 'delete')) {
+        params.userId = getCurrentUserId();
+      }
 
       const responseData = await firebaseClient.delete(url, params);
       return { data: responseData };

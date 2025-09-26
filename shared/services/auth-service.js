@@ -4,9 +4,8 @@ import {
   signOut,
   onAuthStateChanged
 } from 'firebase/auth';
-import { auth, firestore } from '../config/firebase';
+import { auth } from '../config/firebase';
 import { apiClient } from '../config/api-client';
-import { doc, setDoc } from 'firebase/firestore';
 
 export const authService = {
   /**
@@ -59,9 +58,8 @@ export const authService = {
         }
       };
 
-      // Create user document directly in Firestore during registration
-      // (We use direct Firebase calls here since the user isn't authenticated yet in our API client)
-      await setDoc(doc(firestore, 'users', user.uid), userData);
+      // Create user document using our API client
+      await apiClient.post('/users', userData, { params: { userId: user.uid } });
 
       return {
         user: {

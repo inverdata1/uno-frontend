@@ -7,6 +7,7 @@ import React from 'react';
 import { Platform, View } from 'react-native';
 import 'react-native-get-random-values'; // Must be first import for crypto polyfill
 import 'react-native-reanimated';
+import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 import "../global.css";
 import { Text } from '../shared/components/ui';
@@ -94,18 +95,20 @@ export default function RootLayout() {
   }, [setOnboardingCompleted]);
 
   return (
-    <SafeAreaProvider>
-      <QueryClientProvider client={queryClient}>
-        <ThemeProvider value={DefaultTheme}>
-          <AppNavigator />
-          <StatusBar style="auto" />
+    <GestureHandlerRootView style={{ flex: 1 }}>
+      <SafeAreaProvider>
+        <QueryClientProvider client={queryClient}>
+          <ThemeProvider value={DefaultTheme}>
+            <AppNavigator />
+            <StatusBar style="auto" />
 
-          {/* DevTools only in development and web platform */}
-          {__DEV__ && Platform.OS === 'web' && ReactQueryDevtools && (
-            <ReactQueryDevtools initialIsOpen={false} />
-          )}
-        </ThemeProvider>
-      </QueryClientProvider>
-    </SafeAreaProvider>
+            {/* DevTools only in development and web platform */}
+            {__DEV__ && Platform.OS === 'web' && ReactQueryDevtools && (
+              <ReactQueryDevtools initialIsOpen={false} />
+            )}
+          </ThemeProvider>
+        </QueryClientProvider>
+      </SafeAreaProvider>
+    </GestureHandlerRootView>
   );
 }

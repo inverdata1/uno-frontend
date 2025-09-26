@@ -1,5 +1,5 @@
 import { Tabs } from 'expo-router';
-import { useCurrentMode } from '../../features/auth/api/use-user-modes';
+import { useCurrentMode } from '../../features/auth/shared/hooks/use-user-modes';
 
 export default function TabLayout() {
   const { currentMode, isLoading } = useCurrentMode();

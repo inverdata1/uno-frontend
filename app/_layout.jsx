@@ -8,7 +8,6 @@ import { Platform, View } from 'react-native';
 import 'react-native-get-random-values'; // Must be first import for crypto polyfill
 import 'react-native-reanimated';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
-import { useAuthState } from '../features/auth/hooks/use-auth-state';
 import "../global.css";
 import { Text } from '../shared/components/ui';
 import { queryClient } from '../shared/config/query-client';
@@ -65,7 +64,11 @@ function AppNavigator() {
 
 export default function RootLayout() {
   // Initialize auth state on app start
-  useAuthState();
+  const { initializeAuth } = useAuthStore();
+  React.useEffect(() => {
+    const unsubscribe = initializeAuth();
+    return () => unsubscribe && unsubscribe();
+  }, [initializeAuth]);
 
   // One-time migration: Clear persisted onboarding state if needed
   const { setOnboardingCompleted } = useAppStore();

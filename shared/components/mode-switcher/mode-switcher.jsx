@@ -3,7 +3,7 @@ import { View, TouchableOpacity, ActivityIndicator } from 'react-native';
 import { Text } from '../ui/text';
 import { Card } from '../ui/card';
 import { useModeStore } from '../../stores/mode-store';
-import { useCurrentMode, useSwitchMode, useBusinessContexts } from '../../../features/auth/api/use-user-modes';
+import { useCurrentMode, useSwitchMode, useBusinessContexts } from '../../../features/auth/shared/hooks/use-user-modes';
 
 /**
  * Mode Switcher Component

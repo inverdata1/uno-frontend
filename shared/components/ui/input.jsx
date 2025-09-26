@@ -1,6 +1,6 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { TextInput, View, Keyboard, TouchableOpacity } from 'react-native';
-import { Feather } from '@expo/vector-icons';
+import { Ionicons } from '@expo/vector-icons';
 import { cn } from '../../utils/cn';
 import { Text } from './text';
 
@@ -69,8 +69,8 @@ export const Input = ({
             onPress={() => setShowPassword(!showPassword)}
             className="absolute right-4 top-4 bottom-4 justify-center"
           >
-            <Feather
-              name={showPassword ? 'eye' : 'eye-off'}
+            <Ionicons
+              name={showPassword ? 'eye-outline' : 'eye-off-outline'}
               size={20}
               color="#6b7280"
             />
@@ -80,7 +80,7 @@ export const Input = ({
 
       {error && (
         <View className="flex-row items-center mt-2">
-          <Text className="text-red-500 text-xs mr-1">⚠</Text>
+          <Ionicons name="warning-outline" size={12} color="#ef4444" style={{ marginRight: 4 }} />
           <Text className="text-red-500 text-xs font-medium flex-1">
             {(() => {
               if (typeof error === 'string') return error;

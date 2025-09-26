@@ -1,4 +1,4 @@
-import { useCurrentMode } from '../../auth/api/use-user-modes';
+import { useCurrentMode } from '../../auth/shared/hooks/use-user-modes';
 import { useModeStore } from '../../../shared/stores/mode-store';
 import { useAuthStore } from '../../../shared/stores/auth-store';
 

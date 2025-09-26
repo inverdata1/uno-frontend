@@ -1,5 +1,6 @@
 import React from 'react';
 import { View, ScrollView } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import { Card, Text } from '../../shared/components/ui';
 import { ModeSwitcher } from '../../shared/components/mode-switcher';
 import { ClientModeContent, BusinessModeContent, DeliveryModeContent } from '../../features/home/components';
@@ -20,27 +21,29 @@ export default function HomeScreen() {
   };
 
   return (
-    <ScrollView className="flex-1 bg-secondary">
-      <View className="p-4 space-y-4">
+    <SafeAreaView className="flex-1 bg-secondary" edges={['top']}>
+      <ScrollView className="flex-1">
+        <View className="p-4 space-y-4">
 
-        {/* Header */}
-        <Card>
-          <Text variant="heading" className="mb-2">
-            ¡Hola, {user?.firstName || 'Usuario'}! 👋
-          </Text>
-          <Text variant="body">
-            {greeting}
-          </Text>
-        </Card>
+          {/* Header */}
+          <Card>
+            <Text variant="heading" className="mb-2">
+              ¡Hola, {user?.firstName || 'Usuario'}!
+            </Text>
+            <Text variant="body">
+              {greeting}
+            </Text>
+          </Card>
 
-        {/* Mode Switcher */}
-        <ModeSwitcher onModeSwitch={onModeSwitch} />
+          {/* Mode Switcher */}
+          <ModeSwitcher onModeSwitch={onModeSwitch} />
 
-        {/* Mode-specific Content */}
-        {renderModeContent()}
+          {/* Mode-specific Content */}
+          {renderModeContent()}
 
-      </View>
-    </ScrollView>
+        </View>
+      </ScrollView>
+    </SafeAreaView>
   );
 }
 

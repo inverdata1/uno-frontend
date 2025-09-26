@@ -10,7 +10,7 @@ export const DeliveryModeContent = () => {
   return (
     <View className="space-y-4">
       <Card>
-        <Text variant="subheading" className="mb-2">🚗 Modo Repartidor</Text>
+        <Text variant="subheading" className="mb-2">Modo Repartidor</Text>
         <Text variant="body" className="mb-4">
           Gana dinero entregando cualquier tipo de productos
         </Text>

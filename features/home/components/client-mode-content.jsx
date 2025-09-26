@@ -10,7 +10,7 @@ export const ClientModeContent = () => {
   return (
     <View className="space-y-4">
       <Card>
-        <Text variant="subheading" className="mb-2">🛍️ Modo Cliente</Text>
+        <Text variant="subheading" className="mb-2">Modo Cliente</Text>
         <Text variant="body" className="mb-4">
           Encuentra y compra cualquier producto
         </Text>

@@ -4,36 +4,50 @@ import {
   signOut,
   onAuthStateChanged
 } from 'firebase/auth';
-import { doc, setDoc, getDoc } from 'firebase/firestore';
-import { getFirestore } from 'firebase/firestore';
-import { auth } from '../config/firebase';
-import app from '../config/firebase';
-
-// Initialize Firestore
-const firestore = getFirestore(app);
+import { auth, firestore } from '../config/firebase';
+import { apiClient } from '../config/api-client';
+import { doc, setDoc } from 'firebase/firestore';
 
 export const authService = {
   /**
    * Register a new user
    */
-  async signUp({ firstName, lastName, email, phone, password }) {
+  async signUp({ firstName, lastName, email, phone, password, selectedMode = 'client' }) {
     try {
       // Create Firebase auth user
       const userCredential = await createUserWithEmailAndPassword(auth, email, password);
       const user = userCredential.user;
 
-      // Create user document in Firestore - START SIMPLE
+      // Create user document using our API system with selected mode
+      const modes = {};
+
+      // Always enable client mode by default
+      modes.client = {
+        status: 'active',
+        createdAt: new Date()
+      };
+
+      // Add selected mode if different from client
+      if (selectedMode !== 'client') {
+        modes[selectedMode] = {
+          status: selectedMode === 'delivery' ? 'pending' : 'active', // Delivery mode needs approval
+          createdAt: new Date()
+        };
+      }
+
       const userData = {
         id: user.uid,
         firstName,
         lastName,
         email,
-        phone,
-        roles: ['client'], // Everyone starts as client
-        activeRole: 'client',
+        phone: `+58${phone}`, // Convert 04XX XXX XXXX to +58 04XX XXX XXXX
         createdAt: new Date(),
         isActive: true,
-        // Client preferences
+        modes,
+        currentMode: selectedMode,
+        currentBusinessId: null,
+        currentBranchId: null,
+        // User preferences
         preferences: {
           language: 'es',
           currency: 'USD',
@@ -45,6 +59,8 @@ export const authService = {
         }
       };
 
+      // Create user document directly in Firestore during registration
+      // (We use direct Firebase calls here since the user isn't authenticated yet in our API client)
       await setDoc(doc(firestore, 'users', user.uid), userData);
 
       return {
@@ -66,18 +82,18 @@ export const authService = {
   async signIn({ email, password }) {
     try {
       const userCredential = await signInWithEmailAndPassword(auth, email, password);
-
       const user = userCredential.user;
 
-      // Get user data from Firestore
-      const userDoc = await getDoc(doc(firestore, 'users', user.uid));
-      const userData = userDoc.exists() ? userDoc.data() : null;
+      // Get user data through our API system
+      const userProfile = await apiClient.get('/users/profile', { params: { userId: user.uid } });
+      const userModes = await apiClient.get('/user-modes', { params: { userId: user.uid } });
 
       return {
         user: {
           uid: user.uid,
           email: user.email,
-          ...userData
+          ...userProfile.data,
+          ...userModes.data
         }
       };
     } catch (error) {
@@ -99,22 +115,22 @@ export const authService = {
   },
 
   /**
-   * Get current user data from Firestore
+   * Get current user data through our API system
    */
   async getCurrentUserData() {
     try {
       const currentUser = auth.currentUser;
       if (!currentUser) return null;
 
-      const userDoc = await getDoc(doc(firestore, 'users', currentUser.uid));
-      if (userDoc.exists()) {
-        return {
-          uid: currentUser.uid,
-          email: currentUser.email,
-          ...userDoc.data()
-        };
-      }
-      return null;
+      const userProfile = await apiClient.get('/users/profile', { params: { userId: currentUser.uid } });
+      const userModes = await apiClient.get('/user-modes', { params: { userId: currentUser.uid } });
+
+      return {
+        uid: currentUser.uid,
+        email: currentUser.email,
+        ...userProfile.data,
+        ...userModes.data
+      };
     } catch (error) {
       return null;
     }
@@ -126,16 +142,17 @@ export const authService = {
   onAuthStateChanged(callback) {
     return onAuthStateChanged(auth, async (user) => {
       if (user) {
-        // Get user data from Firestore
+        // Get user data through our API system
         try {
-          const userDoc = await getDoc(doc(firestore, 'users', user.uid));
-          const userData = userDoc.exists() ? userDoc.data() : {};
+          const userProfile = await apiClient.get('/users/profile', { params: { userId: user.uid } });
+          const userModes = await apiClient.get('/user-modes', { params: { userId: user.uid } });
 
           callback({
             uid: user.uid,
             email: user.email,
             emailVerified: user.emailVerified,
-            ...userData
+            ...userProfile.data,
+            ...userModes.data
           });
         } catch (error) {
           callback(null);

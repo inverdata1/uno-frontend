@@ -1,5 +1,4 @@
 import { useForm } from '@tanstack/react-form';
-import { zodValidator } from '@tanstack/zod-form-adapter';
 import { Link, useRouter } from 'expo-router';
 import React from 'react';
 import { KeyboardAvoidingView, Platform, ScrollView, TouchableWithoutFeedback, View, Keyboard } from 'react-native';
@@ -27,7 +26,6 @@ export default function LoginScreen() {
       email: '',
       password: '',
     },
-    validatorAdapter: zodValidator(),
     validators: {
       onSubmit: loginSchema,
     },

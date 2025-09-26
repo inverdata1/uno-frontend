@@ -4,6 +4,7 @@ import {
   getDoc,
   getDocs,
   addDoc,
+  setDoc,
   updateDoc,
   deleteDoc,
   query,
@@ -76,20 +77,33 @@ export class BaseFirebaseService {
   /**
    * Create a new document
    * @param {Object} data - Document data
+   * @param {string} [customId] - Optional custom document ID
    * @returns {Promise<Object>} Created document with ID
    */
-  async create(data) {
+  async create(data, customId = null) {
     const docData = {
       ...data,
       createdAt: serverTimestamp(),
       updatedAt: serverTimestamp()
     };
 
-    const docRef = await addDoc(this.collection, docData);
+    let docRef;
+    let documentId;
+
+    if (customId) {
+      // Use setDoc with custom ID
+      docRef = doc(this.db, this.collectionName, customId);
+      await setDoc(docRef, docData);
+      documentId = customId;
+    } else {
+      // Use addDoc for auto-generated ID
+      docRef = await addDoc(collection(this.db, this.collectionName), docData);
+      documentId = docRef.id;
+    }
 
     // Return with actual timestamp since serverTimestamp() returns null initially
     return {
-      id: docRef.id,
+      id: documentId,
       ...data,
       createdAt: new Date(),
       updatedAt: new Date()

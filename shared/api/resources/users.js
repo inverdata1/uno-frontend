@@ -28,6 +28,37 @@ export class UsersResource extends BaseFirebaseService {
     return await this[handler](data, params);
   }
 
+  // === USER CRUD ENDPOINTS ===
+
+  /**
+   * POST /users
+   * Create a new user (used during registration)
+   */
+  async post_index(data, params) {
+    const { userId } = params;
+
+    if (!userId) {
+      throw new Error('userId parameter is required');
+    }
+
+    // Use the user ID from params as the document ID
+    const userWithModes = {
+      ...data,
+      id: userId,
+      modes: data.modes || {
+        client: {
+          status: 'active',
+          createdAt: new Date()
+        }
+      },
+      currentMode: data.currentMode || 'client',
+      currentBusinessId: data.currentBusinessId || null,
+      currentBranchId: data.currentBranchId || null
+    };
+
+    return await this.create(userWithModes, userId);
+  }
+
   // === PROFILE ENDPOINTS ===
 
   /**

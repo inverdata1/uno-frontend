@@ -1,8 +1,11 @@
+import { Ionicons } from '@expo/vector-icons';
 import { Tabs } from 'expo-router';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useCurrentMode } from '../../features/auth/shared/hooks/use-user-modes';
 
 export default function TabLayout() {
   const { currentMode, isLoading } = useCurrentMode();
+  const insets = useSafeAreaInsets();
 
   // Show loading state while determining mode
   if (isLoading) {
@@ -14,20 +17,23 @@ export default function TabLayout() {
   }
 
   // Define tab icons
-  const getTabIcon = (name) => {
-    const icons = {
+  const getTabIcon = (name, focused = false) => {
+    const iconMap = {
       // Common
-      index: '🏠',
+      index: focused ? 'home' : 'home-outline',
+      profile: focused ? 'person' : 'person-outline',
       // Client mode
-      'client/restaurants': '🛍️',
-      'client/orders': '📦',
+      'client/restaurants': focused ? 'basket' : 'basket-outline',
+      'client/orders': focused ? 'receipt' : 'receipt-outline',
       // Business mode
-      'business/dashboard': '📊',
-      'business/products': '🍽️',
+      'business/dashboard': focused ? 'analytics' : 'analytics-outline',
+      'business/products': focused ? 'storefront' : 'storefront-outline',
       // Delivery mode
-      'delivery/dashboard': '🚗'
+      'delivery/dashboard': focused ? 'bicycle' : 'bicycle-outline'
     };
-    return icons[name] || '📱';
+
+    const iconName = iconMap[name] || (focused ? 'apps' : 'apps-outline');
+    return <Ionicons name={iconName} size={24} color={focused ? '#ef4444' : '#64748b'} />;
   };
 
   return (
@@ -35,9 +41,9 @@ export default function TabLayout() {
       screenOptions={{
         headerShown: false,
         tabBarStyle: {
-          paddingBottom: 5,
+          paddingBottom: Math.max(insets.bottom, 5),
           paddingTop: 5,
-          height: 60
+          height: 60 + Math.max(insets.bottom - 5, 0)
         }
       }}>
 
@@ -46,98 +52,59 @@ export default function TabLayout() {
         name="index"
         options={{
           title: 'Inicio',
-          tabBarIcon: () => getTabIcon('index'),
+          tabBarIcon: ({ focused }) => getTabIcon('index', focused),
         }}
       />
 
       {/* Client mode tabs */}
-      {currentMode === 'client' && (
-        <>
-          <Tabs.Screen
-            name="client/restaurants"
-            options={{
-              title: 'Productos',
-              tabBarIcon: () => getTabIcon('client/restaurants'),
-            }}
-          />
-          <Tabs.Screen
-            name="client/orders"
-            options={{
-              title: 'Pedidos',
-              tabBarIcon: () => getTabIcon('client/orders'),
-            }}
-          />
-        </>
-      )}
+      <Tabs.Screen
+        name="client/restaurants"
+        options={currentMode === 'client' ? {
+          title: 'Productos',
+          tabBarIcon: ({ focused }) => getTabIcon('client/restaurants', focused),
+        } : { href: null }}
+      />
+      <Tabs.Screen
+        name="client/orders"
+        options={currentMode === 'client' ? {
+          title: 'Pedidos',
+          tabBarIcon: ({ focused }) => getTabIcon('client/orders', focused),
+        } : { href: null }}
+      />
 
       {/* Business mode tabs */}
-      {currentMode === 'business' && (
-        <>
-          <Tabs.Screen
-            name="business/dashboard"
-            options={{
-              title: 'Dashboard',
-              tabBarIcon: () => getTabIcon('business/dashboard'),
-            }}
-          />
-          <Tabs.Screen
-            name="business/products"
-            options={{
-              title: 'Productos',
-              tabBarIcon: () => getTabIcon('business/products'),
-            }}
-          />
-        </>
-      )}
+      <Tabs.Screen
+        name="business/dashboard"
+        options={currentMode === 'business' ? {
+          title: 'Dashboard',
+          tabBarIcon: ({ focused }) => getTabIcon('business/dashboard', focused),
+        } : { href: null }}
+      />
+      <Tabs.Screen
+        name="business/products"
+        options={currentMode === 'business' ? {
+          title: 'Productos',
+          tabBarIcon: ({ focused }) => getTabIcon('business/products', focused),
+        } : { href: null }}
+      />
 
       {/* Delivery mode tabs */}
-      {currentMode === 'delivery' && (
-        <>
-          <Tabs.Screen
-            name="delivery/dashboard"
-            options={{
-              title: 'Entregas',
-              tabBarIcon: () => getTabIcon('delivery/dashboard'),
-            }}
-          />
-        </>
-      )}
+      <Tabs.Screen
+        name="delivery/dashboard"
+        options={currentMode === 'delivery' ? {
+          title: 'Entregas',
+          tabBarIcon: ({ focused }) => getTabIcon('delivery/dashboard', focused),
+        } : { href: null }}
+      />
 
-      {/* Hide unused tabs */}
-      {currentMode !== 'client' && (
-        <>
-          <Tabs.Screen
-            name="client/restaurants"
-            options={{ href: null }}
-          />
-          <Tabs.Screen
-            name="client/orders"
-            options={{ href: null }}
-          />
-        </>
-      )}
-
-      {currentMode !== 'business' && (
-        <>
-          <Tabs.Screen
-            name="business/dashboard"
-            options={{ href: null }}
-          />
-          <Tabs.Screen
-            name="business/products"
-            options={{ href: null }}
-          />
-        </>
-      )}
-
-      {currentMode !== 'delivery' && (
-        <>
-          <Tabs.Screen
-            name="delivery/dashboard"
-            options={{ href: null }}
-          />
-        </>
-      )}
+      {/* Profile tab - always visible */}
+      <Tabs.Screen
+        name="profile"
+        options={{
+          title: 'Perfil',
+          tabBarIcon: ({ focused }) => getTabIcon('profile', focused),
+        }}
+      />
 
     </Tabs>
   );

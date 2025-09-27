@@ -38,7 +38,7 @@ yarn-error.*
 # typescript
 *.tsbuildinfo
 
-docs/propuesta.md
+CLAUDE.md
 
 android
 ios

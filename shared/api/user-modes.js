@@ -37,15 +37,22 @@ export class UserModesResource extends BaseFirebaseService {
       throw new Error('userId parameter is required');
     }
 
-    const user = await this.findById(userId);
-    const modes = this.extractModesFromUser(user);
+    try {
+      const user = await this.findById(userId);
+      const modes = this.extractModesFromUser(user);
 
-    // If user has business mode, load business contexts
-    if (modes.availableModes.includes('business')) {
-      modes.businessContexts = await this.getBusinessContexts(userId);
+      // If user has business mode, load business contexts
+      if (modes.availableModes.includes('business')) {
+        modes.businessContexts = await this.getBusinessContexts(userId);
+      }
+
+      return modes;
+    } catch (error) {
+      // If user document doesn't exist, return null for now
+      // The useUserModes hook will provide safe defaults
+      console.warn(`User document not found for ${userId}, this user needs to be properly registered`);
+      return null;
     }
-
-    return modes;
   }
 
   /**

@@ -23,6 +23,7 @@ export const useRegistration = ({ onComplete }) => {
       lastName: '',
       email: '',
       phone: '',
+      dateOfBirth: null,
       password: '',
       confirmPassword: '',
       acceptTerms: false,

@@ -72,7 +72,14 @@ export class UsersResource extends BaseFirebaseService {
       throw new Error('userId parameter is required');
     }
 
-    return await this.findById(userId);
+    try {
+      return await this.findById(userId);
+    } catch (error) {
+      // If user document doesn't exist, return null for now
+      // This allows the app to function with safe defaults
+      console.warn(`User document not found for ${userId}, this user needs to be properly registered`);
+      return null;
+    }
   }
 
   /**

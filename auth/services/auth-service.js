@@ -11,7 +11,7 @@ export const authService = {
   /**
    * Register a new user
    */
-  async signUp({ firstName, lastName, email, phone, password, selectedMode = 'client' }) {
+  async signUp({ firstName, lastName, email, phone, dateOfBirth, password, selectedMode = 'client' }) {
     try {
       // Create Firebase auth user
       const userCredential = await createUserWithEmailAndPassword(auth, email, password);
@@ -40,6 +40,7 @@ export const authService = {
         lastName,
         email,
         phone: `+58${phone}`, // Convert 04XX XXX XXXX to +58 04XX XXX XXXX
+        dateOfBirth: dateOfBirth,
         createdAt: new Date(),
         isActive: true,
         modes,

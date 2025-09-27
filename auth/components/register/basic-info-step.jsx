@@ -1,7 +1,7 @@
 import React from 'react';
 import { View } from 'react-native';
 import { z } from 'zod';
-import { Input, Text, Checkbox } from '../../../shared/components/ui';
+import { Input, Text, Checkbox, DatePicker } from '../../../shared/components/ui';
 
 export const BasicInfoStep = ({ form, createFieldProps, triggerUpdate, scrollViewRef }) => {
   return (
@@ -99,6 +99,40 @@ export const BasicInfoStep = ({ form, createFieldProps, triggerUpdate, scrollVie
             error={field.state.meta.errors?.[0]}
           />
         )}
+      />
+
+      <form.Field
+        name="dateOfBirth"
+        validators={{
+          onBlur: z.date().refine(date => {
+            const today = new Date();
+            const age = today.getFullYear() - date.getFullYear();
+            const monthDiff = today.getMonth() - date.getMonth();
+            // Adjust age if birthday hasn't occurred this year
+            const adjustedAge = monthDiff < 0 || (monthDiff === 0 && today.getDate() < date.getDate()) ? age - 1 : age;
+            return adjustedAge >= 13 && adjustedAge <= 100;
+          }, 'Debes ser mayor de 13 años'),
+        }}
+        children={(field) => {
+          // Calculate date limits
+          const today = new Date();
+          const maxDate = new Date(today.getFullYear() - 13, today.getMonth(), today.getDate());
+          const minDate = new Date(today.getFullYear() - 100, today.getMonth(), today.getDate());
+
+          return (
+            <DatePicker
+              value={field.state.value}
+              onChange={(date) => {
+                field.handleChange(date);
+                triggerUpdate();
+              }}
+              placeholder="Selecciona tu fecha de nacimiento"
+              error={field.state.meta.errors?.[0]}
+              maximumDate={maxDate}
+              minimumDate={minDate}
+            />
+          );
+        }}
       />
 
       <form.Field

@@ -1,6 +1,7 @@
 import { DefaultTheme, ThemeProvider } from '@react-navigation/native';
 import { QueryClientProvider } from '@tanstack/react-query';
 import { Stack } from 'expo-router';
+import * as SplashScreen from 'expo-splash-screen';
 import { StatusBar } from 'expo-status-bar';
 import React from 'react';
 import { Platform, View } from 'react-native';
@@ -12,6 +13,9 @@ import "../global.css";
 import { Text } from '../shared/components/ui';
 import { queryClient } from '../shared/config/query-client';
 import { useAuthStore } from '../auth/stores/auth-store';
+
+// Keep the splash screen visible while we fetch resources
+SplashScreen.preventAutoHideAsync();
 
 // Conditionally import ReactQuery DevTools only for web
 let ReactQueryDevtools = null;
@@ -71,11 +75,19 @@ function AppNavigator() {
 
 export default function RootLayout() {
   // Initialize auth state on app start
-  const { initializeAuth } = useAuthStore();
+  const { initializeAuth, isLoading: authLoading } = useAuthStore();
+
   React.useEffect(() => {
     const unsubscribe = initializeAuth();
     return () => unsubscribe && unsubscribe();
   }, [initializeAuth]);
+
+  // Hide splash screen when auth initialization is complete
+  React.useEffect(() => {
+    if (!authLoading) {
+      SplashScreen.hideAsync();
+    }
+  }, [authLoading]);
 
 
   return (

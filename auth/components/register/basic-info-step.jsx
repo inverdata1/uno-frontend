@@ -1,7 +1,7 @@
 import React from 'react';
 import { View } from 'react-native';
 import { z } from 'zod';
-import { Input, Text, Checkbox } from '../../../../shared/components/ui';
+import { Input, Text, Checkbox } from '../../../shared/components/ui';
 
 export const BasicInfoStep = ({ form, createFieldProps, triggerUpdate, scrollViewRef }) => {
   return (

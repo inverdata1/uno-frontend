@@ -14,7 +14,20 @@ import { apiClient } from '../config/api-client';
 export const useUserModes = () => {
   return useQuery({
     queryKey: ['user-modes'],
-    queryFn: () => apiClient.get('/user-modes').then(res => res.data),
+    queryFn: async () => {
+      const res = await apiClient.get('/user-modes');
+      // If API returns null, provide safe defaults
+      if (!res.data) {
+        console.warn('User modes API returned null, using safe defaults');
+        return {
+          currentMode: 'client',
+          currentContext: { businessId: null, branchId: null },
+          availableModes: ['client'],
+          modes: { client: { status: 'active' } }
+        };
+      }
+      return res.data;
+    },
     staleTime: 5 * 60 * 1000, // 5 minutes
     retry: 3,
     retryDelay: (attemptIndex) => Math.min(1000 * 2 ** attemptIndex, 30000),

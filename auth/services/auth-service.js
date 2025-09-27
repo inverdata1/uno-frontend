@@ -153,7 +153,19 @@ export const authService = {
             ...userModes.data
           });
         } catch (error) {
-          callback(null);
+          console.warn('Failed to fetch user profile data, keeping basic auth state:', error);
+          // Don't log out the user if API fails - just provide basic auth info
+          callback({
+            uid: user.uid,
+            email: user.email,
+            emailVerified: user.emailVerified,
+            // Provide safe defaults if API fails
+            firstName: '',
+            lastName: '',
+            phone: '',
+            modes: { client: { status: 'active' } },
+            currentMode: 'client'
+          });
         }
       } else {
         callback(null);

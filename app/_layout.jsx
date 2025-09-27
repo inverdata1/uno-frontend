@@ -1,4 +1,3 @@
-import AsyncStorage from '@react-native-async-storage/async-storage';
 import { DefaultTheme, ThemeProvider } from '@react-navigation/native';
 import { QueryClientProvider } from '@tanstack/react-query';
 import { Stack } from 'expo-router';
@@ -12,7 +11,6 @@ import { SafeAreaProvider } from 'react-native-safe-area-context';
 import "../global.css";
 import { Text } from '../shared/components/ui';
 import { queryClient } from '../shared/config/query-client';
-import { useAppStore } from '../shared/stores/app-store';
 import { useAuthStore } from '../auth/stores/auth-store';
 
 // Conditionally import ReactQuery DevTools only for web
@@ -44,7 +42,6 @@ function LoadingScreen() {
 
 function AppNavigator() {
   const { isAuthenticated, isLoading: authLoading } = useAuthStore();
-  const { isOnboardingCompleted } = useAppStore();
 
   // Show loading screen while auth state is being determined
   if (authLoading) {
@@ -52,15 +49,24 @@ function AppNavigator() {
   }
 
   // Add debug logging
-  console.log('Auth state:', { isAuthenticated, authLoading, isOnboardingCompleted });
+  console.log('🔍 AppNavigator - Auth state:', { isAuthenticated, authLoading });
 
-  return (
-    <Stack screenOptions={{ headerShown: false }}>
-      <Stack.Screen name="(auth)" />
-      <Stack.Screen name="(main)" />
-      <Stack.Screen name="index" />
-    </Stack>
-  );
+  // Redirect based on auth state
+  if (isAuthenticated) {
+    console.log('🎯 User authenticated - showing main stack');
+    return (
+      <Stack screenOptions={{ headerShown: false }}>
+        <Stack.Screen name="(main)" />
+      </Stack>
+    );
+  } else {
+    console.log('🎯 User not authenticated - showing auth stack');
+    return (
+      <Stack screenOptions={{ headerShown: false }}>
+        <Stack.Screen name="(auth)" />
+      </Stack>
+    );
+  }
 }
 
 export default function RootLayout() {
@@ -71,28 +77,6 @@ export default function RootLayout() {
     return () => unsubscribe && unsubscribe();
   }, [initializeAuth]);
 
-  // One-time migration: Clear persisted onboarding state if needed
-  const { setOnboardingCompleted } = useAppStore();
-  React.useEffect(() => {
-    const resetOnboardingIfNeeded = async () => {
-      try {
-        const persistedState = await AsyncStorage.getItem('uno-delivery-app-storage');
-        if (persistedState) {
-          const parsed = JSON.parse(persistedState);
-          // If persisted state has isOnboardingCompleted as false, clear it to use code default (true)
-          if (parsed.state?.isOnboardingCompleted === false) {
-            console.log('🔧 Clearing old onboarding state from AsyncStorage');
-            await AsyncStorage.removeItem('uno-delivery-app-storage');
-            // Force reload the store to use code defaults
-            setOnboardingCompleted(true);
-          }
-        }
-      } catch (error) {
-        console.error('Error checking onboarding migration:', error);
-      }
-    };
-    resetOnboardingIfNeeded();
-  }, [setOnboardingCompleted]);
 
   return (
     <GestureHandlerRootView style={{ flex: 1 }}>

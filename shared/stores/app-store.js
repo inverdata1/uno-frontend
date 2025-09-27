@@ -7,7 +7,6 @@ export const useAppStore = create(
   persist(
     (set, get) => ({
       // UI State
-      isOnboardingCompleted: true,
       theme: 'light',
 
       // User preferences
@@ -25,9 +24,6 @@ export const useAppStore = create(
       error: null,
 
       // Actions
-      setOnboardingCompleted: (completed) =>
-        set({ isOnboardingCompleted: completed }),
-
       setTheme: (theme) =>
         set({ theme }),
 
@@ -54,7 +50,6 @@ export const useAppStore = create(
       // Reset store
       reset: () =>
         set({
-          isOnboardingCompleted: false,
           theme: 'light',
           language: 'es',
           currency: 'USD',
@@ -73,7 +68,6 @@ export const useAppStore = create(
       storage: createJSONStorage(() => AsyncStorage),
       // Only persist certain parts of the state
       partialize: (state) => ({
-        isOnboardingCompleted: state.isOnboardingCompleted,
         theme: state.theme,
         language: state.language,
         currency: state.currency,

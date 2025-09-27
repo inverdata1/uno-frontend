@@ -2,7 +2,6 @@ import { useEffect, useState } from 'react';
 import { useRouter } from 'expo-router';
 import { View } from 'react-native';
 import { useAuthStore } from '../auth/stores/auth-store';
-import { useAppStore } from '../shared/stores/app-store';
 import { Text } from '../shared/components/ui';
 
 function LoadingScreen() {
@@ -19,10 +18,9 @@ function LoadingScreen() {
 }
 
 export default function IndexScreen() {
-  console.log('🟢 INDEX SCREEN RENDERED');
+  console.log('🟢 INDEX SCREEN RENDERED - THIS SHOULD APPEAR!');
   const router = useRouter();
   const { isAuthenticated, isLoading: authLoading } = useAuthStore();
-  const { isOnboardingCompleted } = useAppStore();
   const [hasNavigated, setHasNavigated] = useState(false);
 
   // Track when this component mounts and unmounts
@@ -44,8 +42,7 @@ export default function IndexScreen() {
 
     console.log('📊 Current state:', {
       authLoading,
-      isAuthenticated,
-      isOnboardingCompleted
+      isAuthenticated
     });
 
     // Don't do anything if auth is still loading
@@ -59,15 +56,8 @@ export default function IndexScreen() {
     // Make routing decision with EXPLICIT logging
     if (!isAuthenticated) {
       console.log('🔍 User not authenticated');
-      if (!isOnboardingCompleted) {
-        console.log('🔍 Onboarding NOT completed');
-        console.log('🎯 ROUTING TO: onboarding');
-        router.replace('/(auth)/onboarding');
-      } else {
-        console.log('🔍 Onboarding IS completed');
-        console.log('🎯 ROUTING TO: login');
-        router.replace('/(auth)/login');
-      }
+      console.log('🎯 ROUTING TO: welcome');
+      router.replace('/(auth)/welcome');
     } else {
       console.log('🔍 User IS authenticated');
       console.log('🎯 ROUTING TO: main app');
@@ -78,7 +68,7 @@ export default function IndexScreen() {
     setHasNavigated(true);
     console.log('✅ Navigation completed - hasNavigated set to TRUE, NEVER routing again');
 
-  }, [hasNavigated]); // ONLY depend on hasNavigated
+  }, [hasNavigated, authLoading, isAuthenticated, router]); // Dependencies for routing logic
 
   // Show loading screen while determining route
   return <LoadingScreen />;

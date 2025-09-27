@@ -3,7 +3,7 @@ import { View } from 'react-native';
 import { Link, useRouter } from 'expo-router';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Text } from '../../shared/components/ui';
-import { RegistrationForm } from '../../auth/register/components/registration-form';
+import { RegistrationForm } from '../../auth/components/register/registration-form';
 
 export default function RegisterScreen() {
   const router = useRouter();

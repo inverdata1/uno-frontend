@@ -3,8 +3,8 @@ import { Keyboard, KeyboardAvoidingView, Platform, ScrollView, TouchableWithoutF
 import { Ionicons } from '@expo/vector-icons';
 import { ModeSelector } from '../../../shared/components/layout/mode-selector';
 import { Button, Text } from '../../../shared/components/ui';
-import { useRegistration } from '../hooks/use-registration';
-import { BasicInfoStep } from './steps/basic-info-step';
+import { useRegistration } from '../../hooks/register/use-registration';
+import { BasicInfoStep } from './basic-info-step';
 
 export const RegistrationForm = ({ onComplete }) => {
   const {

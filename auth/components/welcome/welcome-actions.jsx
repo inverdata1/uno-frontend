@@ -2,7 +2,7 @@ import { Link } from 'expo-router';
 import { View } from 'react-native';
 import { Button, Text } from '../../../shared/components/ui';
 
-export function OnboardingActions({ onGetStarted }) {
+export function WelcomeActions({ onGetStarted }) {
   return (
     <View className="px-6 pb-8">
       {/* CTA Buttons */}

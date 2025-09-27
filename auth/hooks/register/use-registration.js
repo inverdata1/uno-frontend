@@ -2,7 +2,7 @@ import { useState, useRef } from 'react';
 import { useForm } from '@tanstack/react-form';
 import { useAuthStore } from '../../stores/auth-store';
 import { useFocusManager } from '../../../shared/hooks';
-import { registerSchema } from '../schemas/register-schema';
+import { registerSchema } from '../../schemas/register/register-schema';
 
 export const useRegistration = ({ onComplete }) => {
   const { signUp, isLoading } = useAuthStore();

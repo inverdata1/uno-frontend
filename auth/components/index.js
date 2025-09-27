@@ -1,4 +1,4 @@
 // Auth Components
-export * from '../login/components';
-export * from '../register/components';
-export * from '../onboarding/components';
+export * from './login';
+export * from './register';
+export * from './welcome';

@@ -1,18 +1,18 @@
 import { useState } from 'react';
 import { Dimensions, ScrollView, View, Image } from 'react-native';
 import { Text } from '../../../shared/components/ui';
-import { onboardingSlides } from '../data/onboarding-slides';
+import { welcomeSlides } from '../../data/welcome/welcome-slides';
 
 const { width: screenWidth } = Dimensions.get('window');
 
-export function OnboardingCarousel({ onSlideChange }) {
+export function WelcomeCarousel({ onSlideChange }) {
   const [currentSlide, setCurrentSlide] = useState(0);
 
   const handleScroll = (event) => {
     const slideIndex = Math.round(event.nativeEvent.contentOffset.x / screenWidth);
     if (slideIndex !== currentSlide) {
       setCurrentSlide(slideIndex);
-      onSlideChange?.(onboardingSlides[slideIndex]);
+      onSlideChange?.(welcomeSlides[slideIndex]);
     }
   };
 
@@ -20,7 +20,7 @@ export function OnboardingCarousel({ onSlideChange }) {
     <View className="flex-1">
       {/* Step Indicators - Much Larger */}
       <View className="flex-row justify-center mb-12">
-        {onboardingSlides.map((_, index) => (
+        {welcomeSlides.map((_, index) => (
           <View
             key={index}
             className={`h-1 rounded-full mx-0.5 w-16 ${
@@ -40,7 +40,7 @@ export function OnboardingCarousel({ onSlideChange }) {
         className="flex-1"
         contentContainerStyle={{ alignItems: 'flex-start' }}
       >
-        {onboardingSlides.map((slide, index) => (
+        {welcomeSlides.map((slide, index) => (
           <View key={slide.id} style={{ width: screenWidth }} className="px-6 pt-4">
             <View className="flex-1">
               {/* Title - Fixed positioning to prevent cutting */}

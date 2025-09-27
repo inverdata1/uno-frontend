@@ -1,3 +1,3 @@
 // Auth Hooks
-export * from '../login/hooks/use-login';
-export * from '../register/hooks/use-registration';
+export * from './login/use-login';
+export * from './register/use-registration';

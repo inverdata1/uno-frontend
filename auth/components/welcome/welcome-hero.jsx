@@ -2,7 +2,7 @@ import React from 'react';
 import { View } from 'react-native';
 import { Text } from '../../../shared/components/ui';
 
-export function OnboardingHero() {
+export function WelcomeHero() {
   return (
     <View className="flex-1 justify-center">
       {/* Hero Text */}

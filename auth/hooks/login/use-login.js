@@ -3,7 +3,7 @@ import { useRouter } from 'expo-router';
 import { z } from 'zod';
 import { useAuthStore } from '../../stores/auth-store';
 import { useFocusManager } from '../../../shared/hooks';
-import { loginSchema } from '../schemas/login-schema';
+import { loginSchema } from '../../schemas/login/login-schema';
 
 /**
  * Hook for managing login form logic

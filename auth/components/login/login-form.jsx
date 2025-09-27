@@ -4,7 +4,7 @@ import { KeyboardAvoidingView, Platform, ScrollView, TouchableWithoutFeedback, V
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { z } from 'zod';
 import { Button, Input, Text } from '../../../shared/components/ui';
-import { useLogin } from '../hooks/use-login';
+import { useLogin } from '../../hooks/login/use-login';
 
 export const LoginForm = () => {
   const {

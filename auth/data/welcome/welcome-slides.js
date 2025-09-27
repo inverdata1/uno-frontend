@@ -1,7 +1,7 @@
-// Onboarding slide content data
+// Welcome intro slide content data
 import { onboardingImages } from '../../../shared/assets/images';
 
-export const onboardingSlides = [
+export const welcomeSlides = [
   {
     id: 1,
     title: 'Gestiona tus pagos\ny rastrea entregas.',

@@ -1,6 +1,6 @@
-import React, { useState, useRef, useEffect } from 'react';
-import { TextInput, View, Keyboard, TouchableOpacity } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
+import { useEffect, useRef, useState } from 'react';
+import { Keyboard, TextInput, TouchableOpacity, View } from 'react-native';
 import { cn } from '../../utils/cn';
 import { Text } from './text';
 
@@ -47,13 +47,16 @@ export const Input = ({
           ref={inputRef}
           className={cn(
             'border rounded-xl px-4 py-4',
-            'text-foreground placeholder:text-gray-400 text-base',
+            'text-foreground text-base font-medium ',
+            // Elegant placeholder styles
+            'placeholder:text-gray-400 placeholder:font-light placeholder:tracking-wide',
+            'placeholder:italic placeholder:text-[15px]',
             // Base state
-            'bg-gray-50 border-gray-200',
+            'bg-gray-50/40 border-gray-400',
             // Focused state (overrides base)
-            actuallyFocused && 'border-primary-500 bg-white',
+            actuallyFocused && 'border-primary-500 bg-white placeholder:text-gray-500 placeholder:not-italic',
             // Error state (overrides both base and focused)
-            error && 'border-red-300 bg-red-50',
+            error && 'border-red-400 bg-red-50 placeholder:text-red-400',
             isPasswordField && 'pr-12', // Add padding for eye icon
             className
           )}

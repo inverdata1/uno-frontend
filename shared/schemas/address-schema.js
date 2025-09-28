@@ -15,11 +15,11 @@ export const addressSchema = z.object({
 
   // Address Details
   street: z.string()
-    .min(5, 'La dirección debe tener al menos 5 caracteres')
+    .min(10, 'Ingresa la dirección completa')
     .max(200, 'La dirección es muy larga'),
   number: z.string()
-    .min(1, 'El número es requerido')
-    .max(20, 'El número es muy largo'),
+    .max(20, 'El número es muy largo')
+    .optional(),
   floor: z.string()
     .max(10, 'El piso es muy largo')
     .optional(),
@@ -39,8 +39,8 @@ export const addressSchema = z.object({
     .min(2, 'El estado es requerido')
     .max(50, 'El estado es muy largo'),
   postalCode: z.string()
-    .max(20, 'El código postal es muy largo')
-    .optional(),
+    .min(4, 'El código postal es requerido')
+    .max(5, 'El código postal debe tener máximo 5 dígitos'),
 
   // Geolocation
   coordinates: z.object({
@@ -49,7 +49,9 @@ export const addressSchema = z.object({
       .max(90, 'Latitud inválida'),
     longitude: z.number()
       .min(-180, 'Longitud inválida')
-      .max(180, 'Longitud inválida')
+      .max(180, 'Longitud inválida'),
+    latitudeDelta: z.number().optional(),
+    longitudeDelta: z.number().optional()
   }),
 
   // Metadata

@@ -7,3 +7,4 @@ export { PhoneInput } from './phone-input';
 export { Checkbox } from './checkbox';
 export { DatePicker } from './date-picker';
 export { BottomSheetComponent as BottomSheet } from './bottom-sheet';
+export { MapPicker } from './map-picker';

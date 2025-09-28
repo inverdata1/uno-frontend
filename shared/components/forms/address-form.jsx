@@ -1,20 +1,26 @@
 import React, { useState } from 'react';
-import { View, ScrollView, KeyboardAvoidingView, Platform } from 'react-native';
+import { View, ScrollView, KeyboardAvoidingView, Platform, TouchableWithoutFeedback, Keyboard } from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useForm } from '@tanstack/react-form';
-import { zodValidator } from '@tanstack/zod-form-adapter';
 import { z } from 'zod';
-import { Input, Text, Button } from '../ui';
+import { Input, Text, Button, MapPicker } from '../ui';
 import { newAddressSchema, venezuelanStates, addressLabels } from '../../schemas/address-schema';
 import { cn } from '../../utils/cn';
+import { useFocusManager } from '../../hooks';
 
 export const AddressForm = ({
   initialData = {},
   onSubmit,
   onCancel,
   mode = 'client',
-  isLoading = false
+  isLoading = false,
+  disableKeyboardAvoidingView = false
 }) => {
   const [forceUpdate, setForceUpdate] = useState(0);
+  const [currentStep, setCurrentStep] = useState(1);
+  const totalSteps = 3;
+  const insets = useSafeAreaInsets();
+  const { createFieldProps, clearFocus } = useFocusManager();
 
   const form = useForm({
     defaultValues: {
@@ -37,353 +43,456 @@ export const AddressForm = ({
       onSubmit: newAddressSchema,
     },
     onSubmit: async ({ value }) => {
-      await onSubmit(value);
+      console.log('Form onSubmit called with value:', value);
+      try {
+        await onSubmit(value);
+        console.log('onSubmit completed successfully');
+      } catch (error) {
+        console.error('Error in form onSubmit:', error);
+        throw error;
+      }
     }
   });
 
   const triggerUpdate = () => setForceUpdate(prev => prev + 1);
+
+  // Step validation functions
+  const isStep1Valid = () => {
+    const label = form.getFieldValue('label') || '';
+    const contactName = form.getFieldValue('contactName') || '';
+    const phone = form.getFieldValue('phone') || '';
+
+    return label.length >= 1 &&
+           contactName.length >= 2 &&
+           phone.length === 11 && /^04(12|14|16|24|26)\d{7}$/.test(phone);
+  };
+
+  const isStep2Valid = () => {
+    const street = form.getFieldValue('street') || '';
+    const city = form.getFieldValue('city') || '';
+    const state = form.getFieldValue('state') || '';
+    const postalCode = form.getFieldValue('postalCode') || '';
+
+    return street.length >= 10 &&
+           city.length >= 2 &&
+           state.length >= 2 &&
+           postalCode.length >= 4;
+  };
+
+  const isStep3Valid = () => {
+    const references = form.getFieldValue('references') || '';
+    const coordinates = form.getFieldValue('coordinates');
+
+    return references.length >= 10 &&
+           coordinates &&
+           coordinates.latitude &&
+           coordinates.longitude;
+  };
+
+  const isCurrentStepValid = () => {
+    switch (currentStep) {
+      case 1: return isStep1Valid();
+      case 2: return isStep2Valid();
+      case 3: return isStep3Valid();
+      default: return false;
+    }
+  };
+
+  const nextStep = () => {
+    if (currentStep < totalSteps) {
+      setCurrentStep(currentStep + 1);
+    }
+  };
+
+  const prevStep = () => {
+    if (currentStep > 1) {
+      setCurrentStep(currentStep - 1);
+    }
+  };
+
+  const renderStepIndicator = () => (
+    <View className="flex-row items-center justify-center mb-6">
+      {Array.from({ length: totalSteps }, (_, index) => (
+        <View key={index} className="flex-row items-center">
+          <View className={cn(
+            "w-8 h-8 rounded-full items-center justify-center",
+            currentStep > index + 1 ? "bg-primary-500" :
+            currentStep === index + 1 ? "bg-primary-500" : "bg-gray-200"
+          )}>
+            <Text className={cn(
+              "text-sm font-semibold",
+              currentStep >= index + 1 ? "text-white" : "text-gray-500"
+            )}>
+              {index + 1}
+            </Text>
+          </View>
+          {index < totalSteps - 1 && (
+            <View className={cn(
+              "w-8 h-0.5 mx-2",
+              currentStep > index + 1 ? "bg-primary-500" : "bg-gray-200"
+            )} />
+          )}
+        </View>
+      ))}
+    </View>
+  );
+
+  const renderContent = () => (
+    <ScrollView
+      className="flex-1"
+      showsVerticalScrollIndicator={false}
+      keyboardShouldPersistTaps="handled"
+    >
+        <TouchableWithoutFeedback onPress={() => {
+          Keyboard.dismiss();
+          clearFocus();
+        }}>
+          <View className="p-6">
+          {/* Step Indicator */}
+          {renderStepIndicator()}
+
+          {/* Step Header */}
+          <View className="mb-6">
+            <Text className="text-xl font-bold text-foreground mb-2">
+              {currentStep === 1 && "Información Básica"}
+              {currentStep === 2 && "Detalles de Dirección"}
+              {currentStep === 3 && "Ubicación y Referencias"}
+            </Text>
+            <Text className="text-muted-foreground">
+              {currentStep === 1 && "Nombre y datos de contacto"}
+              {currentStep === 2 && "Dirección exacta donde entregar"}
+              {currentStep === 3 && "Referencias y confirmación final"}
+            </Text>
+          </View>
+
+          {/* Step Content */}
+          <View className="space-y-6">
+            {/* Step 1: Basic Information */}
+            {currentStep === 1 && (
+              <View className="space-y-6">
+                <form.Field
+                  name="label"
+                  validators={{
+                    onChange: z.string().min(1, 'El nombre de la dirección es requerido'),
+                    onBlur: z.string().min(1, 'El nombre de la dirección es requerido')
+                  }}
+                  children={(field) => (
+                    <View>
+                      <Text className="text-sm font-medium text-foreground mb-2">
+                        Nombre de la dirección *
+                      </Text>
+                      <Input
+                        placeholder="Casa, Trabajo, Oficina..."
+                        value={field.state.value}
+                        onChangeText={(text) => {
+                          field.handleChange(text);
+                          triggerUpdate();
+                        }}
+                        {...createFieldProps('label', { onBlur: field.handleBlur })}
+                        error={field.state.meta.errors?.[0]}
+                      />
+                    </View>
+                  )}
+                />
+
+                <form.Field
+                  name="contactName"
+                  validators={{
+                    onChange: z.string().min(2, 'El nombre de contacto es requerido'),
+                    onBlur: z.string().min(2, 'El nombre de contacto es requerido')
+                  }}
+                  children={(field) => (
+                    <View>
+                      <Text className="text-sm font-medium text-foreground mb-2">
+                        Nombre de contacto *
+                      </Text>
+                      <Input
+                        placeholder="María González"
+                        value={field.state.value}
+                        onChangeText={(text) => {
+                          field.handleChange(text);
+                          triggerUpdate();
+                        }}
+                        {...createFieldProps('contactName', { onBlur: field.handleBlur })}
+                        error={field.state.meta.errors?.[0]}
+                        autoComplete="name"
+                      />
+                    </View>
+                  )}
+                />
+
+                <form.Field
+                  name="phone"
+                  validators={{
+                    onChange: z.string().min(11, 'Ingresa 11 dígitos').regex(/^04(12|14|16|24|26)\d{7}$/, 'Formato: 04XX XXX XXXX'),
+                    onBlur: z.string().min(11, 'Ingresa 11 dígitos').regex(/^04(12|14|16|24|26)\d{7}$/, 'Formato: 04XX XXX XXXX')
+                  }}
+                  children={(field) => (
+                    <View>
+                      <Text className="text-sm font-medium text-foreground mb-2">
+                        Teléfono de contacto *
+                      </Text>
+                      <Input
+                        placeholder="0412 123 4567"
+                        value={(() => {
+                          const phoneValue = field.state.value;
+                          if (phoneValue.length >= 4) {
+                            return phoneValue.replace(/(\d{4})(\d{0,3})(\d{0,4})/, (match, p1, p2, p3) => {
+                              if (p3) return `${p1} ${p2} ${p3}`;
+                              if (p2) return `${p1} ${p2}`;
+                              return p1;
+                            });
+                          }
+                          return phoneValue;
+                        })()}
+                        onChangeText={(text) => {
+                          const cleanText = text.replace(/[^0-9]/g, '').substring(0, 11);
+                          field.handleChange(cleanText);
+                          triggerUpdate();
+                        }}
+                        {...createFieldProps('phone', { onBlur: field.handleBlur })}
+                        error={field.state.meta.errors?.[0]}
+                        keyboardType="numeric"
+                      />
+                    </View>
+                  )}
+                />
+              </View>
+            )}
+
+            {/* Step 2: Address Details */}
+            {currentStep === 2 && (
+              <View className="space-y-6">
+                <form.Field
+                  name="street"
+                  validators={{
+                    onChange: z.string().min(10, 'Ingresa la dirección completa'),
+                    onBlur: z.string().min(10, 'Ingresa la dirección completa')
+                  }}
+                  children={(field) => (
+                    <View>
+                      <Text className="text-sm font-medium text-foreground mb-2">
+                        Dirección completa *
+                      </Text>
+                      <Input
+                        placeholder="Av. Francisco de Miranda, Edificio Torre Oeste, Piso 3, Apto 3A"
+                        value={field.state.value}
+                        onChangeText={(text) => {
+                          field.handleChange(text);
+                          triggerUpdate();
+                        }}
+                        {...createFieldProps('street', { onBlur: field.handleBlur })}
+                        error={field.state.meta.errors?.[0]}
+                        multiline={true}
+                        numberOfLines={3}
+                        textAlignVertical="top"
+                      />
+                    </View>
+                  )}
+                />
+
+                <View className="flex-row gap-3">
+                  <form.Field
+                    name="city"
+                    validators={{
+                      onChange: z.string().min(2, 'La ciudad es requerida'),
+                      onBlur: z.string().min(2, 'La ciudad es requerida')
+                    }}
+                    children={(field) => (
+                      <View className="flex-1">
+                        <Text className="text-sm font-medium text-foreground mb-2">
+                          Ciudad *
+                        </Text>
+                        <Input
+                          placeholder="Caracas"
+                          value={field.state.value}
+                          onChangeText={(text) => {
+                            field.handleChange(text);
+                            triggerUpdate();
+                          }}
+                          {...createFieldProps('city', { onBlur: field.handleBlur })}
+                          error={field.state.meta.errors?.[0]}
+                        />
+                      </View>
+                    )}
+                  />
+
+                  <form.Field
+                    name="state"
+                    validators={{
+                      onChange: z.string().min(2, 'El estado es requerido'),
+                      onBlur: z.string().min(2, 'El estado es requerido')
+                    }}
+                    children={(field) => (
+                      <View className="flex-1">
+                        <Text className="text-sm font-medium text-foreground mb-2">
+                          Estado *
+                        </Text>
+                        <Input
+                          placeholder="Distrito Capital"
+                          value={field.state.value}
+                          onChangeText={(text) => {
+                            field.handleChange(text);
+                            triggerUpdate();
+                          }}
+                          {...createFieldProps('state', { onBlur: field.handleBlur })}
+                          error={field.state.meta.errors?.[0]}
+                        />
+                      </View>
+                    )}
+                  />
+                </View>
+
+                <form.Field
+                  name="postalCode"
+                  validators={{
+                    onChange: z.string().min(4, 'El código postal es requerido'),
+                    onBlur: z.string().min(4, 'El código postal es requerido')
+                  }}
+                  children={(field) => (
+                    <View>
+                      <Text className="text-sm font-medium text-foreground mb-2">
+                        Código Postal
+                      </Text>
+                      <Input
+                        placeholder="1060"
+                        value={field.state.value}
+                        onChangeText={(text) => {
+                          field.handleChange(text);
+                          triggerUpdate();
+                        }}
+                        {...createFieldProps('postalCode', { onBlur: field.handleBlur })}
+                        error={field.state.meta.errors?.[0]}
+                        keyboardType="numeric"
+                      />
+                    </View>
+                  )}
+                />
+              </View>
+            )}
+
+            {/* Step 3: References and Location */}
+            {currentStep === 3 && (
+              <View className="space-y-6">
+                <form.Field
+                  name="references"
+                  validators={{
+                    onChange: z.string().min(10, 'Agrega referencias para facilitar la entrega'),
+                    onBlur: z.string().min(10, 'Agrega referencias para facilitar la entrega')
+                  }}
+                  children={(field) => (
+                    <View>
+                      <Text className="text-sm font-medium text-foreground mb-2">
+                        Referencias *
+                      </Text>
+                      <Input
+                        placeholder="Ej: Edificio azul con portón negro, frente a la farmacia"
+                        value={field.state.value}
+                        onChangeText={(text) => {
+                          field.handleChange(text);
+                          triggerUpdate();
+                        }}
+                        {...createFieldProps('references', { onBlur: field.handleBlur })}
+                        error={field.state.meta.errors?.[0]}
+                        multiline={true}
+                        numberOfLines={4}
+                        textAlignVertical="top"
+                      />
+                    </View>
+                  )}
+                />
+
+                {/* Interactive Map Picker */}
+                <View>
+                  <Text className="text-sm font-medium text-foreground mb-3">
+                    Ubicación en el Mapa
+                  </Text>
+                  <MapPicker
+                    height={250}
+                    initialLocation={initialData.coordinates}
+                    onLocationSelect={(location) => {
+                      form.setFieldValue('coordinates', location);
+                      triggerUpdate();
+                    }}
+                    className="border border-gray-300 rounded-xl"
+                  />
+                </View>
+              </View>
+            )}
+          </View>
+
+          {/* Action Buttons */}
+          <View
+            className="flex-row gap-3 mt-8"
+            style={{ paddingBottom: Math.max(insets.bottom, 16) }}
+          >
+            {currentStep === 1 ? (
+              <Button
+                variant="outline"
+                onPress={onCancel}
+                className="flex-1"
+                disabled={isLoading}
+              >
+                Cancelar
+              </Button>
+            ) : (
+              <Button
+                variant="outline"
+                onPress={prevStep}
+                className="flex-1"
+                disabled={isLoading}
+              >
+                Anterior
+              </Button>
+            )}
+
+            {currentStep < totalSteps ? (
+              <form.Subscribe
+                selector={(state) => [state.values]}
+                children={([values]) => (
+                  <Button
+                    onPress={nextStep}
+                    className="flex-1"
+                    disabled={isLoading || !isCurrentStepValid()}
+                  >
+                    Siguiente
+                  </Button>
+                )}
+              />
+            ) : (
+              <form.Subscribe
+                selector={(state) => [state.canSubmit, state.isSubmitting, state.values]}
+                children={([canSubmit, isSubmitting, values]) => (
+                  <Button
+                    onPress={form.handleSubmit}
+                    disabled={!canSubmit || isSubmitting || isLoading || !isCurrentStepValid()}
+                    className="flex-1"
+                  >
+                    {isSubmitting || isLoading ? 'Guardando...' : 'Guardar Dirección'}
+                  </Button>
+                )}
+              />
+            )}
+          </View>
+        </View>
+        </TouchableWithoutFeedback>
+    </ScrollView>
+  );
+
+  if (disableKeyboardAvoidingView) {
+    return (
+      <View className="flex-1">
+        {renderContent()}
+      </View>
+    );
+  }
 
   return (
     <KeyboardAvoidingView
       behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
       className="flex-1"
     >
-      <ScrollView
-        className="flex-1"
-        showsVerticalScrollIndicator={false}
-        keyboardShouldPersistTaps="handled"
-      >
-        <View className="p-6 space-y-4">
-          {/* Header */}
-          <View className="mb-4">
-            <Text className="text-2xl font-bold text-foreground">
-              {initialData.id ? 'Editar Dirección' : 'Nueva Dirección'}
-            </Text>
-            <Text className="text-muted-foreground mt-1">
-              Completa todos los campos para una entrega precisa
-            </Text>
-          </View>
-
-          {/* Address Label */}
-          <form.Field
-            name="label"
-            validators={{
-              onBlur: z.string().min(1, 'El nombre de la dirección es requerido')
-            }}
-            children={(field) => (
-              <View>
-                <Text className="text-sm font-medium text-foreground mb-2">
-                  Nombre de la dirección *
-                </Text>
-                <Input
-                  placeholder="Ej: Casa, Trabajo, Oficina"
-                  value={field.state.value}
-                  onChangeText={(text) => {
-                    field.handleChange(text);
-                    triggerUpdate();
-                  }}
-                  onBlur={field.handleBlur}
-                  error={field.state.meta.errors?.[0]}
-                />
-              </View>
-            )}
-          />
-
-          {/* Contact Information */}
-          <View className="space-y-4">
-            <Text className="text-lg font-semibold text-foreground">
-              Información de Contacto
-            </Text>
-
-            <form.Field
-              name="contactName"
-              validators={{
-                onBlur: z.string().min(2, 'El nombre de contacto es requerido')
-              }}
-              children={(field) => (
-                <View>
-                  <Text className="text-sm font-medium text-foreground mb-2">
-                    Nombre de contacto *
-                  </Text>
-                  <Input
-                    placeholder="Nombre de quien recibe"
-                    value={field.state.value}
-                    onChangeText={(text) => {
-                      field.handleChange(text);
-                      triggerUpdate();
-                    }}
-                    onBlur={field.handleBlur}
-                    error={field.state.meta.errors?.[0]}
-                    autoComplete="name"
-                  />
-                </View>
-              )}
-            />
-
-            <form.Field
-              name="phone"
-              validators={{
-                onBlur: z.string().min(11, 'Ingresa 11 dígitos').regex(/^04(12|14|16|24|26)\d{7}$/, 'Formato: 04XX XXX XXXX')
-              }}
-              children={(field) => (
-                <View>
-                  <Text className="text-sm font-medium text-foreground mb-2">
-                    Teléfono de contacto *
-                  </Text>
-                  <Input
-                    placeholder="04XX XXX XXXX"
-                    value={field.state.value}
-                    onChangeText={(text) => {
-                      const cleanText = text.replace(/[^0-9]/g, '').substring(0, 11);
-                      field.handleChange(cleanText);
-                      triggerUpdate();
-                    }}
-                    onBlur={field.handleBlur}
-                    error={field.state.meta.errors?.[0]}
-                    keyboardType="numeric"
-                  />
-                </View>
-              )}
-            />
-          </View>
-
-          {/* Address Details */}
-          <View className="space-y-4">
-            <Text className="text-lg font-semibold text-foreground">
-              Detalles de la Dirección
-            </Text>
-
-            <form.Field
-              name="street"
-              validators={{
-                onBlur: z.string().min(5, 'La dirección debe tener al menos 5 caracteres')
-              }}
-              children={(field) => (
-                <View>
-                  <Text className="text-sm font-medium text-foreground mb-2">
-                    Calle/Avenida *
-                  </Text>
-                  <Input
-                    placeholder="Ej: Av. Francisco de Miranda"
-                    value={field.state.value}
-                    onChangeText={(text) => {
-                      field.handleChange(text);
-                      triggerUpdate();
-                    }}
-                    onBlur={field.handleBlur}
-                    error={field.state.meta.errors?.[0]}
-                  />
-                </View>
-              )}
-            />
-
-            <View className="flex-row space-x-3">
-              <form.Field
-                name="number"
-                validators={{
-                  onBlur: z.string().min(1, 'El número es requerido')
-                }}
-                children={(field) => (
-                  <View className="flex-1">
-                    <Text className="text-sm font-medium text-foreground mb-2">
-                      Número *
-                    </Text>
-                    <Input
-                      placeholder="123"
-                      value={field.state.value}
-                      onChangeText={(text) => {
-                        field.handleChange(text);
-                        triggerUpdate();
-                      }}
-                      onBlur={field.handleBlur}
-                      error={field.state.meta.errors?.[0]}
-                    />
-                  </View>
-                )}
-              />
-
-              <form.Field
-                name="floor"
-                children={(field) => (
-                  <View className="flex-1">
-                    <Text className="text-sm font-medium text-foreground mb-2">
-                      Piso (opcional)
-                    </Text>
-                    <Input
-                      placeholder="3"
-                      value={field.state.value}
-                      onChangeText={(text) => {
-                        field.handleChange(text);
-                        triggerUpdate();
-                      }}
-                      onBlur={field.handleBlur}
-                      error={field.state.meta.errors?.[0]}
-                    />
-                  </View>
-                )}
-              />
-
-              <form.Field
-                name="apartment"
-                children={(field) => (
-                  <View className="flex-1">
-                    <Text className="text-sm font-medium text-foreground mb-2">
-                      Apto (opcional)
-                    </Text>
-                    <Input
-                      placeholder="A-2"
-                      value={field.state.value}
-                      onChangeText={(text) => {
-                        field.handleChange(text);
-                        triggerUpdate();
-                      }}
-                      onBlur={field.handleBlur}
-                      error={field.state.meta.errors?.[0]}
-                    />
-                  </View>
-                )}
-              />
-            </View>
-
-            <form.Field
-              name="references"
-              validators={{
-                onBlur: z.string().min(10, 'Agrega referencias para facilitar la entrega')
-              }}
-              children={(field) => (
-                <View>
-                  <Text className="text-sm font-medium text-foreground mb-2">
-                    Referencias *
-                  </Text>
-                  <Input
-                    placeholder="Ej: Edificio azul con portón negro, frente a la farmacia"
-                    value={field.state.value}
-                    onChangeText={(text) => {
-                      field.handleChange(text);
-                      triggerUpdate();
-                    }}
-                    onBlur={field.handleBlur}
-                    error={field.state.meta.errors?.[0]}
-                    multiline={true}
-                    numberOfLines={3}
-                  />
-                </View>
-              )}
-            />
-
-            <form.Field
-              name="neighborhood"
-              children={(field) => (
-                <View>
-                  <Text className="text-sm font-medium text-foreground mb-2">
-                    Sector/Barrio (opcional)
-                  </Text>
-                  <Input
-                    placeholder="Ej: El Rosal, Las Mercedes"
-                    value={field.state.value}
-                    onChangeText={(text) => {
-                      field.handleChange(text);
-                      triggerUpdate();
-                    }}
-                    onBlur={field.handleBlur}
-                    error={field.state.meta.errors?.[0]}
-                  />
-                </View>
-              )}
-            />
-
-            <View className="flex-row space-x-3">
-              <form.Field
-                name="city"
-                validators={{
-                  onBlur: z.string().min(2, 'La ciudad es requerida')
-                }}
-                children={(field) => (
-                  <View className="flex-1">
-                    <Text className="text-sm font-medium text-foreground mb-2">
-                      Ciudad *
-                    </Text>
-                    <Input
-                      placeholder="Caracas"
-                      value={field.state.value}
-                      onChangeText={(text) => {
-                        field.handleChange(text);
-                        triggerUpdate();
-                      }}
-                      onBlur={field.handleBlur}
-                      error={field.state.meta.errors?.[0]}
-                    />
-                  </View>
-                )}
-              />
-
-              <form.Field
-                name="state"
-                validators={{
-                  onBlur: z.string().min(2, 'El estado es requerido')
-                }}
-                children={(field) => (
-                  <View className="flex-1">
-                    <Text className="text-sm font-medium text-foreground mb-2">
-                      Estado *
-                    </Text>
-                    <Input
-                      placeholder="Distrito Capital"
-                      value={field.state.value}
-                      onChangeText={(text) => {
-                        field.handleChange(text);
-                        triggerUpdate();
-                      }}
-                      onBlur={field.handleBlur}
-                      error={field.state.meta.errors?.[0]}
-                    />
-                  </View>
-                )}
-              />
-            </View>
-          </View>
-
-          {/* Map Picker Placeholder */}
-          <View className="space-y-4">
-            <Text className="text-lg font-semibold text-foreground">
-              Ubicación en el Mapa
-            </Text>
-            <View className="bg-gray-100 rounded-xl p-8 items-center justify-center min-h-48">
-              <Text className="text-gray-500 text-center">
-                Selector de mapa próximamente
-              </Text>
-              <Text className="text-gray-400 text-sm text-center mt-2">
-                Por ahora, asegúrate de completar bien la dirección y referencias
-              </Text>
-            </View>
-          </View>
-
-          {/* Action Buttons */}
-          <View className="flex-row space-x-3 mt-8">
-            <Button
-              variant="outline"
-              onPress={onCancel}
-              className="flex-1"
-              disabled={isLoading}
-            >
-              Cancelar
-            </Button>
-
-            <form.Subscribe
-              selector={(state) => [state.canSubmit, state.isSubmitting]}
-              children={([canSubmit, isSubmitting]) => (
-                <Button
-                  onPress={form.handleSubmit}
-                  disabled={!canSubmit || isSubmitting || isLoading}
-                  className="flex-1"
-                >
-                  {isSubmitting || isLoading ? 'Guardando...' : 'Guardar Dirección'}
-                </Button>
-              )}
-            />
-          </View>
-        </View>
-      </ScrollView>
+      {renderContent()}
     </KeyboardAvoidingView>
   );
 };

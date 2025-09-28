@@ -1,79 +1,74 @@
-import React, { useState, useRef, useEffect } from 'react';
-import { View, Pressable, Animated, Image } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
-import { BottomSheetModal, BottomSheetView, BottomSheetBackdrop } from '@gorhom/bottom-sheet';
-import { Text, Button } from '../ui';
-import { AddressForm } from '../forms/address-form';
+import { BottomSheetBackdrop, BottomSheetModal, BottomSheetView } from '@gorhom/bottom-sheet';
+import LottieView from 'lottie-react-native';
+import { useEffect, useRef, useState } from 'react';
+import { Pressable, View } from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { lottieAnimations } from '../../assets/images';
 import { cn } from '../../utils/cn';
-import { illustrations } from '../../assets/images';
+import { AddressForm } from '../forms/address-form';
+import { Button, Text } from '../ui';
 
-const NavigationMapIllustration = ({ className = "", style = {} }) => {
+const LottieMapImage = () => {
+  const animationRef = useRef(null);
+  const [hasPlayedOnce, setHasPlayedOnce] = useState(false);
+  const timeoutRef = useRef(null);
+
+  useEffect(() => {
+    if (animationRef.current) {
+      // Play animation from 0 to frame 58 only
+      animationRef.current.play(0, 58);
+    }
+
+    // Cleanup timeout on unmount
+    return () => {
+      if (timeoutRef.current) {
+        clearTimeout(timeoutRef.current);
+      }
+    };
+  }, []);
+
+  const startCustomLoop = () => {
+    if (animationRef.current) {
+      // Play frames 58-90
+      animationRef.current.play(58, 90);
+    }
+  };
+
+  const handleAnimationFinish = () => {
+    if (!hasPlayedOnce) {
+      // First animation (0-58) finished, start the pause/loop cycle
+      setHasPlayedOnce(true);
+      // Start with a pause before first custom loop
+      timeoutRef.current = setTimeout(() => {
+        startCustomLoop();
+      }, 2000); // 2 second pause before first loop
+    } else {
+      // Animation segment (58-90) finished, pause before next loop
+      timeoutRef.current = setTimeout(() => {
+        startCustomLoop();
+      }, 2000); // 2 second pause before each loop
+    }
+  };
+
   return (
-    <View className={cn("bg-blue-50 rounded-2xl overflow-hidden border border-blue-100 relative", className)} style={style}>
-      {/* Main curved roads */}
-      <View className="absolute bg-white rounded-full" style={{
-        top: 20,
-        left: 40,
-        width: 200,
-        height: 4,
-        transform: [{ rotate: '15deg' }]
-      }} />
-      <View className="absolute bg-white rounded-full" style={{
-        top: 40,
-        left: 20,
-        width: 180,
-        height: 4,
-        transform: [{ rotate: '-10deg' }]
-      }} />
-      <View className="absolute bg-white rounded-full" style={{
-        top: 60,
-        left: 60,
-        width: 160,
-        height: 4,
-        transform: [{ rotate: '8deg' }]
-      }} />
-
-      {/* GPS-style areas */}
-      <View className="absolute bg-green-100 rounded-lg" style={{
-        top: 15,
-        left: 50,
-        width: 80,
-        height: 25,
-        opacity: 0.6
-      }} />
-      <View className="absolute bg-blue-100 rounded-lg" style={{
-        top: 50,
-        left: 200,
-        width: 60,
-        height: 30,
-        opacity: 0.6
-      }} />
-
-      {/* Location markers */}
-      <View className="absolute" style={{ top: 25, left: 120 }}>
-        <View className="w-3 h-3 rounded-full bg-primary-500" />
+    <View className="w-full mb-1 items-center">
+      <View style={{ width: '90%', aspectRatio: 16/9, borderRadius: 16, overflow: 'hidden' }}>
+        <LottieView
+          ref={animationRef}
+          source={lottieAnimations.map}
+          loop={false} // Never auto-loop, we control everything manually
+          onAnimationFinish={handleAnimationFinish}
+          style={{
+            width: '100%',
+            height: '100%'
+          }}
+        />
       </View>
-      <View className="absolute" style={{ top: 45, left: 80 }}>
-        <View className="w-3 h-3 rounded-full bg-blue-500" />
-      </View>
-
-      {/* Main location pin */}
-      <View className="absolute" style={{ top: 35, left: 160 }}>
-        <Ionicons name="location" size={20} color="#DC2626" />
-      </View>
-
-      {/* Route line */}
-      <View className="absolute bg-primary-500 rounded-full" style={{
-        top: 30,
-        left: 100,
-        width: 80,
-        height: 3,
-        opacity: 0.8,
-        transform: [{ rotate: '25deg' }]
-      }} />
     </View>
   );
 };
+
 
 const AddressCard = ({ address, isSelected, onSelect, onEdit, onDelete }) => (
   <Pressable
@@ -215,6 +210,7 @@ export const AddressManager = ({
   const [view, setView] = useState('list');
   const [editingAddress, setEditingAddress] = useState(null);
   const bottomSheetRef = useRef(null);
+  const insets = useSafeAreaInsets();
 
   useEffect(() => {
     if (visible) {
@@ -236,11 +232,19 @@ export const AddressManager = ({
 
   const handleFormSubmit = async (addressData) => {
     try {
+      console.log('handleFormSubmit called with:', addressData);
+      console.log('Current view:', view);
+      console.log('Editing address:', editingAddress);
+
       if (view === 'edit') {
+        console.log('Calling onEditAddress...');
         await onEditAddress({ ...editingAddress, ...addressData });
       } else {
+        console.log('Calling onAddAddress...');
         await onAddAddress(addressData);
       }
+
+      console.log('Address operation completed, setting view to list');
       setView('list');
       setEditingAddress(null);
     } catch (error) {
@@ -270,24 +274,13 @@ export const AddressManager = ({
           </Text>
         </View>
 
-        {/* Map Illustration */}
-        <View className="w-full mb-1 items-center">
-          <Image
-            source={illustrations.map}
-            style={{
-              width: '90%',
-              height: undefined,
-              aspectRatio: 16/9,
-              borderRadius: 16
-            }}
-            resizeMode="stretch"
-          />
-        </View>
+        {/* Lottie Map Animation */}
+        <LottieMapImage />
       </View>
 
       {/* Content */}
       {addresses.length === 0 ? (
-        <View className="flex-1 items-center justify-center px-8 pt-4 pb-12">
+        <View className="flex-1 items-center justify-center px-8 pt-4 pb-20">
           <Text className="text-xl font-bold text-gray-900 mb-3 text-center">
             Agrega tu primera dirección
           </Text>
@@ -340,7 +333,7 @@ export const AddressManager = ({
   const renderFormContent = () => (
     <View className="flex-1">
       {/* Form Header */}
-      <View className="flex-row items-center px-6 pb-4">
+      <View className="flex-row items-center px-6 pb-4 pt-4">
         <Pressable
           onPress={handleFormCancel}
           className="w-8 h-8 rounded-full items-center justify-center mr-4 active:scale-95"
@@ -358,6 +351,7 @@ export const AddressManager = ({
         onSubmit={handleFormSubmit}
         onCancel={handleFormCancel}
         isLoading={isLoading}
+        disableKeyboardAvoidingView={true}
       />
     </View>
   );
@@ -365,11 +359,14 @@ export const AddressManager = ({
   return (
     <BottomSheetModal
       ref={bottomSheetRef}
-      snapPoints={['85%', '95%']}
+      snapPoints={view === 'list' ? ['85%', '95%'] : ['95%']}
       enablePanDownToClose
       onDismiss={handleClose}
       backdropComponent={CustomBackdrop}
       handleComponent={CustomHandle}
+      keyboardBehavior="fillParent"
+      keyboardBlurBehavior="restore"
+      android_keyboardInputMode="adjustResize"
       backgroundStyle={{
         backgroundColor: '#ffffff',
         borderTopLeftRadius: 20,

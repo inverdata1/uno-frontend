@@ -25,3 +25,8 @@ export const backgrounds = {
   // Add background images here
   // gradientPrimary: require('./backgrounds/background-gradient-primary.webp'),
 };
+
+// Lottie Animations
+export const lottieAnimations = {
+  map: require('../lottie/map.json'),
+};

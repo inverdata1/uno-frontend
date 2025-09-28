@@ -1,10 +1,11 @@
-import React, { useState } from 'react';
-import { View, Text, TouchableOpacity } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
-import { useCurrentMode } from '../../hooks/use-user-modes';
-import { useAddressStore } from '../../../modes/core/address-store';
+import { useState } from 'react';
+import { Text, TouchableOpacity, View } from 'react-native';
 import { useAuthStore } from '../../../auth/stores/auth-store';
+import { useAddressStore } from '../../../modes/core/address-store';
 import { getModeSettings } from '../../../modes/core/mode-config';
+import { useCurrentMode } from '../../hooks/use-user-modes';
+import { AddressManager } from '../modals/address-bottom-sheet';
 
 /**
  * Adaptive header that changes based on current mode
@@ -12,19 +13,57 @@ import { getModeSettings } from '../../../modes/core/mode-config';
 export const AdaptiveHeader = () => {
   const { currentMode } = useCurrentMode();
   const { user } = useAuthStore();
-  const { getCurrentAddressForMode, hasAddressesForMode } = useAddressStore();
-  const [showAddressPicker, setShowAddressPicker] = useState(false);
+  const {
+    getCurrentAddressForMode,
+    hasAddressesForMode,
+    addAddress,
+    updateAddress,
+    deleteAddress,
+    getAddressesForMode,
+    setCurrentAddressForMode
+  } = useAddressStore();
+  const [showAddressManager, setShowAddressManager] = useState(false);
 
   const modeSettings = getModeSettings(currentMode);
   const currentAddress = getCurrentAddressForMode(currentMode);
   const hasAddresses = hasAddressesForMode(currentMode);
 
   const handleAddressPress = () => {
-    if (hasAddresses) {
-      setShowAddressPicker(true);
-    } else {
-      // Navigate to add address screen
-      console.log('Navigate to add address for mode:', currentMode);
+    setShowAddressManager(true);
+  };
+
+  const handleAddressSelect = (address) => {
+    setCurrentAddressForMode(currentMode, address);
+    setShowAddressManager(false);
+  };
+
+  const handleAddAddress = async (addressData) => {
+    try {
+      await addAddress(addressData, currentMode);
+      console.log('Address added successfully for mode:', currentMode);
+    } catch (error) {
+      console.error('Error adding address:', error);
+      throw error;
+    }
+  };
+
+  const handleEditAddress = async (addressData) => {
+    try {
+      await updateAddress(addressData.id, addressData, currentMode);
+      console.log('Address updated successfully for mode:', currentMode);
+    } catch (error) {
+      console.error('Error updating address:', error);
+      throw error;
+    }
+  };
+
+  const handleDeleteAddress = async (address) => {
+    try {
+      await deleteAddress(address.id, currentMode);
+      console.log('Address deleted successfully for mode:', currentMode);
+    } catch (error) {
+      console.error('Error deleting address:', error);
+      throw error;
     }
   };
 
@@ -134,6 +173,18 @@ export const AdaptiveHeader = () => {
           </View>
         </View>
       </TouchableOpacity>
+
+      {/* Address Manager */}
+      <AddressManager
+        visible={showAddressManager}
+        onClose={() => setShowAddressManager(false)}
+        addresses={getAddressesForMode(currentMode)}
+        selectedAddress={currentAddress}
+        onAddressSelect={handleAddressSelect}
+        onAddAddress={handleAddAddress}
+        onEditAddress={handleEditAddress}
+        onDeleteAddress={handleDeleteAddress}
+      />
     </View>
   );
 };

@@ -9,6 +9,7 @@ import 'react-native-get-random-values'; // Must be first import for crypto poly
 import 'react-native-reanimated';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
+import { BottomSheetModalProvider } from '@gorhom/bottom-sheet';
 import "../global.css";
 import { Text } from '../shared/components/ui';
 import { queryClient } from '../shared/config/query-client';
@@ -95,13 +96,15 @@ export default function RootLayout() {
       <SafeAreaProvider>
         <QueryClientProvider client={queryClient}>
           <ThemeProvider value={DefaultTheme}>
-            <AppNavigator />
-            <StatusBar style="auto" />
+            <BottomSheetModalProvider>
+              <AppNavigator />
+              <StatusBar style="auto" />
 
-            {/* DevTools only in development and web platform */}
-            {__DEV__ && Platform.OS === 'web' && ReactQueryDevtools && (
-              <ReactQueryDevtools initialIsOpen={false} />
-            )}
+              {/* DevTools only in development and web platform */}
+              {__DEV__ && Platform.OS === 'web' && ReactQueryDevtools && (
+                <ReactQueryDevtools initialIsOpen={false} />
+              )}
+            </BottomSheetModalProvider>
           </ThemeProvider>
         </QueryClientProvider>
       </SafeAreaProvider>

@@ -70,7 +70,7 @@ const LottieMapImage = () => {
 };
 
 
-const AddressCard = ({ address, isSelected, onSelect, onEdit, onDelete }) => (
+const AddressCard = ({ address, isSelected, onSelect, onEdit, onDelete, onSetDefault }) => (
   <Pressable
     onPress={() => onSelect(address)}
     className={cn(
@@ -134,20 +134,37 @@ const AddressCard = ({ address, isSelected, onSelect, onEdit, onDelete }) => (
             'text-sm leading-relaxed',
             isSelected ? 'text-white/80' : 'text-gray-600'
           )}>
-            {address.street} {address.number}
-            {address.floor && `, Piso ${address.floor}`}
-            {address.apartment && `, Apto ${address.apartment}`}
+            {address.street}
+            {address.number ? ` ${address.number}` : ''}
+            {address.floor ? `, Piso ${address.floor}` : ''}
+            {address.apartment ? `, Apto ${address.apartment}` : ''}
           </Text>
           <Text className={cn(
             'text-sm font-medium',
             isSelected ? 'text-white/75' : 'text-gray-500'
           )}>
-            {address.city}, {address.state}
+            {address.city}{address.stateName ? `, ${address.stateName}` : ''}
           </Text>
         </View>
       </View>
 
-      <View className="flex-row space-x-2">
+      <View className="flex-row gap-2">
+        {!address.isDefault && (
+          <Pressable
+            onPress={() => onSetDefault(address)}
+            className={cn(
+              'w-10 h-10 rounded-xl items-center justify-center',
+              'active:scale-95',
+              isSelected ? 'bg-white/20' : 'bg-amber-50'
+            )}
+          >
+            <Ionicons
+              name="star"
+              size={16}
+              color={isSelected ? '#ffffff' : '#f59e0b'}
+            />
+          </Pressable>
+        )}
         <Pressable
           onPress={() => onEdit(address)}
           className={cn(
@@ -205,10 +222,12 @@ export const AddressManager = ({
   onAddAddress,
   onEditAddress,
   onDeleteAddress,
+  onSetDefaultAddress,
   isLoading = false
 }) => {
   const [view, setView] = useState('list');
   const [editingAddress, setEditingAddress] = useState(null);
+  const [addressToDelete, setAddressToDelete] = useState(null);
   const bottomSheetRef = useRef(null);
   const insets = useSafeAreaInsets();
 
@@ -228,6 +247,34 @@ export const AddressManager = ({
   const handleEdit = (address) => {
     setEditingAddress(address);
     setView('edit');
+  };
+
+  const handleDeleteRequest = (address) => {
+    setAddressToDelete(address);
+  };
+
+  const handleConfirmDelete = async () => {
+    if (addressToDelete) {
+      try {
+        await onDeleteAddress(addressToDelete);
+        setAddressToDelete(null);
+      } catch (error) {
+        console.error('Error deleting address:', error);
+        // Keep the dialog open if there's an error
+      }
+    }
+  };
+
+  const handleCancelDelete = () => {
+    setAddressToDelete(null);
+  };
+
+  const handleSetDefault = async (address) => {
+    try {
+      await onSetDefaultAddress(address);
+    } catch (error) {
+      console.error('Error setting default address:', error);
+    }
   };
 
   const handleFormSubmit = async (addressData) => {
@@ -258,21 +305,20 @@ export const AddressManager = ({
 
   const renderListContent = () => (
     <View className="flex-1">
-      {/* Header with Map */}
+      {/* Header */}
       <View className="px-6 pb-2">
         <View className="mb-8">
           <Text className="text-2xl font-bold text-gray-900">
             Direcciones
           </Text>
         </View>
-
-        {/* Lottie Map Animation */}
-        <LottieMapImage />
       </View>
 
       {/* Content */}
       {addresses.length === 0 ? (
         <View className="flex-1 items-center justify-center px-8 pt-4 pb-20">
+          {/* Lottie Map Animation - only show when empty */}
+          <LottieMapImage />
           <Text className="text-xl font-bold text-gray-900 mb-3 text-center">
             Agrega tu primera dirección
           </Text>
@@ -298,7 +344,8 @@ export const AddressManager = ({
                 isSelected={selectedAddress?.id === address.id}
                 onSelect={onAddressSelect}
                 onEdit={handleEdit}
-                onDelete={onDeleteAddress}
+                onDelete={handleDeleteRequest}
+                onSetDefault={handleSetDefault}
               />
             ))}
           </View>
@@ -368,6 +415,46 @@ export const AddressManager = ({
       <BottomSheetView className="flex-1">
         {view === 'list' ? renderListContent() : renderFormContent()}
       </BottomSheetView>
+
+      {/* Delete Confirmation Dialog */}
+      {addressToDelete && (
+        <View className="absolute inset-0 bg-black/50 justify-center items-center z-50">
+          <View className="mx-6 bg-white rounded-2xl p-6 shadow-xl">
+            <View className="items-center mb-4">
+              <View className="w-12 h-12 bg-red-100 rounded-full items-center justify-center mb-3">
+                <Ionicons name="trash" size={24} color="#ef4444" />
+              </View>
+              <Text className="text-lg font-bold text-gray-900 text-center mb-2">
+                Eliminar dirección
+              </Text>
+              <Text className="text-sm text-gray-600 text-center">
+                ¿Estás seguro de que quieres eliminar "{addressToDelete.label}"?
+              </Text>
+              <Text className="text-xs text-gray-500 text-center mt-1">
+                Esta acción no se puede deshacer.
+              </Text>
+            </View>
+
+            <View className="flex-row gap-3">
+              <Button
+                variant="outline"
+                onPress={handleCancelDelete}
+                className="flex-1"
+                disabled={isLoading}
+              >
+                Cancelar
+              </Button>
+              <Button
+                onPress={handleConfirmDelete}
+                className="flex-1 bg-red-500"
+                disabled={isLoading}
+              >
+                {isLoading ? 'Eliminando...' : 'Eliminar'}
+              </Button>
+            </View>
+          </View>
+        </View>
+      )}
     </BottomSheetModal>
   );
 };

@@ -21,21 +21,9 @@ export const addressSchema = z.object({
   street: z.string()
     .min(10, 'Ingresa la dirección completa')
     .max(200, 'La dirección es muy larga'),
-  number: z.string()
-    .max(20, 'El número es muy largo')
-    .optional(),
-  floor: z.string()
-    .max(10, 'El piso es muy largo')
-    .optional(),
-  apartment: z.string()
-    .max(20, 'El apartamento es muy largo')
-    .optional(),
   references: z.string()
     .min(10, 'Agrega referencias para facilitar la entrega')
     .max(300, 'Las referencias son muy largas'),
-  neighborhood: z.string()
-    .max(100, 'El sector/barrio es muy largo')
-    .optional(),
   city: z.string()
     .min(2, 'La ciudad es requerida')
     .max(100, 'La ciudad es muy larga'),
@@ -43,6 +31,10 @@ export const addressSchema = z.object({
   // Changed from 'state' to 'stateId'
   stateId: z.string()
     .min(1, 'El estado es requerido'),
+
+  // Store state name for display
+  stateName: z.string()
+    .min(1, 'El nombre del estado es requerido'),
 
   postalCode: z.string()
     .min(4, 'El código postal es requerido')

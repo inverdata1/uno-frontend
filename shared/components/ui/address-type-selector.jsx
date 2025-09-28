@@ -19,9 +19,23 @@ export const AddressTypeSelector = ({
 }) => {
   const { data: addressTypes = [], isLoading, error: queryError } = useAddressTypes(userType);
 
-  // Debug logging
-  console.log('AddressTypeSelector - userType:', userType);
-  console.log('AddressTypeSelector - addressTypes:', addressTypes);
+  // Sort address types by priority order
+  const getSortOrder = (typeId) => {
+    const priorityOrder = {
+      'CLIENT_HOME': 1,
+      'CLIENT_WORK': 2,
+      'CLIENT_OTHER': 3,
+      'BUSINESS_MAIN': 1,
+      'BUSINESS_BRANCH': 2,
+      'BUSINESS_WAREHOUSE': 3,
+      'BUSINESS_PICKUP': 4,
+      'DRIVER_BASE': 1,
+      'DRIVER_ZONE': 2
+    };
+    return priorityOrder[typeId] || 999;
+  };
+
+  const sortedAddressTypes = [...addressTypes].sort((a, b) => getSortOrder(a.id) - getSortOrder(b.id));
 
   const getTypeIcon = (typeId) => {
     const iconMap = {
@@ -74,70 +88,58 @@ export const AddressTypeSelector = ({
   }
 
   return (
-    <View className={cn("space-y-3", className)}>
-      <Text className="text-lg font-semibold text-foreground mb-2">
+    <View className={cn("space-y-3 mb-6", className)}>
+      <Text className="text-sm font-medium text-foreground mb-2">
         Tipo de dirección *
       </Text>
 
-      {/* Grid layout for better spacing */}
-      <View className="flex-row flex-wrap gap-3">
-        {addressTypes.map((type) => {
-          const isSelected = value === type.id;
-          const iconName = getTypeIcon(type.id);
-          const color = getTypeColor(type.id);
+      {/* iOS-style segmented control */}
+      <View className="bg-gray-100 p-1 rounded-xl">
+        <View className="flex-row">
+          {sortedAddressTypes.map((type, index) => {
+            const isSelected = value === type.id;
+            const iconName = getTypeIcon(type.id);
+            const color = getTypeColor(type.id);
 
-          return (
-            <Pressable
-              key={type.id}
-              onPress={() => !disabled && onChange(type.id)}
-              disabled={disabled}
-              className={cn(
-                "flex-1 min-w-[45%] max-w-[48%] p-3 rounded-xl border-2",
-                "bg-white",
-                isSelected
-                  ? "border-blue-500 bg-blue-50"
-                  : "border-gray-200",
-                disabled && "opacity-50"
-              )}
-              style={{
-                shadowColor: isSelected ? '#3b82f6' : '#000',
-                shadowOffset: { width: 0, height: 2 },
-                shadowOpacity: isSelected ? 0.1 : 0.03,
-                shadowRadius: 4,
-                elevation: isSelected ? 3 : 1,
-              }}
-            >
-              <View className="items-center space-y-2">
-                {/* Icon with dynamic color background */}
-                <View
-                  className="w-10 h-10 rounded-full items-center justify-center"
-                  style={{ backgroundColor: `${color}15` }}
-                >
-                  <Ionicons
-                    name={iconName}
-                    size={20}
-                    color={color}
-                  />
-                </View>
+            return (
+              <Pressable
+                key={type.id}
+                onPress={() => !disabled && onChange(type.id)}
+                disabled={disabled}
+                className={cn(
+                  "flex-1 flex-row items-center justify-center px-3 py-2 rounded-lg",
+                  isSelected
+                    ? "bg-white"
+                    : "bg-transparent",
+                  disabled && "opacity-50"
+                )}
+                style={{
+                  shadowColor: isSelected ? '#000' : 'transparent',
+                  shadowOffset: { width: 0, height: 1 },
+                  shadowOpacity: isSelected ? 0.1 : 0,
+                  shadowRadius: 2,
+                  elevation: isSelected ? 2 : 0,
+                }}
+              >
+                {/* Icon */}
+                <Ionicons
+                  name={iconName}
+                  size={16}
+                  color={isSelected ? color : '#6b7280'}
+                  style={{ marginRight: 4 }}
+                />
 
                 {/* Type name */}
                 <Text className={cn(
-                  "font-medium text-center text-sm",
-                  isSelected ? "text-blue-700" : "text-gray-900"
-                )}>
+                  "font-medium text-sm text-center",
+                  isSelected ? "text-gray-900" : "text-gray-500"
+                )} numberOfLines={1}>
                   {type.name}
                 </Text>
-
-                {/* Selection indicator */}
-                {isSelected && (
-                  <View className="absolute top-1 right-1 w-5 h-5 bg-blue-500 rounded-full items-center justify-center">
-                    <Ionicons name="checkmark" size={12} color="white" />
-                  </View>
-                )}
-              </View>
-            </Pressable>
-          );
-        })}
+              </Pressable>
+            );
+          })}
+        </View>
       </View>
 
       {/* Error message */}

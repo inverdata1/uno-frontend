@@ -17,7 +17,7 @@
     },
     "android": {
       "adaptiveIcon": {
-        "backgroundColor": "#E6F4FE",
+        "backgroundColor": "#E6F4FE"
       },
       "edgeToEdgeEnabled": true,
       "predictiveBackGestureEnabled": false,
@@ -58,6 +58,12 @@
         "projectId": "a633fd1d-846c-4e8f-a97a-114204c9ca14"
       }
     },
-    "owner": "inverdata"
+    "owner": "inverdata",
+    "runtimeVersion": {
+      "policy": "appVersion"
+    },
+    "updates": {
+      "url": "https://u.expo.dev/a633fd1d-846c-4e8f-a97a-114204c9ca14"
+    }
   }
 }

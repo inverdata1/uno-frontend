@@ -1,12 +1,13 @@
-import React, { useState } from 'react';
-import { View, ScrollView, KeyboardAvoidingView, Platform, TouchableWithoutFeedback, Keyboard } from 'react-native';
-import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useForm } from '@tanstack/react-form';
+import { useState } from 'react';
+import { Keyboard, KeyboardAvoidingView, Platform, ScrollView, TouchableWithoutFeedback, View } from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { z } from 'zod';
-import { Input, Text, Button, MapPicker, AddressTypeSelector, StateSelector } from '../ui';
+import { useFocusManager } from '../../hooks';
+import { useVenezuelanStates } from '../../hooks/use-venezuelan-states';
 import { newAddressSchema } from '../../schemas/address-schema';
 import { cn } from '../../utils/cn';
-import { useFocusManager } from '../../hooks';
+import { AddressTypeSelector, Button, Input, MapPicker, StateSelector, Text } from '../ui';
 
 export const AddressForm = ({
   initialData = {},
@@ -21,6 +22,7 @@ export const AddressForm = ({
   const totalSteps = 3;
   const insets = useSafeAreaInsets();
   const { createFieldProps, clearFocus } = useFocusManager();
+  const { data: states = [] } = useVenezuelanStates();
 
   const form = useForm({
     defaultValues: {
@@ -29,13 +31,10 @@ export const AddressForm = ({
       contactName: initialData.contactName || '',
       phone: initialData.phone || '',
       street: initialData.street || '',
-      number: initialData.number || '',
-      floor: initialData.floor || '',
-      apartment: initialData.apartment || '',
       references: initialData.references || '',
-      neighborhood: initialData.neighborhood || '',
       city: initialData.city || '',
       stateId: initialData.stateId || '',
+      stateName: initialData.stateName || '',
       postalCode: initialData.postalCode || '',
       isDefault: initialData.isDefault || false,
       isActive: initialData.isActive !== undefined ? initialData.isActive : true,
@@ -322,7 +321,7 @@ export const AddressForm = ({
                           Ciudad *
                         </Text>
                         <Input
-                          placeholder="Caracas"
+                          placeholder="Maracaibo"
                           value={field.state.value}
                           onChangeText={(text) => {
                             field.handleChange(text);
@@ -350,6 +349,11 @@ export const AddressForm = ({
                           value={field.state.value}
                           onChange={(stateId) => {
                             field.handleChange(stateId);
+                            // Also store the state name
+                            const selectedState = states.find(state => state.id === stateId);
+                            if (selectedState) {
+                              form.setFieldValue('stateName', selectedState.name);
+                            }
                             triggerUpdate();
                           }}
                           error={field.state.meta.errors?.[0]}

@@ -2,9 +2,10 @@ import { Ionicons } from '@expo/vector-icons';
 import { useState } from 'react';
 import { Text, TouchableOpacity, View } from 'react-native';
 import { useAuthStore } from '../../../auth/stores/auth-store';
+import { getModeSettings, getAddressBehavior } from '../../../modes/core/mode-config';
 import { useAddressStore } from '../../../modes/core/address-store';
-import { getModeSettings } from '../../../modes/core/mode-config';
 import { useCurrentMode } from '../../hooks/use-user-modes';
+import { useAddresses, useCreateAddress, useUpdateAddress, useDeleteAddress, useSetDefaultAddress } from '../../hooks/use-addresses';
 import { AddressManager } from '../modals/address-bottom-sheet';
 
 /**
@@ -16,60 +17,71 @@ export const AdaptiveHeader = () => {
   const {
     getCurrentAddressForMode,
     hasAddressesForMode,
-    addAddress,
-    updateAddress,
-    deleteAddress,
     getAddressesForMode,
-    setCurrentAddressForMode
+    selectAddress
   } = useAddressStore();
   const [showAddressManager, setShowAddressManager] = useState(false);
 
+  // TanStack Query hooks for data
+  const { data: addresses = [], isLoading } = useAddresses(user?.uid);
+  const createAddressMutation = useCreateAddress();
+  const updateAddressMutation = useUpdateAddress();
+  const deleteAddressMutation = useDeleteAddress();
+  const setDefaultAddressMutation = useSetDefaultAddress();
+
   const modeSettings = getModeSettings(currentMode);
-  const currentAddress = getCurrentAddressForMode(currentMode);
-  const hasAddresses = hasAddressesForMode(currentMode);
+  const currentAddress = getCurrentAddressForMode(addresses, currentMode);
+  const hasAddresses = hasAddressesForMode(addresses, currentMode);
 
   const handleAddressPress = () => {
     setShowAddressManager(true);
   };
 
   const handleAddressSelect = (address) => {
-    setCurrentAddressForMode(currentMode, address);
+    selectAddress(address, currentMode);
     setShowAddressManager(false);
   };
 
   const handleAddAddress = async (addressData) => {
-    try {
-      await addAddress(addressData, currentMode);
-      console.log('Address added successfully for mode:', currentMode);
-    } catch (error) {
-      console.error('Error adding address:', error);
-      throw error;
-    }
+    const behavior = getAddressBehavior(currentMode);
+
+    const firebaseAddressData = {
+      ...addressData,
+      mode: currentMode,
+      userType: behavior.type
+    };
+
+    return await createAddressMutation.mutateAsync({
+      addressData: firebaseAddressData,
+      userId: user.uid
+    });
   };
 
   const handleEditAddress = async (addressData) => {
-    try {
-      await updateAddress(addressData.id, addressData, currentMode);
-      console.log('Address updated successfully for mode:', currentMode);
-    } catch (error) {
-      console.error('Error updating address:', error);
-      throw error;
-    }
+    return await updateAddressMutation.mutateAsync({
+      addressId: addressData.id,
+      addressData,
+      userId: user.uid
+    });
   };
 
   const handleDeleteAddress = async (address) => {
-    try {
-      await deleteAddress(address.id, currentMode);
-      console.log('Address deleted successfully for mode:', currentMode);
-    } catch (error) {
-      console.error('Error deleting address:', error);
-      throw error;
-    }
+    return await deleteAddressMutation.mutateAsync({
+      addressId: address.id,
+      userId: user.uid
+    });
+  };
+
+  const handleSetDefaultAddress = async (address) => {
+    return await setDefaultAddressMutation.mutateAsync({
+      addressId: address.id,
+      userId: user.uid
+    });
   };
 
   const getAddressText = () => {
     if (currentAddress) {
-      return currentAddress.name;
+      return currentAddress.label || currentAddress.name;
     }
     return modeSettings.placeholder;
   };
@@ -178,12 +190,14 @@ export const AdaptiveHeader = () => {
       <AddressManager
         visible={showAddressManager}
         onClose={() => setShowAddressManager(false)}
-        addresses={getAddressesForMode(currentMode)}
+        addresses={getAddressesForMode(addresses, currentMode)}
         selectedAddress={currentAddress}
         onAddressSelect={handleAddressSelect}
         onAddAddress={handleAddAddress}
         onEditAddress={handleEditAddress}
         onDeleteAddress={handleDeleteAddress}
+        onSetDefaultAddress={handleSetDefaultAddress}
+        isLoading={isLoading || createAddressMutation.isPending || updateAddressMutation.isPending || deleteAddressMutation.isPending || setDefaultAddressMutation.isPending}
       />
     </View>
   );

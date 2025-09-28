@@ -1,6 +1,10 @@
 import { z } from 'zod';
 
 export const addressSchema = z.object({
+  // New required field - Address Type
+  addressTypeId: z.string()
+    .min(1, 'Selecciona el tipo de dirección'),
+
   // Basic Info
   label: z.string()
     .min(1, 'El nombre de la dirección es requerido')
@@ -35,9 +39,11 @@ export const addressSchema = z.object({
   city: z.string()
     .min(2, 'La ciudad es requerida')
     .max(100, 'La ciudad es muy larga'),
-  state: z.string()
-    .min(2, 'El estado es requerido')
-    .max(50, 'El estado es muy largo'),
+
+  // Changed from 'state' to 'stateId'
+  stateId: z.string()
+    .min(1, 'El estado es requerido'),
+
   postalCode: z.string()
     .min(4, 'El código postal es requerido')
     .max(5, 'El código postal debe tener máximo 5 dígitos'),
@@ -55,7 +61,8 @@ export const addressSchema = z.object({
   }),
 
   // Metadata
-  isDefault: z.boolean().default(false)
+  isDefault: z.boolean().default(false),
+  isActive: z.boolean().default(true)
 });
 
 // Schema for creating new address (without coordinates initially)

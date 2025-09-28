@@ -3,8 +3,8 @@ import { View, ScrollView, KeyboardAvoidingView, Platform, TouchableWithoutFeedb
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useForm } from '@tanstack/react-form';
 import { z } from 'zod';
-import { Input, Text, Button, MapPicker } from '../ui';
-import { newAddressSchema, venezuelanStates, addressLabels } from '../../schemas/address-schema';
+import { Input, Text, Button, MapPicker, AddressTypeSelector, StateSelector } from '../ui';
+import { newAddressSchema } from '../../schemas/address-schema';
 import { cn } from '../../utils/cn';
 import { useFocusManager } from '../../hooks';
 
@@ -24,6 +24,7 @@ export const AddressForm = ({
 
   const form = useForm({
     defaultValues: {
+      addressTypeId: initialData.addressTypeId || '',
       label: initialData.label || '',
       contactName: initialData.contactName || '',
       phone: initialData.phone || '',
@@ -34,23 +35,17 @@ export const AddressForm = ({
       references: initialData.references || '',
       neighborhood: initialData.neighborhood || '',
       city: initialData.city || '',
-      state: initialData.state || '',
+      stateId: initialData.stateId || '',
       postalCode: initialData.postalCode || '',
       isDefault: initialData.isDefault || false,
+      isActive: initialData.isActive !== undefined ? initialData.isActive : true,
       coordinates: initialData.coordinates || null
     },
     validators: {
       onSubmit: newAddressSchema,
     },
     onSubmit: async ({ value }) => {
-      console.log('Form onSubmit called with value:', value);
-      try {
-        await onSubmit(value);
-        console.log('onSubmit completed successfully');
-      } catch (error) {
-        console.error('Error in form onSubmit:', error);
-        throw error;
-      }
+      await onSubmit(value);
     }
   });
 
@@ -58,11 +53,13 @@ export const AddressForm = ({
 
   // Step validation functions
   const isStep1Valid = () => {
+    const addressTypeId = form.getFieldValue('addressTypeId') || '';
     const label = form.getFieldValue('label') || '';
     const contactName = form.getFieldValue('contactName') || '';
     const phone = form.getFieldValue('phone') || '';
 
-    return label.length >= 1 &&
+    return addressTypeId.length >= 1 &&
+           label.length >= 1 &&
            contactName.length >= 2 &&
            phone.length === 11 && /^04(12|14|16|24|26)\d{7}$/.test(phone);
   };
@@ -70,12 +67,12 @@ export const AddressForm = ({
   const isStep2Valid = () => {
     const street = form.getFieldValue('street') || '';
     const city = form.getFieldValue('city') || '';
-    const state = form.getFieldValue('state') || '';
+    const stateId = form.getFieldValue('stateId') || '';
     const postalCode = form.getFieldValue('postalCode') || '';
 
     return street.length >= 10 &&
            city.length >= 2 &&
-           state.length >= 2 &&
+           stateId.length >= 1 &&
            postalCode.length >= 4;
   };
 
@@ -170,6 +167,27 @@ export const AddressForm = ({
             {/* Step 1: Basic Information */}
             {currentStep === 1 && (
               <View className="space-y-6">
+                <form.Field
+                  name="addressTypeId"
+                  validators={{
+                    onChange: z.string().min(1, 'Selecciona el tipo de dirección'),
+                    onBlur: z.string().min(1, 'Selecciona el tipo de dirección')
+                  }}
+                  children={(field) => (
+                    <View>
+                      <AddressTypeSelector
+                        value={field.state.value}
+                        onChange={(typeId) => {
+                          field.handleChange(typeId);
+                          triggerUpdate();
+                        }}
+                        userType={mode}
+                        error={field.state.meta.errors?.[0]}
+                      />
+                    </View>
+                  )}
+                />
+
                 <form.Field
                   name="label"
                   validators={{
@@ -318,24 +336,22 @@ export const AddressForm = ({
                   />
 
                   <form.Field
-                    name="state"
+                    name="stateId"
                     validators={{
-                      onChange: z.string().min(2, 'El estado es requerido'),
-                      onBlur: z.string().min(2, 'El estado es requerido')
+                      onChange: z.string().min(1, 'El estado es requerido'),
+                      onBlur: z.string().min(1, 'El estado es requerido')
                     }}
                     children={(field) => (
                       <View className="flex-1">
                         <Text className="text-sm font-medium text-foreground mb-2">
                           Estado *
                         </Text>
-                        <Input
-                          placeholder="Distrito Capital"
+                        <StateSelector
                           value={field.state.value}
-                          onChangeText={(text) => {
-                            field.handleChange(text);
+                          onChange={(stateId) => {
+                            field.handleChange(stateId);
                             triggerUpdate();
                           }}
-                          {...createFieldProps('state', { onBlur: field.handleBlur })}
                           error={field.state.meta.errors?.[0]}
                         />
                       </View>

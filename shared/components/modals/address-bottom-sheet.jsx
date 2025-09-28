@@ -232,19 +232,11 @@ export const AddressManager = ({
 
   const handleFormSubmit = async (addressData) => {
     try {
-      console.log('handleFormSubmit called with:', addressData);
-      console.log('Current view:', view);
-      console.log('Editing address:', editingAddress);
-
       if (view === 'edit') {
-        console.log('Calling onEditAddress...');
         await onEditAddress({ ...editingAddress, ...addressData });
       } else {
-        console.log('Calling onAddAddress...');
         await onAddAddress(addressData);
       }
-
-      console.log('Address operation completed, setting view to list');
       setView('list');
       setEditingAddress(null);
     } catch (error) {

@@ -8,3 +8,5 @@ export { Checkbox } from './checkbox';
 export { DatePicker } from './date-picker';
 export { BottomSheetComponent as BottomSheet } from './bottom-sheet';
 export { MapPicker } from './map-picker';
+export { AddressTypeSelector } from './address-type-selector';
+export { StateSelector } from './state-selector';

@@ -7,7 +7,8 @@
     "android": "expo run:android",
     "ios": "expo run:ios",
     "web": "expo start --web",
-    "lint": "expo lint"
+    "lint": "expo lint",
+    "seed": "npx tsx scripts/seed-data.js"
   },
   "dependencies": {
     "@expo/metro-runtime": "~6.1.2",

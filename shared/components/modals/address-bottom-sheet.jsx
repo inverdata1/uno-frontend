@@ -102,7 +102,7 @@ const getTypeColor = (typeId) => {
 const AddressCard = ({ address, isSelected, onSelect, onEdit, onDelete, onSetDefault }) => (
   <Pressable
     onPress={() => onSelect(address)}
-    className="mx-6 px-4 py-3 rounded-xl border border-primary-400 "
+    className="mx-6 px-4 py-3 rounded-xl border border-primary-200 "
   >
     <View className="flex-row items-start">
       {/* Selection indicator */}

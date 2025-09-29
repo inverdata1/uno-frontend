@@ -3,7 +3,8 @@ import { View, Alert, ActivityIndicator, Pressable } from 'react-native';
 import MapView, { Marker, PROVIDER_GOOGLE } from 'react-native-maps';
 import * as Location from 'expo-location';
 import { Ionicons } from '@expo/vector-icons';
-import { Text, Button } from './';
+import { Text } from './text';
+import { Button } from './button';
 import { cn } from '../../utils/cn';
 
 export const MapPicker = ({

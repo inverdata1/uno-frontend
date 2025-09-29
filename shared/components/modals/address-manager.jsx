@@ -1,9 +1,9 @@
-import React, { useState } from 'react';
-import { View, Modal, Pressable, ScrollView, Animated } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
-import { Text, Button } from '../ui';
-import { AddressForm } from '../forms/address-form';
+import { useState } from 'react';
+import { Modal, Pressable, ScrollView, View } from 'react-native';
 import { cn } from '../../utils/cn';
+import { AddressForm } from '../forms/address-form';
+import { Button, Text } from '../ui';
 
 const AddressCard = ({ address, isSelected, onSelect, onEdit, onDelete }) => (
   <Pressable
@@ -69,9 +69,7 @@ const AddressCard = ({ address, isSelected, onSelect, onEdit, onDelete }) => (
             'text-sm leading-relaxed',
             isSelected ? 'text-white/80' : 'text-gray-600'
           )}>
-            {address.street} {address.number}
-            {address.floor && `, Piso ${address.floor}`}
-            {address.apartment && `, Apto ${address.apartment}`}
+            {address.street}
           </Text>
           <Text className={cn(
             'text-sm font-medium',

@@ -148,9 +148,6 @@ const AddressCard = ({ address, isSelected, onSelect, onEdit, onDelete, onSetDef
         {/* Address */}
         <Text className="text-sm text-gray-500 mb-1">
           {address.street}
-          {address.number ? ` ${address.number}` : ''}
-          {address.floor ? `, Piso ${address.floor}` : ''}
-          {address.apartment ? `, Apto ${address.apartment}` : ''}
         </Text>
 
         {/* Location */}

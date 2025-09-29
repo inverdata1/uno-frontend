@@ -46,7 +46,8 @@ export const AdaptiveHeader = () => {
     const behavior = getAddressBehavior(currentMode);
 
     const firebaseAddressData = {
-      ...addressData
+      ...addressData,
+      userType: currentMode
     };
 
     return await createAddressMutation.mutateAsync({

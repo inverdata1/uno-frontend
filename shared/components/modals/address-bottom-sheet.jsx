@@ -5,7 +5,6 @@ import { useEffect, useRef, useState } from 'react';
 import { Pressable, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { lottieAnimations } from '../../assets/images';
-import { cn } from '../../utils/cn';
 import { AddressForm } from '../forms/address-form';
 import { Button, Text } from '../ui';
 
@@ -73,126 +72,75 @@ const LottieMapImage = () => {
 const AddressCard = ({ address, isSelected, onSelect, onEdit, onDelete, onSetDefault }) => (
   <Pressable
     onPress={() => onSelect(address)}
-    className={cn(
-      'mx-6 mb-4 p-5 rounded-2xl border-0',
-      'active:scale-[0.98]',
-      isSelected
-        ? 'bg-primary-500 shadow-lg shadow-primary-500/20'
-        : 'bg-white shadow-sm shadow-black/5'
-    )}
-    style={{
-      shadowOffset: { width: 0, height: 2 },
-      shadowOpacity: isSelected ? 0.15 : 0.08,
-      shadowRadius: isSelected ? 8 : 4,
-      elevation: isSelected ? 6 : 2,
-    }}
+    className="mx-6 px-4 py-3 rounded-xl border border-primary-400 bg-primary-50"
   >
-    <View className="flex-row items-start justify-between">
-      <View className="flex-1 mr-3">
-        <View className="flex-row items-center mb-3">
-          <View className={cn(
-            'w-8 h-8 rounded-full items-center justify-center mr-3',
-            isSelected ? 'bg-white/20' : 'bg-primary-50'
-          )}>
-            <Ionicons
-              name="location"
-              size={16}
-              color={isSelected ? '#ffffff' : '#059669'}
-            />
+    <View className="flex-row items-start">
+      {/* Selection indicator */}
+      <View className="mr-4 pt-1">
+        {isSelected ? (
+          <View className="w-5 h-5 bg-primary-500 rounded-full items-center justify-center">
+            <Ionicons name="checkmark" size={12} color="white" />
           </View>
-          <View className="flex-1">
-            <Text className={cn(
-              'font-bold text-base leading-tight',
-              isSelected ? 'text-white' : 'text-gray-900'
-            )}>
-              {address.label}
-            </Text>
-            {address.isDefault && (
-              <View className={cn(
-                'mt-1 self-start px-2 py-0.5 rounded-full',
-                isSelected ? 'bg-white/20' : 'bg-amber-100'
-              )}>
-                <Text className={cn(
-                  'text-xs font-semibold',
-                  isSelected ? 'text-white' : 'text-amber-700'
-                )}>
-                  Predeterminada
-                </Text>
-              </View>
-            )}
-          </View>
-        </View>
-
-        <View className="space-y-1.5">
-          <Text className={cn(
-            'font-medium text-sm',
-            isSelected ? 'text-white/90' : 'text-gray-700'
-          )}>
-            {address.contactName}
-          </Text>
-          <Text className={cn(
-            'text-sm leading-relaxed',
-            isSelected ? 'text-white/80' : 'text-gray-600'
-          )}>
-            {address.street}
-            {address.number ? ` ${address.number}` : ''}
-            {address.floor ? `, Piso ${address.floor}` : ''}
-            {address.apartment ? `, Apto ${address.apartment}` : ''}
-          </Text>
-          <Text className={cn(
-            'text-sm font-medium',
-            isSelected ? 'text-white/75' : 'text-gray-500'
-          )}>
-            {address.city}{address.stateName ? `, ${address.stateName}` : ''}
-          </Text>
-        </View>
+        ) : (
+          <View className="w-5 h-5 border-2 border-gray-300 rounded-full" />
+        )}
       </View>
 
-      <View className="flex-row gap-2">
-        {!address.isDefault && (
-          <Pressable
-            onPress={() => onSetDefault(address)}
-            className={cn(
-              'w-10 h-10 rounded-xl items-center justify-center',
-              'active:scale-95',
-              isSelected ? 'bg-white/20' : 'bg-amber-50'
-            )}
-          >
-            <Ionicons
-              name="star"
-              size={16}
-              color={isSelected ? '#ffffff' : '#f59e0b'}
-            />
-          </Pressable>
+      {/* Content */}
+      <View className="flex-1 min-h-0">
+        {/* Title row */}
+        <View className="flex-row items-start justify-between mb-2">
+          <Text className="font-semibold text-base flex-1 mr-2 text-gray-900">
+            {address.label}
+          </Text>
+          {address.isDefault && (
+            <View className="bg-green-100 px-2 py-0.5 rounded-full shrink-0">
+              <Text className="text-green-700 text-xs font-medium">
+                Predeterminada
+              </Text>
+            </View>
+          )}
+        </View>
+
+        {/* Contact name */}
+        <Text className="text-sm text-gray-600 mb-2">
+          {address.contactName}
+        </Text>
+
+        {/* Address */}
+        <Text className="text-sm text-gray-500 mb-1">
+          {address.street}
+          {address.number ? ` ${address.number}` : ''}
+          {address.floor ? `, Piso ${address.floor}` : ''}
+          {address.apartment ? `, Apto ${address.apartment}` : ''}
+        </Text>
+
+        {/* Location */}
+        <Text className="text-sm text-gray-500">
+          {address.city}{address.stateName ? `, ${address.stateName}` : ''}
+        </Text>
+
+        {/* Actions - only show when selected */}
+        {isSelected && (
+          <View className="flex-row gap-4 mt-3 pt-3 border-t border-gray-100">
+            <Pressable
+              onPress={() => onEdit(address)}
+              className="flex-row items-center active:opacity-60"
+            >
+              <Ionicons name="pencil" size={16} color="#6B7280" />
+              <Text className="text-gray-600 text-sm font-medium ml-1">Editar</Text>
+            </Pressable>
+
+
+            <Pressable
+              onPress={() => onDelete(address)}
+              className="flex-row items-center active:opacity-60"
+            >
+              <Ionicons name="trash" size={16} color="#DC2626" />
+              <Text className="text-red-600 text-sm font-medium ml-1">Eliminar</Text>
+            </Pressable>
+          </View>
         )}
-        <Pressable
-          onPress={() => onEdit(address)}
-          className={cn(
-            'w-10 h-10 rounded-xl items-center justify-center',
-            'active:scale-95',
-            isSelected ? 'bg-white/20' : 'bg-gray-50'
-          )}
-        >
-          <Ionicons
-            name="pencil"
-            size={16}
-            color={isSelected ? '#ffffff' : '#6B7280'}
-          />
-        </Pressable>
-        <Pressable
-          onPress={() => onDelete(address)}
-          className={cn(
-            'w-10 h-10 rounded-xl items-center justify-center',
-            'active:scale-95',
-            isSelected ? 'bg-red-500/20' : 'bg-red-50'
-          )}
-        >
-          <Ionicons
-            name="trash"
-            size={16}
-            color={isSelected ? '#ffffff' : '#DC2626'}
-          />
-        </Pressable>
       </View>
     </View>
   </Pressable>
@@ -228,16 +176,20 @@ export const AddressManager = ({
   const [view, setView] = useState('list');
   const [editingAddress, setEditingAddress] = useState(null);
   const [addressToDelete, setAddressToDelete] = useState(null);
+  const [currentSnapIndex, setCurrentSnapIndex] = useState(0);
+  const [localSelectedAddress, setLocalSelectedAddress] = useState(selectedAddress);
   const bottomSheetRef = useRef(null);
   const insets = useSafeAreaInsets();
 
   useEffect(() => {
     if (visible) {
       bottomSheetRef.current?.present();
+      // Reset local selection when modal opens
+      setLocalSelectedAddress(selectedAddress);
     } else {
       bottomSheetRef.current?.dismiss();
     }
-  }, [visible]);
+  }, [visible, selectedAddress]);
 
   const handleAddNew = () => {
     setEditingAddress(null);
@@ -297,9 +249,28 @@ export const AddressManager = ({
     setEditingAddress(null);
   };
 
+  const handleLocalSelect = (address) => {
+    setLocalSelectedAddress(address);
+  };
+
+  const handleConfirmSelection = async () => {
+    if (localSelectedAddress) {
+      // First set as default, then select
+      try {
+        await onSetDefaultAddress(localSelectedAddress);
+        onAddressSelect(localSelectedAddress);
+      } catch (error) {
+        console.error('Error setting default address:', error);
+        // Still proceed with selection even if setting default fails
+        onAddressSelect(localSelectedAddress);
+      }
+    }
+  };
+
   const handleClose = () => {
     setView('list');
     setEditingAddress(null);
+    setLocalSelectedAddress(selectedAddress); // Reset to original selection
     onClose();
   };
 
@@ -337,32 +308,52 @@ export const AddressManager = ({
       ) : (
         <View className="flex-1">
           <View className="flex-1 pt-2">
-            {addresses.map((address) => (
-              <AddressCard
-                key={address.id}
-                address={address}
-                isSelected={selectedAddress?.id === address.id}
-                onSelect={onAddressSelect}
-                onEdit={handleEdit}
-                onDelete={handleDeleteRequest}
-                onSetDefault={handleSetDefault}
-              />
+            {addresses.map((address, index) => (
+              <View key={address.id} className="mb-3">
+                <AddressCard
+                  address={address}
+                  isSelected={localSelectedAddress?.id === address.id}
+                  onSelect={handleLocalSelect}
+                  onEdit={handleEdit}
+                  onDelete={handleDeleteRequest}
+                  onSetDefault={handleSetDefault}
+                />
+              </View>
             ))}
           </View>
 
-          {/* Add Button */}
-          <View className="px-6 pt-4 pb-6">
-            <Pressable
+          {/* Action Buttons */}
+          <View
+            className="px-6 pt-4 gap-3"
+            style={{ paddingBottom: Math.max(insets.bottom, 24) }}
+          >
+            {/* Confirm Selection Button - only show if selection changed */}
+            {localSelectedAddress?.id !== selectedAddress?.id && (
+              <Button
+                onPress={handleConfirmSelection}
+                className="w-full bg-primary-500 h-12 rounded-2xl"
+              >
+                <Text className="text-white font-semibold text-base">
+                  Seleccionar "{localSelectedAddress?.label}"
+                </Text>
+              </Button>
+            )}
+
+            {/* Add Address Button */}
+            <Button
+              variant="outline"
               onPress={handleAddNew}
-              className="flex-row items-center justify-center bg-white border border-gray-200 rounded-2xl py-4 px-6 shadow-sm active:scale-[0.98]"
+              className="w-full h-14 rounded-2xl"
             >
-              <View className="w-6 h-6 rounded-full bg-primary-500 items-center justify-center mr-3">
-                <Ionicons name="add" size={16} color="#ffffff" />
+              <View className="flex-row items-center">
+                <View className="w-6 h-6 rounded-full bg-primary-500 items-center justify-center mr-3">
+                  <Ionicons name="add" size={16} color="#ffffff" />
+                </View>
+                <Text className="text-primary-600 font-semibold text-base">
+                  Agregar dirección
+                </Text>
               </View>
-              <Text className="text-gray-900 font-semibold text-base">
-                Agregar dirección
-              </Text>
-            </Pressable>
+            </Button>
           </View>
         </View>
       )}
@@ -395,12 +386,22 @@ export const AddressManager = ({
     </View>
   );
 
+  const handleSheetChanges = (index) => {
+    console.log('BottomSheet snap index changed to:', index);
+    setCurrentSnapIndex(index);
+  };
+
+  // Dynamic positioning based on snap point
+  const modalPositionClass = currentSnapIndex >= 1 ? 'justify-center pb-16' : 'justify-start pt-12';
+  console.log('Current snap index:', currentSnapIndex, 'Modal position class:', modalPositionClass);
+
   return (
     <BottomSheetModal
       ref={bottomSheetRef}
       snapPoints={view === 'list' ? ['85%', '95%'] : ['95%']}
       enablePanDownToClose
       onDismiss={handleClose}
+      onChange={handleSheetChanges}
       backdropComponent={CustomBackdrop}
       handleComponent={CustomHandle}
       keyboardBehavior="fillParent"
@@ -416,9 +417,19 @@ export const AddressManager = ({
         {view === 'list' ? renderListContent() : renderFormContent()}
       </BottomSheetView>
 
-      {/* Delete Confirmation Dialog */}
+      {/* Delete Confirmation Dialog - Outside BottomSheet */}
       {addressToDelete && (
-        <View className="absolute inset-0 bg-black/50 justify-center items-center z-50">
+        <View
+          className={`absolute inset-0 bg-black/50 ${modalPositionClass} items-center`}
+          style={{
+            position: 'absolute',
+            top: 0,
+            left: 0,
+            right: 0,
+            bottom: 0,
+            zIndex: 9999,
+          }}
+        >
           <View className="mx-6 bg-white rounded-2xl p-6 shadow-xl">
             <View className="items-center mb-4">
               <View className="w-12 h-12 bg-red-100 rounded-full items-center justify-center mb-3">

@@ -387,13 +387,11 @@ export const AddressManager = ({
   );
 
   const handleSheetChanges = (index) => {
-    console.log('BottomSheet snap index changed to:', index);
     setCurrentSnapIndex(index);
   };
 
   // Dynamic positioning based on snap point
   const modalPositionClass = currentSnapIndex >= 1 ? 'justify-center pb-16' : 'justify-start pt-12';
-  console.log('Current snap index:', currentSnapIndex, 'Modal position class:', modalPositionClass);
 
   return (
     <BottomSheetModal

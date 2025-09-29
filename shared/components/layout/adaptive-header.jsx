@@ -46,9 +46,7 @@ export const AdaptiveHeader = () => {
     const behavior = getAddressBehavior(currentMode);
 
     const firebaseAddressData = {
-      ...addressData,
-      mode: currentMode,
-      userType: behavior.type
+      ...addressData
     };
 
     return await createAddressMutation.mutateAsync({
@@ -197,6 +195,7 @@ export const AdaptiveHeader = () => {
         onEditAddress={handleEditAddress}
         onDeleteAddress={handleDeleteAddress}
         onSetDefaultAddress={handleSetDefaultAddress}
+        userMode={currentMode}
         isLoading={isLoading || createAddressMutation.isPending || updateAddressMutation.isPending || deleteAddressMutation.isPending || setDefaultAddressMutation.isPending}
       />
     </View>

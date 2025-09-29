@@ -47,14 +47,13 @@ export const Input = ({
           ref={inputRef}
           className={cn(
             'border rounded-xl px-4 py-4',
-            'text-foreground text-base font-medium ',
-            // Elegant placeholder styles
-            'placeholder:text-gray-400 placeholder:font-light placeholder:tracking-wide',
-            'placeholder:italic placeholder:text-[15px]',
+            'text-foreground text-base',
+            // Placeholder styles
+            'placeholder:text-gray-400',
             // Base state
-            'bg-gray-50/40 border-gray-400',
+            'bg-gray-50 border-gray-400',
             // Focused state (overrides base)
-            actuallyFocused && 'border-primary-500 bg-white placeholder:text-gray-500 placeholder:not-italic',
+            actuallyFocused && 'border-primary-500 bg-white',
             // Error state (overrides both base and focused)
             error && 'border-red-400 bg-red-50 placeholder:text-red-400',
             isPasswordField && 'pr-12', // Add padding for eye icon

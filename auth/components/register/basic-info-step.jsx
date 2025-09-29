@@ -85,7 +85,7 @@ export const BasicInfoStep = ({ form, createFieldProps, triggerUpdate, scrollVie
         }}
         children={(field) => (
           <Input
-            placeholder="04XX XXX XXXX"
+            placeholder="Numero de telefono"
             value={field.state.value}
             onChangeText={(text) => {
               // Only allow numbers and limit to 11 digits

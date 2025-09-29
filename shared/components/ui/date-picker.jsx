@@ -50,7 +50,7 @@ export const DatePicker = ({
           'flex-row items-center justify-between px-4 py-4 border rounded-xl',
           'text-base',
           // Base state - match Input component
-          'bg-gray-50 border-gray-200',
+          'bg-gray-50 border-gray-400',
           // Error state - match Input component
           error && 'border-red-300 bg-red-50',
           // Disabled state

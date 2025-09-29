@@ -209,7 +209,8 @@ export const AddressManager = ({
   onEditAddress,
   onDeleteAddress,
   onSetDefaultAddress,
-  isLoading = false
+  isLoading = false,
+  userMode = 'client'
 }) => {
   const [view, setView] = useState('list');
   const [editingAddress, setEditingAddress] = useState(null);
@@ -418,6 +419,7 @@ export const AddressManager = ({
         initialData={editingAddress || {}}
         onSubmit={handleFormSubmit}
         onCancel={handleFormCancel}
+        mode={userMode}
         isLoading={isLoading}
         disableKeyboardAvoidingView={true}
       />

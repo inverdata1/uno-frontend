@@ -69,10 +69,40 @@ const LottieMapImage = () => {
 };
 
 
+const getTypeIcon = (typeId) => {
+  const iconMap = {
+    'CLIENT_HOME': 'home',
+    'CLIENT_WORK': 'business',
+    'CLIENT_OTHER': 'location',
+    'BUSINESS_MAIN': 'storefront',
+    'BUSINESS_BRANCH': 'business',
+    'BUSINESS_WAREHOUSE': 'cube',
+    'BUSINESS_PICKUP': 'basket',
+    'DRIVER_BASE': 'car',
+    'DRIVER_ZONE': 'map'
+  };
+  return iconMap[typeId] || 'location';
+};
+
+const getTypeColor = (typeId) => {
+  const colorMap = {
+    'CLIENT_HOME': '#10b981', // emerald
+    'CLIENT_WORK': '#3b82f6', // blue
+    'CLIENT_OTHER': '#8b5cf6', // violet
+    'BUSINESS_MAIN': '#f59e0b', // amber
+    'BUSINESS_BRANCH': '#ef4444', // red
+    'BUSINESS_WAREHOUSE': '#6b7280', // gray
+    'BUSINESS_PICKUP': '#ec4899', // pink
+    'DRIVER_BASE': '#06b6d4', // cyan
+    'DRIVER_ZONE': '#84cc16'  // lime
+  };
+  return colorMap[typeId] || '#6b7280';
+};
+
 const AddressCard = ({ address, isSelected, onSelect, onEdit, onDelete, onSetDefault }) => (
   <Pressable
     onPress={() => onSelect(address)}
-    className="mx-6 px-4 py-3 rounded-xl border border-primary-400 bg-primary-50"
+    className="mx-6 px-4 py-3 rounded-xl border border-primary-400 "
   >
     <View className="flex-row items-start">
       {/* Selection indicator */}
@@ -90,9 +120,17 @@ const AddressCard = ({ address, isSelected, onSelect, onEdit, onDelete, onSetDef
       <View className="flex-1 min-h-0">
         {/* Title row */}
         <View className="flex-row items-start justify-between mb-2">
-          <Text className="font-semibold text-base flex-1 mr-2 text-gray-900">
-            {address.label}
-          </Text>
+          <View className="flex-row items-center flex-1 mr-2">
+            <Ionicons
+              name={getTypeIcon(address.addressTypeId)}
+              size={18}
+              color={getTypeColor(address.addressTypeId)}
+              style={{ marginRight: 8 }}
+            />
+            <Text className="font-semibold text-base text-gray-900">
+              {address.label}
+            </Text>
+          </View>
           {address.isDefault && (
             <View className="bg-green-100 px-2 py-0.5 rounded-full shrink-0">
               <Text className="text-green-700 text-xs font-medium">

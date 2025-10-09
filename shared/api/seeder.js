@@ -1,5 +1,6 @@
 import { seedAddressTypes, checkAddressTypesExist } from './address-types/seeder';
 import { seedVenezuelanStates, checkVenezuelanStatesExist } from './venezuelan-states/seeder';
+import { seedUserTypesOnly } from './user-types/seeder';
 
 /**
  * Main Data Seeder
@@ -13,6 +14,7 @@ export const seedAllLookupData = async () => {
   console.log('🚀 Starting data seeding process...');
 
   try {
+    await seedUserTypesOnly();
     await seedAddressTypes();
     await seedVenezuelanStates();
     console.log('🎉 All lookup data seeded successfully!');

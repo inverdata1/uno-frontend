@@ -47,7 +47,7 @@ export const AdaptiveHeader = () => {
 
     const firebaseAddressData = {
       ...addressData,
-      userType: currentMode
+      type: currentMode
     };
 
     return await createAddressMutation.mutateAsync({

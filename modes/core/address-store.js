@@ -14,20 +14,18 @@ export const useAddressStore = create((set, get) => ({
   // Mode-aware methods (take addresses as parameter from TanStack Query)
   getAddressesForMode: (addresses, mode) => {
     if (!addresses) return [];
-    const behavior = getAddressBehavior(mode);
 
     return addresses.filter(address =>
-      address.userType === behavior.type || address.type === 'universal'
+      address.type === mode || address.type === 'universal'
     );
   },
 
   getCurrentAddressForMode: (addresses, mode) => {
     const { currentAddress } = get();
-    const behavior = getAddressBehavior(mode);
 
     // If current address is compatible with mode, return it
     if (currentAddress &&
-        (currentAddress.userType === behavior.type || currentAddress.type === 'universal')) {
+        (currentAddress.type === mode || currentAddress.type === 'universal')) {
       return currentAddress;
     }
 

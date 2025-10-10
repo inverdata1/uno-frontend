@@ -6,7 +6,7 @@
  *
  * Document Structure:
  * {
- *   id: string,                    // USER_TYPE_ID (CLIENT, BUSINESS, DRIVER)
+ *   id: string,                    // USER_TYPE_ID (client, business, driver)
  *   name: string,                  // Display name (Cliente, Negocio, Repartidor)
  *   description: string,           // Description of user type
  *   permissions: array,            // Array of permission strings
@@ -22,7 +22,7 @@
 export const COLLECTION_NAME = 'user_types';
 
 export const COLLECTION_SCHEMA = {
-  id: 'string (predefined: CLIENT|BUSINESS|DRIVER)',
+  id: 'string (predefined: client|business|driver)',
   name: 'string (required, max 50)',
   description: 'string (required, max 200)',
   permissions: 'array (required)',
@@ -35,9 +35,9 @@ export const COLLECTION_SCHEMA = {
 };
 
 export const USER_TYPES = {
-  CLIENT: 'CLIENT',
-  BUSINESS: 'BUSINESS',
-  DRIVER: 'DRIVER'
+  CLIENT: 'client',
+  BUSINESS: 'business',
+  DRIVER: 'driver'
 };
 
 export const FIRESTORE_RULES = `

@@ -8,7 +8,7 @@ import { ModeSwitcher } from '../../shared/components/layout/mode-switcher';
 import { ModeSwitcherModal } from '../../shared/components/layout/mode-switcher/mode-switcher-modal';
 import { useAuthStore } from '../../auth/stores/auth-store';
 import { useCurrentMode } from '../../shared/hooks/use-user-modes';
-import { getModeConfig } from '../../modes/core/mode-config';
+import { getUserTypeConfig } from '../../shared/config/user-types';
 import { cn } from '../../shared/utils/cn';
 
 export default function ProfileScreen() {
@@ -36,7 +36,7 @@ export default function ProfileScreen() {
     setModalVisible(false);
   };
 
-  const getModeInfo = () => getModeConfig(currentMode);
+  const getModeInfo = () => getUserTypeConfig(currentMode);
 
   const handleLogout = () => {
     Alert.alert(

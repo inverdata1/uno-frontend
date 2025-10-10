@@ -3,10 +3,10 @@ import { View } from 'react-native';
 import { Button, Card, Text } from '../../../shared/components/ui';
 
 /**
- * Delivery Dashboard Component
- * Shows delivery driver interface and earnings
+ * Driver Deliveries Screen
+ * Shows available and active deliveries
  */
-export const DeliveryDashboard = () => {
+export default function DriverDeliveriesScreen() {
   const [isOnline, setIsOnline] = useState(false);
 
   return (
@@ -14,10 +14,10 @@ export const DeliveryDashboard = () => {
       {/* Header */}
       <Card>
         <Text variant="heading" className="mb-2">
-          🚗 Delivery Dashboard
+          Entregas
         </Text>
         <Text variant="body">
-          Panel de control para repartidores
+          Panel de control para entregas
         </Text>
       </Card>
 
@@ -38,18 +38,6 @@ export const DeliveryDashboard = () => {
           </Button>
         </View>
       </Card>
-
-      {/* Earnings */}
-      <View className="flex-row gap-2">
-        <Card className="flex-1">
-          <Text variant="label" className="mb-1">Hoy</Text>
-          <Text variant="heading">$0</Text>
-        </Card>
-        <Card className="flex-1">
-          <Text variant="label" className="mb-1">Esta Semana</Text>
-          <Text variant="heading">$0</Text>
-        </Card>
-      </View>
 
       {/* Available Deliveries */}
       <Card>
@@ -74,4 +62,4 @@ export const DeliveryDashboard = () => {
       </Card>
     </View>
   );
-};
+}

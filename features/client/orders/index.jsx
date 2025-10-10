@@ -3,10 +3,9 @@ import { View } from 'react-native';
 import { Text } from '../../../shared/components/ui';
 
 /**
- * Orders List Component for Client Mode
- * Shows user's order history and current orders
+ * Orders Screen - Client views purchase history
  */
-export const OrdersList = () => {
+export default function OrdersScreen() {
   return (
     <View className="p-4">
       <Text variant="heading" className="mb-4">
@@ -22,4 +21,4 @@ export const OrdersList = () => {
       </View>
     </View>
   );
-};
+}

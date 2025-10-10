@@ -2,8 +2,8 @@ import { Ionicons } from '@expo/vector-icons';
 import { useState } from 'react';
 import { Text, TouchableOpacity, View } from 'react-native';
 import { useAuthStore } from '../../../auth/stores/auth-store';
-import { getModeSettings, getAddressBehavior } from '../../../modes/core/mode-config';
-import { useAddressStore } from '../../../modes/core/address-store';
+import { getUserTypeConfig, getAddressBehavior } from '../../config/user-types';
+import { getCurrentAddressForMode, hasAddressesForMode, getAddressesForMode } from '../../utils/address-helpers';
 import { useCurrentMode } from '../../hooks/use-user-modes';
 import { useAddresses, useCreateAddress, useUpdateAddress, useDeleteAddress, useSetDefaultAddress } from '../../hooks/use-addresses';
 import { AddressManager } from '../modals/address-bottom-sheet';
@@ -14,12 +14,6 @@ import { AddressManager } from '../modals/address-bottom-sheet';
 export const AdaptiveHeader = () => {
   const { currentMode } = useCurrentMode();
   const { user } = useAuthStore();
-  const {
-    getCurrentAddressForMode,
-    hasAddressesForMode,
-    getAddressesForMode,
-    selectAddress
-  } = useAddressStore();
   const [showAddressManager, setShowAddressManager] = useState(false);
 
   // TanStack Query hooks for data
@@ -29,7 +23,7 @@ export const AdaptiveHeader = () => {
   const deleteAddressMutation = useDeleteAddress();
   const setDefaultAddressMutation = useSetDefaultAddress();
 
-  const modeSettings = getModeSettings(currentMode);
+  const modeSettings = getUserTypeConfig(currentMode);
   const currentAddress = getCurrentAddressForMode(addresses, currentMode);
   const hasAddresses = hasAddressesForMode(addresses, currentMode);
 
@@ -37,8 +31,12 @@ export const AdaptiveHeader = () => {
     setShowAddressManager(true);
   };
 
-  const handleAddressSelect = (address) => {
-    selectAddress(address, currentMode);
+  const handleAddressSelect = async (address) => {
+    // Set as default address
+    await setDefaultAddressMutation.mutateAsync({
+      addressId: address.id,
+      userId: user.uid
+    });
     setShowAddressManager(false);
   };
 

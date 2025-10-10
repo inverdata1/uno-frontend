@@ -5,7 +5,7 @@ module.exports = {
   content: [
     "./app/**/*.{js,jsx,ts,tsx}",
     "./auth/**/*.{js,jsx,ts,tsx}",
-    "./modes/**/*.{js,jsx,ts,tsx}",
+    "./features/**/*.{js,jsx,ts,tsx}",
     "./shared/**/*.{js,jsx,ts,tsx}",
     "./components/**/*.{js,jsx,ts,tsx}",
   ],

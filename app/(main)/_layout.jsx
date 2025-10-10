@@ -3,7 +3,7 @@ import { Tabs } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useCurrentMode } from '../../shared/hooks/use-user-modes';
 import { theme } from '../../shared/config/theme';
-import { getTabConfig } from '../../modes/core/mode-config';
+// Tab config removed - using inline configuration
 
 export default function TabLayout() {
   const { currentMode, isLoading } = useCurrentMode();
@@ -18,8 +18,7 @@ export default function TabLayout() {
     );
   }
 
-  // Get tabs configuration for current mode
-  const tabsConfig = getTabConfig(currentMode);
+  // Tabs are configured inline below based on currentMode
 
   // Define tab icons with fallbacks
   const getTabIcon = (iconName, focused = false) => {
@@ -59,10 +58,10 @@ export default function TabLayout() {
 
       {/* Client mode tabs */}
       <Tabs.Screen
-        name="client/restaurants"
+        name="client/stores"
         options={currentMode === 'client' ? {
-          title: 'Productos',
-          tabBarIcon: ({ focused }) => getTabIcon('basket', focused),
+          title: 'Tiendas',
+          tabBarIcon: ({ focused }) => getTabIcon('storefront', focused),
         } : { href: null }}
       />
       <Tabs.Screen

@@ -4,7 +4,7 @@ import { Ionicons } from '@expo/vector-icons';
 import BottomSheet, { BottomSheetView } from '@gorhom/bottom-sheet';
 import { Text } from '../../ui';
 import { useCurrentMode, useSwitchMode, useBusinessContexts } from '../../../hooks/use-user-modes';
-import { getModeConfig } from '../../../../modes/core/mode-config';
+import { getUserTypeConfig } from '../../../config/user-types';
 import { colors } from '../../../utils/colors';
 
 export const ModeSwitcherModal = ({ visible, onClose, onModeSwitch }) => {
@@ -44,10 +44,10 @@ export const ModeSwitcherModal = ({ visible, onClose, onModeSwitch }) => {
     }
   };
 
-  // Use the standardized getModeConfig utility
+  // Use the standardized getUserTypeConfig utility
 
   const ModeCard = ({ mode, isActive, onPress, isAvailable }) => {
-    const config = getModeConfig(mode);
+    const config = getUserTypeConfig(mode);
 
     return (
       <TouchableOpacity

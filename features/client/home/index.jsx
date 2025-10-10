@@ -1,17 +1,14 @@
 import React from 'react';
 import { View, ScrollView, TouchableOpacity } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
-import { Button, Card, Text } from '../../../shared/components/ui';
+import { Text } from '../../../shared/components/ui';
 import { AdaptiveHeader } from '../../../shared/components/layout/adaptive-header';
-import { getModeConfig } from '../../core/mode-config';
 
 /**
- * Client Mode Dashboard Content
- * Shows client-specific features and actions
+ * Client Home Screen
+ * Shows categories, offers, and upcoming social feed
  */
-export const ClientModeContent = () => {
-  const modeInfo = getModeConfig('client');
-
+export default function ClientHomeScreen() {
   const categories = [
     { icon: 'restaurant', title: 'Restaurantes', color: '#ef4444' },
     { icon: 'storefront', title: 'Supermercado', color: '#10b981' },
@@ -23,7 +20,7 @@ export const ClientModeContent = () => {
 
   const offers = [
     { title: 'Envío gratis', subtitle: 'En pedidos +$20', color: '#10b981' },
-    { title: '30% OFF', subtitle: 'Restaurantes selectos', color: '#ef4444' },
+    { title: '30% OFF', subtitle: 'Tiendas selectas', color: '#ef4444' },
     { title: 'Nuevos usuarios', subtitle: 'Descuento especial', color: '#3b82f6' },
   ];
 
@@ -210,7 +207,7 @@ export const ClientModeContent = () => {
               color: '#64748b',
               fontWeight: '500'
             }}>
-              Función en desarrollo 🚀
+              Función en desarrollo
             </Text>
           </View>
         </View>
@@ -218,4 +215,4 @@ export const ClientModeContent = () => {
       </View>
     </ScrollView>
   );
-};
+}

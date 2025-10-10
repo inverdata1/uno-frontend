@@ -1,29 +1,28 @@
 import React from 'react';
 import { View, StyleSheet } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { ClientModeContent } from '../../modes/client/components';
-import { BusinessModeContent } from '../../modes/business/components';
-import { DeliveryModeContent } from '../../modes/delivery/components';
-import { useHomeContent } from '../../modes/client/hooks/use-home-content';
+import ClientHomeScreen from '../../features/client/home';
+import BusinessDashboardScreen from '../../features/business/dashboard';
+import DriverDeliveriesScreen from '../../features/driver/deliveries';
+import { useCurrentMode } from '../../shared/hooks/use-user-modes';
 
 export default function HomeScreen() {
-  const { user, currentMode, currentBusiness, greeting } = useHomeContent();
+  const { currentMode } = useCurrentMode();
 
   const renderModeContent = () => {
     switch (currentMode) {
       case 'business':
-        return <BusinessModeContent businessContext={currentBusiness} />;
+        return <BusinessDashboardScreen />;
       case 'delivery':
-        return <DeliveryModeContent />;
+        return <DriverDeliveriesScreen />;
       default:
-        return <ClientModeContent />;
+        return <ClientHomeScreen />;
     }
   };
 
   return (
     <SafeAreaView style={styles.container} edges={['top']}>
       <View style={{ flex: 1 }}>
-        {/* Mode-specific Content */}
         {renderModeContent()}
       </View>
     </SafeAreaView>

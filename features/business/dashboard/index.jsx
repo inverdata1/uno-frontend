@@ -4,10 +4,10 @@ import { Button, Card, Text } from '../../../shared/components/ui';
 import { useBusinessContexts } from '../../../shared/hooks/use-user-modes';
 
 /**
- * Business Dashboard Component
+ * Business Dashboard Screen
  * Shows business stats and quick actions
  */
-export const BusinessDashboard = () => {
+export default function BusinessDashboardScreen() {
   const businessContexts = useBusinessContexts();
   const currentBusiness = businessContexts.find(b => b.isActive) || businessContexts[0] || null;
 
@@ -16,7 +16,7 @@ export const BusinessDashboard = () => {
       {/* Header */}
       <Card>
         <Text variant="heading" className="mb-2">
-          📊 Dashboard
+          Dashboard
         </Text>
         <Text variant="body">
           {currentBusiness ?
@@ -63,4 +63,4 @@ export const BusinessDashboard = () => {
       </Card>
     </View>
   );
-};
+}

@@ -56,6 +56,24 @@ export default function TabLayout() {
         }}
       />
 
+      {/* Feed - Visible for client and business */}
+      <Tabs.Screen
+        name="feed"
+        options={(currentMode === 'client' || currentMode === 'business') ? {
+          title: 'Feed',
+          tabBarIcon: ({ focused }) => getTabIcon('apps', focused),
+        } : { href: null }}
+      />
+
+      {/* Categories - Visible for client and business */}
+      <Tabs.Screen
+        name="categories"
+        options={(currentMode === 'client' || currentMode === 'business') ? {
+          title: 'Categorías',
+          tabBarIcon: ({ focused }) => getTabIcon('grid', focused),
+        } : { href: null }}
+      />
+
       {/* Client mode tabs */}
       <Tabs.Screen
         name="client/stores"

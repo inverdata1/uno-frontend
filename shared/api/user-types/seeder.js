@@ -1,12 +1,13 @@
 import { UserTypesResource } from './resource.js';
 import { USER_TYPES } from './collection.js';
+import { firebaseClient } from '../index.js';
 
 /**
  * User Types Seeder
  * Seeds the user_types collection with default data
  */
 
-const userTypesResource = new UserTypesResource();
+const getUserTypesResource = () => new UserTypesResource(firebaseClient);
 
 export const USER_TYPES_DATA = {
   [USER_TYPES.CLIENT]: {
@@ -111,15 +112,16 @@ export const seedUserTypes = async () => {
   console.log('🌱 Seeding user types...');
 
   try {
-    for (const userTypeData of Object.values(USER_TYPES_DATA)) {
-      // Check if user type already exists
-      const existing = await userTypesResource.findById(userTypeData.id);
+    const userTypesResource = getUserTypesResource();
 
-      if (!existing) {
+    for (const userTypeData of Object.values(USER_TYPES_DATA)) {
+      try {
+        await userTypesResource.findById(userTypeData.id);
+        console.log(`⏭️  User type already exists: ${userTypeData.name}`);
+      } catch (error) {
+        // User type doesn't exist, create it
         await userTypesResource.create(userTypeData, userTypeData.id);
         console.log(`✅ Created user type: ${userTypeData.name}`);
-      } else {
-        console.log(`⏭️  User type already exists: ${userTypeData.name}`);
       }
     }
 

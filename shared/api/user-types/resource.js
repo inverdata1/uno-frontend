@@ -1,12 +1,12 @@
-import { BaseFirebaseService } from '../base/firebase-service';
+import { BaseFirebaseService } from '../base-firebase-service';
 
 /**
  * User Types Resource
  * Handles user types CRUD operations
  */
 export class UserTypesResource extends BaseFirebaseService {
-  constructor() {
-    super('user_types');
+  constructor(client) {
+    super(client, 'user_types');
   }
 
   /**

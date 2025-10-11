@@ -1,27 +1,57 @@
 import { seedAddressTypes, checkAddressTypesExist } from './address-types/seeder';
 import { seedVenezuelanStates, checkVenezuelanStatesExist } from './venezuelan-states/seeder';
 import { seedUserTypesOnly } from './user-types/seeder';
+import { seedCategories } from './categories/seeder';
+import { seedProducts } from './products/seeder';
+import { seedPosts } from './posts/seeder';
+import { seedStories } from './stories/seeder';
 
 /**
  * Main Data Seeder
- * Manages seeding of all lookup collections
+ * Manages seeding of all lookup and demo collections
  */
 
 /**
- * Seed all lookup collections
+ * Seed all lookup collections (required for app to function)
  */
 export const seedAllLookupData = async () => {
-  console.log('🚀 Starting data seeding process...');
+  console.log('🚀 Starting lookup data seeding...');
 
   try {
     await seedUserTypesOnly();
     await seedAddressTypes();
     await seedVenezuelanStates();
+    await seedCategories();
     console.log('🎉 All lookup data seeded successfully!');
   } catch (error) {
-    console.error('❌ Data seeding failed:', error);
+    console.error('❌ Lookup data seeding failed:', error);
     throw error;
   }
+};
+
+/**
+ * Seed demo/sample data (optional, for testing)
+ */
+export const seedDemoData = async () => {
+  console.log('🚀 Starting demo data seeding...');
+
+  try {
+    await seedProducts();
+    await seedPosts();
+    await seedStories();
+    console.log('🎉 All demo data seeded successfully!');
+  } catch (error) {
+    console.error('❌ Demo data seeding failed:', error);
+    throw error;
+  }
+};
+
+/**
+ * Seed everything (lookup + demo data)
+ */
+export const seedAll = async () => {
+  await seedAllLookupData();
+  await seedDemoData();
 };
 
 /**

@@ -3,10 +3,12 @@ import { View, ScrollView, TouchableOpacity, Image, Dimensions, Alert } from 're
 import { Ionicons } from '@expo/vector-icons';
 import { useQuery } from '@tanstack/react-query';
 import { router } from 'expo-router';
+import { LinearGradient } from 'expo-linear-gradient';
 import { Text } from '../../../shared/components/ui';
 import { AdaptiveHeader } from '../../../shared/components/layout/adaptive-header';
 import { apiClient } from '../../../shared/config/api-client';
 import { seedStories } from '../../../shared/api/stories/seeder';
+import StoryViewer from '../../social/stories/story-viewer';
 
 const { width } = Dimensions.get('window');
 
@@ -16,6 +18,8 @@ const { width } = Dimensions.get('window');
  */
 export default function ClientHomeScreen() {
   const [isSeeding, setIsSeeding] = useState(false);
+  const [storyViewerVisible, setStoryViewerVisible] = useState(false);
+  const [selectedStories, setSelectedStories] = useState([]);
 
   // Fetch categories
   const { data: categories = [] } = useQuery({
@@ -158,32 +162,60 @@ export default function ClientHomeScreen() {
               return (
                 <TouchableOpacity
                   key={businessStories.businessId}
-                  style={{ alignItems: 'center', marginHorizontal: 8 }}
+                  style={{ alignItems: 'center', marginHorizontal: 6 }}
                   activeOpacity={0.7}
+                  onPress={() => {
+                    setSelectedStories(businessStories.stories);
+                    setStoryViewerVisible(true);
+                  }}
                 >
-                  {/* Gradient border ring - only if has unviewed */}
+                  {/* Story Ring Container */}
                   <View style={{
-                    width: 76,
-                    height: 76,
-                    borderRadius: 38,
-                    padding: 2,
+                    width: 72,
+                    height: 72,
                     marginBottom: 6,
-                    borderWidth: 2,
-                    borderColor: businessStories.hasUnviewed ? '#DC2626' : '#e2e8f0'
+                    alignItems: 'center',
+                    justifyContent: 'center'
                   }}>
-                    {/* White border */}
-                    <View style={{
-                      width: 70,
-                      height: 70,
-                      borderRadius: 35,
-                      padding: 3,
-                      backgroundColor: '#ffffff'
-                    }}>
-                      {/* Story image */}
+                    {businessStories.hasUnviewed ? (
+                      // Instagram gradient ring for unviewed
+                      <LinearGradient
+                        colors={['#f09433', '#e6683c', '#dc2743', '#cc2366', '#bc1888']}
+                        start={{ x: 0, y: 0 }}
+                        end={{ x: 1, y: 1 }}
+                        style={{
+                          position: 'absolute',
+                          width: 72,
+                          height: 72,
+                          borderRadius: 36
+                        }}
+                      />
+                    ) : (
+                      // Gray border for viewed
                       <View style={{
-                        width: 64,
-                        height: 64,
-                        borderRadius: 32,
+                        position: 'absolute',
+                        width: 72,
+                        height: 72,
+                        borderRadius: 36,
+                        borderWidth: 2,
+                        borderColor: '#d1d5db'
+                      }} />
+                    )}
+
+                    {/* White padding */}
+                    <View style={{
+                      width: 66,
+                      height: 66,
+                      borderRadius: 33,
+                      backgroundColor: '#ffffff',
+                      alignItems: 'center',
+                      justifyContent: 'center'
+                    }}>
+                      {/* Story Image */}
+                      <View style={{
+                        width: 62,
+                        height: 62,
+                        borderRadius: 31,
                         backgroundColor: '#e2e8f0',
                         overflow: 'hidden'
                       }}>
@@ -201,7 +233,8 @@ export default function ClientHomeScreen() {
                       </View>
                     </View>
                   </View>
-                  <Text style={{ fontSize: 11, color: '#64748b', maxWidth: 76, textAlign: 'center' }} numberOfLines={1}>
+
+                  <Text style={{ fontSize: 11, color: '#64748b', maxWidth: 72, textAlign: 'center' }} numberOfLines={1}>
                     Business {index + 1}
                   </Text>
                 </TouchableOpacity>
@@ -293,6 +326,13 @@ export default function ClientHomeScreen() {
           ))}
         </View>
       </View>
+
+      {/* Story Viewer Modal */}
+      <StoryViewer
+        visible={storyViewerVisible}
+        stories={selectedStories}
+        onClose={() => setStoryViewerVisible(false)}
+      />
     </ScrollView>
   );
 }

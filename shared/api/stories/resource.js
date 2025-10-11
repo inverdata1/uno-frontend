@@ -284,7 +284,7 @@ export class StoriesResource extends BaseFirebaseService {
         grouped[story.businessId] = {
           businessId: story.businessId,
           stories: [],
-          hasUnviewed: false, // TODO: Implement viewed tracking per user
+          hasUnviewed: true, // TODO: Implement viewed tracking per user - set to true for now
           latestStoryTime: story.createdAt
         };
       }

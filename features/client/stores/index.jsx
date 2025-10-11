@@ -1,5 +1,6 @@
 import React from 'react';
 import { View } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import { Text } from '../../../shared/components/ui';
 
 /**
@@ -7,18 +8,20 @@ import { Text } from '../../../shared/components/ui';
  */
 export default function StoresScreen() {
   return (
-    <View className="p-4">
-      <Text variant="heading" className="mb-4">
-        Tiendas
-      </Text>
-      <View className="bg-card p-6 rounded-lg border border-border">
-        <Text variant="body" className="text-muted-foreground text-center">
-          Proximamente verás todas las tiendas disponibles.
+    <SafeAreaView className="flex-1" edges={['top']}>
+      <View className="p-4">
+        <Text variant="heading" className="mb-4">
+          Tiendas
         </Text>
-        <Text variant="caption" className="text-muted-foreground text-center mt-2">
-          Función en desarrollo 🚀
-        </Text>
+        <View className="bg-card p-6 rounded-lg border border-border">
+          <Text variant="body" className="text-muted-foreground text-center">
+            Proximamente verás todas las tiendas disponibles.
+          </Text>
+          <Text variant="caption" className="text-muted-foreground text-center mt-2">
+            Función en desarrollo 🚀
+          </Text>
+        </View>
       </View>
-    </View>
+    </SafeAreaView>
   );
 }

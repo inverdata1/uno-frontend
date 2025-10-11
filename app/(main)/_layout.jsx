@@ -1,8 +1,8 @@
 import { Ionicons } from '@expo/vector-icons';
 import { Tabs } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { useCurrentMode } from '../../shared/hooks/use-user-modes';
 import { theme } from '../../shared/config/theme';
+import { useCurrentMode } from '../../shared/hooks/use-user-modes';
 // Tab config removed - using inline configuration
 
 export default function TabLayout() {
@@ -65,14 +65,6 @@ export default function TabLayout() {
         } : { href: null }}
       />
 
-      {/* Categories - Visible for client and business */}
-      <Tabs.Screen
-        name="categories"
-        options={(currentMode === 'client' || currentMode === 'business') ? {
-          title: 'Categorías',
-          tabBarIcon: ({ focused }) => getTabIcon('grid', focused),
-        } : { href: null }}
-      />
 
       {/* Client mode tabs */}
       <Tabs.Screen

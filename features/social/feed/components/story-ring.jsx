@@ -55,23 +55,53 @@ export const StoryRing = ({
             colors={['#F58529', '#DD2A7B', '#8134AF', '#515BD4']}
             start={{ x: 0, y: 0 }}
             end={{ x: 1, y: 1 }}
-            className={cn('rounded-full p-0.5', config.container)}
+            style={{
+              width: config.gradient,
+              height: config.gradient,
+              borderRadius: config.gradient / 2,
+              padding: 2,
+              justifyContent: 'center',
+              alignItems: 'center'
+            }}
           >
-            <View className="bg-white rounded-full p-0.5">
+            <View style={{
+              backgroundColor: '#ffffff',
+              borderRadius: (config.gradient - 4) / 2,
+              padding: 2,
+              justifyContent: 'center',
+              alignItems: 'center'
+            }}>
               <Image
                 source={{ uri: business?.logo }}
-                className={cn('rounded-full bg-gray-200', config.image)}
-                style={{ width: config.imageSize, height: config.imageSize }}
+                style={{
+                  width: config.imageSize,
+                  height: config.imageSize,
+                  borderRadius: config.imageSize / 2,
+                  backgroundColor: '#e5e7eb'
+                }}
               />
             </View>
           </LinearGradient>
         ) : (
           // Viewed story - gray ring
-          <View className={cn('rounded-full p-0.5 border-2 border-gray-300', config.container)}>
+          <View style={{
+            width: config.gradient,
+            height: config.gradient,
+            borderRadius: config.gradient / 2,
+            padding: 2,
+            borderWidth: 2,
+            borderColor: '#d1d5db',
+            justifyContent: 'center',
+            alignItems: 'center'
+          }}>
             <Image
               source={{ uri: business?.logo }}
-              className={cn('rounded-full bg-gray-200', config.image)}
-              style={{ width: config.imageSize - 4, height: config.imageSize - 4 }}
+              style={{
+                width: config.imageSize,
+                height: config.imageSize,
+                borderRadius: config.imageSize / 2,
+                backgroundColor: '#e5e7eb'
+              }}
             />
           </View>
         )}

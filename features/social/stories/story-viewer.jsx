@@ -14,6 +14,7 @@ export default function StoryViewer({ visible, stories = [], initialIndex = 0, o
   const [currentStoryIndex, setCurrentStoryIndex] = useState(initialIndex);
   const [isPaused, setIsPaused] = useState(false);
   const [progressAnims, setProgressAnims] = useState([]);
+  const pausedValueRef = useRef(0);
   const currentStory = stories[currentStoryIndex];
 
   // Initialize progress animations only once when stories array changes
@@ -52,19 +53,22 @@ export default function StoryViewer({ visible, stories = [], initialIndex = 0, o
   }, [visible, initialIndex, progressAnims.length]);
 
   const handleNext = useCallback(() => {
+    pausedValueRef.current = 0; // Reset pause tracking
     setCurrentStoryIndex(prev => {
       const nextIndex = prev + 1;
       if (nextIndex < stories.length) {
         progressAnims[prev]?.setValue(1);
         return nextIndex;
       } else {
-        onClose();
+        // Defer onClose to avoid setState during render
+        setTimeout(() => onClose(), 0);
         return prev;
       }
     });
   }, [stories.length, onClose, progressAnims]);
 
   const handlePrevious = useCallback(() => {
+    pausedValueRef.current = 0; // Reset pause tracking
     setCurrentStoryIndex(prev => {
       if (prev > 0) {
         progressAnims[prev]?.setValue(0);
@@ -75,7 +79,7 @@ export default function StoryViewer({ visible, stories = [], initialIndex = 0, o
   }, [progressAnims]);
 
   useEffect(() => {
-    if (!visible || isPaused || !currentStory || progressAnims.length === 0) {
+    if (!visible || !currentStory || progressAnims.length === 0) {
       return;
     }
 
@@ -84,25 +88,37 @@ export default function StoryViewer({ visible, stories = [], initialIndex = 0, o
       return;
     }
 
-    // Reset current animation to 0 before starting
-    currentAnim.setValue(0);
-
     const duration = (currentStory?.duration || 5) * 1000;
-
-    let timeoutId;
     let isCancelled = false;
+    let animationHandle;
+
+    if (isPaused) {
+      // When paused, stop animation and store current value
+      currentAnim.stopAnimation((value) => {
+        pausedValueRef.current = value;
+      });
+      return;
+    }
+
+    // Calculate remaining duration based on paused value
+    const startValue = pausedValueRef.current;
+    const remainingDuration = duration * (1 - startValue);
+
+    // Set to start value (0 if fresh, paused value if resuming)
+    currentAnim.setValue(startValue);
 
     // Small delay to ensure the animation starts properly
-    timeoutId = setTimeout(() => {
+    const timeoutId = setTimeout(() => {
       if (isCancelled) return;
 
-      // Animate progress bar
-      Animated.timing(currentAnim, {
+      // Animate progress bar from current value to 1
+      animationHandle = Animated.timing(currentAnim, {
         toValue: 1,
-        duration,
+        duration: remainingDuration,
         useNativeDriver: false
       }).start(({ finished }) => {
         if (finished && !isCancelled) {
+          pausedValueRef.current = 0; // Reset for next story
           handleNext();
         }
       });
@@ -110,13 +126,42 @@ export default function StoryViewer({ visible, stories = [], initialIndex = 0, o
 
     return () => {
       isCancelled = true;
-      if (timeoutId) clearTimeout(timeoutId);
-      currentAnim.stopAnimation();
+      clearTimeout(timeoutId);
+      if (animationHandle) {
+        currentAnim.stopAnimation((value) => {
+          pausedValueRef.current = value;
+        });
+      }
     };
   }, [currentStoryIndex, visible, isPaused, currentStory, handleNext, progressAnims]);
 
-  const handlePressIn = () => setIsPaused(true);
-  const handlePressOut = () => setIsPaused(false);
+  const pressStartTime = useRef(0);
+  const LONG_PRESS_THRESHOLD = 200; // milliseconds
+
+  const handlePressIn = () => {
+    pressStartTime.current = Date.now();
+    setIsPaused(true);
+  };
+
+  const handlePressOut = () => {
+    setIsPaused(false);
+  };
+
+  const handleTapLeft = () => {
+    const pressDuration = Date.now() - pressStartTime.current;
+    // Only navigate if it was a quick tap (not a long press)
+    if (pressDuration < LONG_PRESS_THRESHOLD) {
+      handlePrevious();
+    }
+  };
+
+  const handleTapRight = () => {
+    const pressDuration = Date.now() - pressStartTime.current;
+    // Only navigate if it was a quick tap (not a long press)
+    if (pressDuration < LONG_PRESS_THRESHOLD) {
+      handleNext();
+    }
+  };
 
   if (!visible || !currentStory) return null;
 
@@ -173,38 +218,41 @@ export default function StoryViewer({ visible, stories = [], initialIndex = 0, o
         <View style={styles.tapZones}>
           <TouchableOpacity
             style={styles.tapLeft}
-            onPress={handlePrevious}
+            onPress={handleTapLeft}
             onPressIn={handlePressIn}
             onPressOut={handlePressOut}
             activeOpacity={1}
           />
           <TouchableOpacity
             style={styles.tapRight}
-            onPress={handleNext}
+            onPress={handleTapRight}
             onPressIn={handlePressIn}
             onPressOut={handlePressOut}
             activeOpacity={1}
           />
         </View>
 
-        {/* Action Buttons */}
-        <View style={styles.actions}>
-          <TouchableOpacity style={styles.actionButton}>
-            <Ionicons name="heart-outline" size={28} color="#ffffff" />
-          </TouchableOpacity>
-          <TouchableOpacity style={styles.actionButton}>
-            <Ionicons name="paper-plane-outline" size={28} color="#ffffff" />
-          </TouchableOpacity>
-        </View>
-
-        {/* Bottom CTA - "Ir a Catalogo" button */}
-        {currentStory.taggedProducts?.length > 0 && (
-          <View style={styles.ctaContainer}>
+        {/* Bottom Message Input - Instagram style */}
+        <View style={styles.bottomContainer}>
+          {/* "Ir a Catalogo" button above input if products tagged */}
+          {currentStory.taggedProducts?.length > 0 && (
             <TouchableOpacity style={styles.ctaButton}>
               <Text style={styles.ctaText}>Ir a Catalogo</Text>
             </TouchableOpacity>
+          )}
+
+          <View style={styles.messageInputContainer}>
+            <View style={styles.messageInput}>
+              <Text style={styles.messageInputPlaceholder}>Enviar mensaje</Text>
+            </View>
+            <TouchableOpacity style={styles.sendButton}>
+              <Ionicons name="paper-plane-outline" size={24} color="#ffffff" />
+            </TouchableOpacity>
+            <TouchableOpacity style={styles.likeButton}>
+              <Ionicons name="heart-outline" size={28} color="#ffffff" />
+            </TouchableOpacity>
           </View>
-        )}
+        </View>
       </View>
     </Modal>
   );
@@ -302,39 +350,62 @@ const styles = StyleSheet.create({
   tapRight: {
     flex: 1
   },
-  actions: {
+  bottomContainer: {
     position: 'absolute',
-    right: 16,
-    top: '50%',
-    gap: 24,
-    zIndex: 2
+    bottom: 0,
+    left: 0,
+    right: 0,
+    paddingHorizontal: 16,
+    paddingBottom: 30,
+    paddingTop: 16,
+    backgroundColor: 'rgba(0, 0, 0, 0.3)',
+    zIndex: 3
   },
-  actionButton: {
+  messageInputContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 12
+  },
+  messageInput: {
+    flex: 1,
+    height: 44,
+    borderRadius: 22,
+    borderWidth: 2,
+    borderColor: '#ffffff',
+    paddingHorizontal: 16,
+    justifyContent: 'center'
+  },
+  messageInputPlaceholder: {
+    color: '#ffffff',
+    fontSize: 15
+  },
+  sendButton: {
     width: 44,
     height: 44,
     alignItems: 'center',
     justifyContent: 'center'
   },
-  ctaContainer: {
-    position: 'absolute',
-    bottom: 100,
-    left: 16,
-    right: 16,
-    zIndex: 2
+  likeButton: {
+    width: 44,
+    height: 44,
+    alignItems: 'center',
+    justifyContent: 'center'
   },
   ctaButton: {
     backgroundColor: 'rgba(255, 255, 255, 0.95)',
-    borderRadius: 8,
-    paddingVertical: 14,
+    borderRadius: 22,
+    paddingVertical: 12,
+    paddingHorizontal: 24,
     alignItems: 'center',
+    marginBottom: 12,
     shadowColor: '#000',
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.3,
-    shadowRadius: 8
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.2,
+    shadowRadius: 4
   },
   ctaText: {
-    fontSize: 16,
-    fontWeight: '700',
+    fontSize: 15,
+    fontWeight: '600',
     color: '#0f172a'
   }
 });

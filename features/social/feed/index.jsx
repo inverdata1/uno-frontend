@@ -1,11 +1,13 @@
 import React, { useState } from 'react';
 import { View, FlatList, RefreshControl, ScrollView } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { apiClient } from '../../../shared/config/api-client';
 import { PostCard } from './components/post-card';
 import { StoryRing, AddStoryButton } from './components/story-ring';
 import { Text } from '../../../shared/components/ui/text';
 import { useCurrentMode } from '../../../shared/hooks/use-user-modes';
+import StoryViewer from '../stories/story-viewer';
 
 /**
  * Feed Screen
@@ -16,6 +18,8 @@ export default function FeedScreen() {
   const { currentMode } = useCurrentMode();
   const queryClient = useQueryClient();
   const [refreshing, setRefreshing] = useState(false);
+  const [storyViewerVisible, setStoryViewerVisible] = useState(false);
+  const [selectedStories, setSelectedStories] = useState([]);
 
   // Fetch posts
   const { data: posts = [], isLoading } = useQuery({
@@ -70,9 +74,9 @@ export default function FeedScreen() {
     saveMutation.mutate({ postId, isSaved });
   };
 
-  const handleStoryPress = (businessId) => {
-    // TODO: Navigate to stories viewer
-    console.log('View stories for business:', businessId);
+  const handleStoryPress = (businessStories) => {
+    setSelectedStories(businessStories.stories);
+    setStoryViewerVisible(true);
   };
 
   const handleCreateStory = () => {
@@ -95,39 +99,7 @@ export default function FeedScreen() {
     console.log('View product:', productId);
   };
 
-  const renderHeader = () => (
-    <View className="bg-white border-b border-gray-100">
-      {/* Stories Row */}
-      <ScrollView
-        horizontal
-        showsHorizontalScrollIndicator={false}
-        className="py-4 px-4"
-      >
-        {/* Add Story Button (only for business users) */}
-        {currentMode === 'business' && (
-          <AddStoryButton onPress={handleCreateStory} />
-        )}
-
-        {/* Stories */}
-        {storiesData.map((businessStories) => (
-          <StoryRing
-            key={businessStories.businessId}
-            business={businessStories.business}
-            hasUnviewed={businessStories.hasUnviewed}
-            onPress={() => handleStoryPress(businessStories.businessId)}
-          />
-        ))}
-
-        {storiesData.length === 0 && !isLoading && (
-          <View className="flex-1 items-center justify-center py-8">
-            <Text className="text-gray-500 text-sm">
-              No hay historias disponibles
-            </Text>
-          </View>
-        )}
-      </ScrollView>
-    </View>
-  );
+  const renderHeader = () => null;
 
   const renderPost = ({ item: post }) => {
     // TODO: Get business data from cache or fetch
@@ -165,7 +137,7 @@ export default function FeedScreen() {
   );
 
   return (
-    <View className="flex-1 bg-gray-50">
+    <SafeAreaView className="flex-1 bg-gray-50" edges={['top']}>
       <FlatList
         data={posts}
         renderItem={renderPost}
@@ -177,6 +149,12 @@ export default function FeedScreen() {
         }
         showsVerticalScrollIndicator={false}
       />
-    </View>
+
+      <StoryViewer
+        visible={storyViewerVisible}
+        stories={selectedStories}
+        onClose={() => setStoryViewerVisible(false)}
+      />
+    </SafeAreaView>
   );
 }

@@ -9,6 +9,7 @@ import { AdaptiveHeader } from '../../../shared/components/layout/adaptive-heade
 import { apiClient } from '../../../shared/config/api-client';
 import { seedStories } from '../../../shared/api/stories/seeder';
 import StoryViewer from '../../social/stories/story-viewer';
+import OffersBanner from './offers-banner';
 
 const { width } = Dimensions.get('window');
 
@@ -64,9 +65,21 @@ export default function ClientHomeScreen() {
   };
 
   const offers = [
-    { title: '50% OFF', subtitle: 'Your first order', color: '#3b82f6' },
-    { title: 'Envío gratis', subtitle: 'En pedidos +$20', color: '#10b981' },
-    { title: '30% OFF', subtitle: 'Tiendas selectas', color: '#ef4444' },
+    {
+      id: '1',
+      imageUrl: 'https://images.unsplash.com/photo-1607082348824-0a96f2a4b9da?w=800&h=400&fit=crop',
+      title: '50% OFF Your first order'
+    },
+    {
+      id: '2',
+      imageUrl: 'https://images.unsplash.com/photo-1607083206968-13611e3d76db?w=800&h=400&fit=crop',
+      title: 'Envío gratis en pedidos +$20'
+    },
+    {
+      id: '3',
+      imageUrl: 'https://images.unsplash.com/photo-1607082349566-187342175e2f?w=800&h=400&fit=crop',
+      title: '30% OFF Tiendas selectas'
+    },
   ];
 
   const cardWidth = (width - 48) / 2; // 2 columns with padding
@@ -97,37 +110,13 @@ export default function ClientHomeScreen() {
       </View>
 
       {/* Offers Banner Carousel */}
-      <ScrollView
-        horizontal
-        showsHorizontalScrollIndicator={false}
-        pagingEnabled
-        snapToInterval={width - 32}
-        decelerationRate="fast"
-        contentContainerStyle={{ paddingHorizontal: 16, paddingBottom: 8 }}
-      >
-        {offers.map((offer, index) => (
-          <TouchableOpacity
-            key={index}
-            activeOpacity={0.9}
-            style={{
-              backgroundColor: offer.color,
-              borderRadius: 12,
-              padding: 24,
-              width: width - 32,
-              marginRight: index < offers.length - 1 ? 12 : 0,
-              height: 140,
-              justifyContent: 'center'
-            }}
-          >
-            <Text style={{ color: '#ffffff', fontSize: 28, fontWeight: '800', marginBottom: 4 }}>
-              {offer.title}
-            </Text>
-            <Text style={{ color: 'rgba(255, 255, 255, 0.95)', fontSize: 15 }}>
-              {offer.subtitle}
-            </Text>
-          </TouchableOpacity>
-        ))}
-      </ScrollView>
+      <OffersBanner
+        offers={offers}
+        onOfferPress={(offer) => {
+          console.log('Offer pressed:', offer);
+          // Navigate to offer detail or apply discount
+        }}
+      />
 
       {/* Stories Row - Instagram style */}
       <View style={{ paddingVertical: 16, borderBottomWidth: 1, borderBottomColor: '#f1f5f9' }}>
@@ -244,19 +233,88 @@ export default function ClientHomeScreen() {
         )}
       </View>
 
-      {/* Products Grid - 2 columns */}
-      <View style={{ paddingHorizontal: 16, paddingTop: 20 }}>
-        <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16 }}>
-          <Text style={{ fontSize: 18, fontWeight: '700', color: '#0f172a' }}>
-            Para ti
+      {/* Videos Recomendados */}
+      <View style={{ paddingVertical: 20, borderBottomWidth: 1, borderBottomColor: '#f1f5f9' }}>
+        <View style={{ paddingHorizontal: 16, marginBottom: 16 }}>
+          <Text style={{ fontSize: 20, fontWeight: '700', color: '#0f172a' }}>
+            Videos Recomendados
           </Text>
-          <TouchableOpacity>
-            <Ionicons name="options-outline" size={20} color="#64748b" />
-          </TouchableOpacity>
+        </View>
+        <ScrollView
+          horizontal
+          showsHorizontalScrollIndicator={false}
+          contentContainerStyle={{ paddingHorizontal: 16, gap: 12 }}
+        >
+          {posts.filter(post => post.mediaType === 'video').slice(0, 3).map((video) => (
+            <TouchableOpacity
+              key={video.id}
+              activeOpacity={0.9}
+              onPress={() => {
+                // TODO: Open full-screen vertical video viewer
+                console.log('Open video viewer starting at:', video.id);
+              }}
+              style={{
+                width: 140,
+                height: 200,
+                borderRadius: 12,
+                overflow: 'hidden',
+                backgroundColor: '#f8fafc'
+              }}
+            >
+              {video.thumbnailUrl ? (
+                <Image
+                  source={{ uri: video.thumbnailUrl }}
+                  style={{ width: '100%', height: '100%' }}
+                  resizeMode="cover"
+                />
+              ) : (
+                <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center', backgroundColor: '#e2e8f0' }}>
+                  <Ionicons name="play-circle" size={48} color="#94a3b8" />
+                </View>
+              )}
+              {/* Play icon overlay */}
+              <View style={{
+                position: 'absolute',
+                top: 0,
+                left: 0,
+                right: 0,
+                bottom: 0,
+                justifyContent: 'center',
+                alignItems: 'center'
+              }}>
+                <View style={{
+                  width: 48,
+                  height: 48,
+                  borderRadius: 24,
+                  backgroundColor: 'rgba(0, 0, 0, 0.4)',
+                  justifyContent: 'center',
+                  alignItems: 'center'
+                }}>
+                  <Ionicons name="play" size={24} color="#ffffff" />
+                </View>
+              </View>
+            </TouchableOpacity>
+          ))}
+          {posts.filter(post => post.mediaType === 'video').length === 0 && (
+            <View style={{ paddingHorizontal: 16, paddingVertical: 40 }}>
+              <Text style={{ color: '#94a3b8', fontSize: 14 }}>
+                No hay videos disponibles
+              </Text>
+            </View>
+          )}
+        </ScrollView>
+      </View>
+
+      {/* Cerca de ti */}
+      <View style={{ paddingHorizontal: 16, paddingTop: 20, paddingBottom: 16 }}>
+        <View style={{ marginBottom: 16 }}>
+          <Text style={{ fontSize: 20, fontWeight: '700', color: '#0f172a' }}>
+            Cerca de ti
+          </Text>
         </View>
 
         <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 12 }}>
-          {products.map((product) => (
+          {products.slice(0, 6).map((product) => (
             <TouchableOpacity
               key={product.id}
               activeOpacity={0.9}
@@ -325,6 +383,39 @@ export default function ClientHomeScreen() {
             </TouchableOpacity>
           ))}
         </View>
+      </View>
+
+      {/* Categories */}
+      <View style={{ paddingBottom: 24, borderTopWidth: 1, borderTopColor: '#f1f5f9', paddingTop: 20 }}>
+        <View style={{ paddingHorizontal: 16, marginBottom: 16 }}>
+          <Text style={{ fontSize: 20, fontWeight: '700', color: '#0f172a' }}>
+            Categorías
+          </Text>
+        </View>
+        <ScrollView
+          horizontal
+          showsHorizontalScrollIndicator={false}
+          contentContainerStyle={{ paddingHorizontal: 16, gap: 12 }}
+        >
+          {categories.map((category) => (
+            <TouchableOpacity
+              key={category.id}
+              activeOpacity={0.8}
+              style={{
+                paddingHorizontal: 20,
+                paddingVertical: 12,
+                borderRadius: 24,
+                borderWidth: 1.5,
+                borderColor: '#e2e8f0',
+                backgroundColor: '#ffffff'
+              }}
+            >
+              <Text style={{ fontSize: 15, fontWeight: '600', color: '#334155' }}>
+                {category.name}
+              </Text>
+            </TouchableOpacity>
+          ))}
+        </ScrollView>
       </View>
 
       {/* Story Viewer Modal */}

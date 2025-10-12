@@ -10,6 +10,8 @@ import { useAuthStore } from '../../auth/stores/auth-store';
 import { useCurrentMode } from '../../shared/hooks/use-user-modes';
 import { getUserTypeConfig } from '../../shared/config/user-types';
 import { cn } from '../../shared/utils/cn';
+import { seedStories } from '../../shared/api/stories/seeder';
+import { seedPosts } from '../../shared/api/posts/seeder';
 
 export default function ProfileScreen() {
   const { user, signOut } = useAuthStore();
@@ -18,6 +20,7 @@ export default function ProfileScreen() {
   // Bottom sheet for mode switcher
   const bottomSheetRef = useRef(null);
   const [modalVisible, setModalVisible] = useState(false);
+  const [isSeeding, setIsSeeding] = useState(false);
 
   const handleSheetChanges = useCallback((index) => {
     console.log('Profile bottom sheet index changed to:', index);
@@ -60,6 +63,23 @@ export default function ProfileScreen() {
         },
       ]
     );
+  };
+
+  const handleSeedData = async () => {
+    try {
+      setIsSeeding(true);
+      console.log('Seeding all data...');
+
+      await seedStories();
+      await seedPosts();
+
+      Alert.alert('Success', 'Data seeded successfully!');
+    } catch (error) {
+      console.error('Seeding error:', error);
+      Alert.alert('Error', 'Failed to seed data: ' + error.message);
+    } finally {
+      setIsSeeding(false);
+    }
   };
 
   const SettingsItem = ({ icon, title, subtitle, onPress, danger = false, highlight = false, showBorder = false }) => (
@@ -352,6 +372,40 @@ export default function ProfileScreen() {
               />
             </View>
           </View>
+
+          {/* Development Tools */}
+          {__DEV__ && (
+            <View style={{ marginBottom: 32 }}>
+              <Text style={{
+                fontSize: 20,
+                fontWeight: '700',
+                color: '#1f2937',
+                marginBottom: 16,
+                paddingHorizontal: 4
+              }}>
+                Desarrollo
+              </Text>
+              <View style={{
+                backgroundColor: '#ffffff',
+                borderRadius: 16,
+                overflow: 'hidden',
+                shadowColor: '#000',
+                shadowOffset: { width: 0, height: 2 },
+                shadowOpacity: 0.05,
+                shadowRadius: 8,
+                elevation: 2
+              }}>
+                <SettingsItem
+                  icon="cloud-download-outline"
+                  title={isSeeding ? "Cargando datos..." : "Seed Data"}
+                  subtitle="Cargar historias, posts y videos de prueba"
+                  onPress={handleSeedData}
+                  highlight={true}
+                  showBorder={false}
+                />
+              </View>
+            </View>
+          )}
 
           {/* Logout - Standalone */}
           <View style={{

@@ -1,14 +1,13 @@
-import React, { useState } from 'react';
-import { View, ScrollView, TouchableOpacity, Image, Dimensions, Alert } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useQuery } from '@tanstack/react-query';
-import { router } from 'expo-router';
 import { LinearGradient } from 'expo-linear-gradient';
-import { Text } from '../../../shared/components/ui';
+import { useState } from 'react';
+import { Dimensions, Image, ScrollView, TouchableOpacity, View } from 'react-native';
 import { AdaptiveHeader } from '../../../shared/components/layout/adaptive-header';
+import { Text } from '../../../shared/components/ui';
 import { apiClient } from '../../../shared/config/api-client';
-import { seedStories } from '../../../shared/api/stories/seeder';
 import StoryViewer from '../../social/stories/story-viewer';
+import VideoViewer from '../../social/videos/video-viewer';
 import OffersBanner from './offers-banner';
 
 const { width } = Dimensions.get('window');
@@ -18,10 +17,10 @@ const { width } = Dimensions.get('window');
  * Instagram/TikTok inspired layout
  */
 export default function ClientHomeScreen() {
-  const [isSeeding, setIsSeeding] = useState(false);
   const [storyViewerVisible, setStoryViewerVisible] = useState(false);
   const [selectedStories, setSelectedStories] = useState([]);
-
+  const [videoViewerVisible, setVideoViewerVisible] = useState(false);
+  const [selectedVideoIndex, setSelectedVideoIndex] = useState(0);
   // Fetch categories
   const { data: categories = [] } = useQuery({
     queryKey: ['categories'],
@@ -41,28 +40,16 @@ export default function ClientHomeScreen() {
   });
 
   // Fetch stories
-  const { data: stories = [], refetch: refetchStories } = useQuery({
+  const { data: stories = [] } = useQuery({
     queryKey: ['stories'],
-    queryFn: () => apiClient.get('/stories').then(res => {
-      console.log('Stories from API:', res.data);
-      return res.data;
-    })
+    queryFn: () => apiClient.get('/stories').then(res => res.data)
   });
 
-  const handleSeedStories = async () => {
-    try {
-      setIsSeeding(true);
-      console.log('Seeding stories...');
-      await seedStories();
-      Alert.alert('Success', 'Stories seeded successfully!');
-      refetchStories();
-    } catch (error) {
-      console.error('Seeding error:', error);
-      Alert.alert('Error', 'Failed to seed stories: ' + error.message);
-    } finally {
-      setIsSeeding(false);
-    }
-  };
+  // Fetch videos (video posts only)
+  const { data: videos = [] } = useQuery({
+    queryKey: ['videos'],
+    queryFn: () => apiClient.get('/posts/videos').then(res => res.data)
+  });
 
   const offers = [
     {
@@ -122,23 +109,9 @@ export default function ClientHomeScreen() {
       <View style={{ paddingVertical: 16, borderBottomWidth: 1, borderBottomColor: '#f1f5f9' }}>
         {stories.length === 0 ? (
           <View style={{ paddingHorizontal: 16, paddingVertical: 20, alignItems: 'center' }}>
-            <Text style={{ fontSize: 14, color: '#94a3b8', marginBottom: 12 }}>
-              No stories yet
+            <Text style={{ fontSize: 14, color: '#94a3b8' }}>
+              No hay historias disponibles
             </Text>
-            <TouchableOpacity
-              onPress={handleSeedStories}
-              disabled={isSeeding}
-              style={{
-                backgroundColor: isSeeding ? '#94a3b8' : '#8B5CF6',
-                paddingHorizontal: 20,
-                paddingVertical: 10,
-                borderRadius: 8
-              }}
-            >
-              <Text style={{ color: '#ffffff', fontSize: 14, fontWeight: '600' }}>
-                {isSeeding ? 'Seeding...' : 'Seed Stories'}
-              </Text>
-            </TouchableOpacity>
           </View>
         ) : (
           <ScrollView
@@ -245,13 +218,13 @@ export default function ClientHomeScreen() {
           showsHorizontalScrollIndicator={false}
           contentContainerStyle={{ paddingHorizontal: 16, gap: 12 }}
         >
-          {posts.filter(post => post.mediaType === 'video').slice(0, 3).map((video) => (
+          {videos.slice(0, 3).map((video, index) => (
             <TouchableOpacity
               key={video.id}
               activeOpacity={0.9}
               onPress={() => {
-                // TODO: Open full-screen vertical video viewer
-                console.log('Open video viewer starting at:', video.id);
+                setSelectedVideoIndex(index);
+                setVideoViewerVisible(true);
               }}
               style={{
                 width: 140,
@@ -295,7 +268,7 @@ export default function ClientHomeScreen() {
               </View>
             </TouchableOpacity>
           ))}
-          {posts.filter(post => post.mediaType === 'video').length === 0 && (
+          {videos.length === 0 && (
             <View style={{ paddingHorizontal: 16, paddingVertical: 40 }}>
               <Text style={{ color: '#94a3b8', fontSize: 14 }}>
                 No hay videos disponibles
@@ -423,6 +396,13 @@ export default function ClientHomeScreen() {
         visible={storyViewerVisible}
         stories={selectedStories}
         onClose={() => setStoryViewerVisible(false)}
+      />
+            {/* Video Viewer Modal */}
+      <VideoViewer
+        visible={videoViewerVisible}
+        videos={videos}
+        initialIndex={selectedVideoIndex}
+        onClose={() => setVideoViewerVisible(false)}
       />
     </ScrollView>
   );

@@ -13,6 +13,9 @@
       "bundleIdentifier": "com.inverdata.unodelivery",
       "config": {
         "googleMapsApiKey": "AIzaSyCPYgISlUZoPs9-iLW2Tl9d-2yPZjTyll4"
+      },
+      "infoPlist": {
+        "ITSAppUsesNonExemptEncryption": false
       }
     },
     "android": {
@@ -45,6 +48,13 @@
           "dark": {
             "backgroundColor": "#000000"
           }
+        }
+      ],
+      [
+        "expo-video",
+        {
+          "supportsBackgroundPlayback": true,
+          "supportsPictureInPicture": true
         }
       ]
     ],

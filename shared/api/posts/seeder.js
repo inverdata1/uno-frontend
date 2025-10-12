@@ -1,6 +1,6 @@
-import { PostsResource } from './resource.js';
-import { POST_TYPES } from './collection.js';
 import { firebaseClient } from '../index.js';
+import { POST_TYPES } from './collection.js';
+import { PostsResource } from './resource.js';
 
 /**
  * Posts Seeder
@@ -32,18 +32,132 @@ export const SAMPLE_POSTS = [
     businessId: 'sample_business_2',
     userId: 'sample_user_2',
     type: POST_TYPES.VIDEO,
-    caption: 'Nuevas camisetas disponibles! Varios colores y tallas.',
+    caption: 'Nuevas camisetas disponibles! Varios colores y tallas. Perfectas para el verano.',
     media: [
       {
         type: 'video',
-        url: 'https://images.unsplash.com/photo-1523381210434-271e8be1f52b?w=600&h=800&fit=crop',
-        thumbnailUrl: 'https://images.unsplash.com/photo-1523381210434-271e8be1f52b?w=300&h=400&fit=crop',
+        url: 'https://cdn.pixabay.com/video/2025/10/04/307864_tiny.mp4',
+        thumbnailUrl: 'https://images.unsplash.com/photo-1523381210434-271e8be1f52b?w=300&h=500&fit=crop',
         duration: 15
       }
     ],
-    thumbnailUrl: 'https://images.unsplash.com/photo-1523381210434-271e8be1f52b?w=300&h=400&fit=crop',
-    taggedProducts: [],
+    thumbnailUrl: 'https://images.unsplash.com/photo-1523381210434-271e8be1f52b?w=300&h=500&fit=crop',
+    taggedProducts: ['product_1'],
     hashtags: ['Fashion', 'Ropa', 'Moda'],
+    mentions: [],
+    isPublished: true
+  },
+  {
+    businessId: 'sample_business_3',
+    userId: 'sample_user_3',
+    type: POST_TYPES.VIDEO,
+    caption: 'Preparando el café perfecto! Granos 100% colombianos.',
+    media: [
+      {
+        type: 'video',
+        url: 'https://cdn.pixabay.com/video/2025/09/15/304330_tiny.mp4',
+        thumbnailUrl: 'https://images.unsplash.com/photo-1495474472287-4d71bcdd2085?w=300&h=500&fit=crop',
+        duration: 20
+      }
+    ],
+    thumbnailUrl: 'https://images.unsplash.com/photo-1495474472287-4d71bcdd2085?w=300&h=500&fit=crop',
+    taggedProducts: ['product_2', 'product_3'],
+    hashtags: ['Coffee', 'Cafe', 'CoffeeLover'],
+    mentions: [],
+    isPublished: true
+  },
+  {
+    businessId: 'sample_business_1',
+    userId: 'sample_user_1',
+    type: POST_TYPES.VIDEO,
+    caption: 'Unboxing de zapatos deportivos! Link en bio.',
+    media: [
+      {
+        type: 'video',
+        url: 'https://cdn.pixabay.com/video/2025/07/27/293788_tiny.mp4',
+        thumbnailUrl: 'https://images.unsplash.com/photo-1542291026-7eec264c27ff?w=300&h=500&fit=crop',
+        duration: 25
+      }
+    ],
+    thumbnailUrl: 'https://images.unsplash.com/photo-1542291026-7eec264c27ff?w=300&h=500&fit=crop',
+    taggedProducts: ['product_4'],
+    hashtags: ['Sneakers', 'Unboxing', 'Fashion'],
+    mentions: [],
+    isPublished: true
+  },
+  {
+    businessId: 'sample_business_2',
+    userId: 'sample_user_2',
+    type: POST_TYPES.VIDEO,
+    caption: 'Rutina de maquillaje natural en 60 segundos.',
+    media: [
+      {
+        type: 'video',
+        url: 'https://cdn.pixabay.com/video/2024/10/13/236256_tiny.mp4',
+        thumbnailUrl: 'https://images.unsplash.com/photo-1596704017254-9b121068ec31?w=300&h=500&fit=crop',
+        duration: 30
+      }
+    ],
+    thumbnailUrl: 'https://images.unsplash.com/photo-1596704017254-9b121068ec31?w=300&h=500&fit=crop',
+    taggedProducts: ['product_5', 'product_6', 'product_7'],
+    hashtags: ['Makeup', 'Beauty', 'Tutorial'],
+    mentions: [],
+    isPublished: true
+  },
+  {
+    businessId: 'sample_business_3',
+    userId: 'sample_user_3',
+    type: POST_TYPES.VIDEO,
+    caption: 'Receta fácil de smoothie bowl! Ingredientes frescos y saludables.',
+    media: [
+      {
+        type: 'video',
+        url: 'https://cdn.pixabay.com/video/2024/05/18/212404_tiny.mp4',
+        thumbnailUrl: 'https://images.unsplash.com/photo-1590301157890-4810ed352733?w=300&h=500&fit=crop',
+        duration: 30
+      }
+    ],
+    thumbnailUrl: 'https://images.unsplash.com/photo-1590301157890-4810ed352733?w=300&h=500&fit=crop',
+    taggedProducts: ['product_8'],
+    hashtags: ['Healthy', 'Food', 'Recipe'],
+    mentions: [],
+    isPublished: true
+  },
+  {
+    businessId: 'sample_business_1',
+    userId: 'sample_user_1',
+    type: POST_TYPES.VIDEO,
+    caption: 'Nueva colección de relojes! Diseño minimalista y elegante.',
+    media: [
+      {
+        type: 'video',
+        url: 'https://cdn.pixabay.com/video/2025/08/20/298643_tiny.mp4',
+        thumbnailUrl: 'https://images.unsplash.com/photo-1524805444758-089113d48a6d?w=300&h=500&fit=crop',
+        duration: 18
+      }
+    ],
+    thumbnailUrl: 'https://images.unsplash.com/photo-1524805444758-089113d48a6d?w=300&h=500&fit=crop',
+    taggedProducts: ['product_9'],
+    hashtags: ['Watches', 'Fashion', 'Style'],
+    mentions: [],
+    isPublished: true
+  },
+  {
+    businessId: 'sample_business_2',
+    userId: 'sample_user_2',
+    type: POST_TYPES.VIDEO,
+    caption: 'Decorando mi espacio de trabajo! Tips y productos.',
+    media: [
+      {
+        type: 'video',
+        url: 'https://cdn.pixabay.com/video/2025/09/06/302098_tiny.mp4',
+        thumbnailUrl: 'https://images.unsplash.com/photo-1484480974693-6ca0a78fb36b?w=300&h=500&fit=crop',
+        duration: 35
+      }
+    ],
+    thumbnailUrl: 'https://images.unsplash.com/photo-1484480974693-6ca0a78fb36b?w=300&h=500&fit=crop',
+    taggedProducts: ['product_10', 'product_11'],
+    hashtags: ['HomeDecor', 'Workspace', 'Decor'],
     mentions: [],
     isPublished: true
   },

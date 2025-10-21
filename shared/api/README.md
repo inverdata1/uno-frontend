@@ -81,20 +81,20 @@ Esto permite cambiar de Firebase a un backend real cambiando solo un flag.
 ### 1. Usar en tus Hooks (NO cambia cuando tengas backend)
 
 ```javascript
-// features/auth/api/use-user-modes.js
-import { apiClient } from '../../../shared/config/api-client';
+// shared/hooks/use-user-type.js
+import { apiClient } from '../config/api-client';
 
-export const useUserModes = () => {
+export const useUserType = () => {
   return useQuery({
-    queryKey: ['user-modes'],
+    queryKey: ['user-types'],
     queryFn: () => apiClient.get('/user-modes').then(res => res.data)
   });
 };
 
-export const useSwitchMode = () => {
+export const useSwitchUserType = () => {
   return useMutation({
-    mutationFn: ({ mode, businessId }) =>
-      apiClient.post('/user-modes/switch', { mode, businessId }).then(res => res.data)
+    mutationFn: ({ userType, businessId }) =>
+      apiClient.post('/user-modes/switch', { mode: userType, businessId }).then(res => res.data)
   });
 };
 ```
@@ -102,23 +102,23 @@ export const useSwitchMode = () => {
 ### 2. Usar en Componentes
 
 ```javascript
-import { useUserModes, useSwitchMode } from '../api/use-user-modes';
+import { useCurrentUserType, useSwitchUserType } from '../hooks/use-user-type';
 
 const ModeSwitcher = () => {
-  const { data: userModes, isLoading } = useUserModes();
-  const switchMode = useSwitchMode();
+  const { currentUserType, availableUserTypes, isLoading } = useCurrentUserType();
+  const switchUserType = useSwitchUserType();
 
   if (isLoading) return <Text>Cargando...</Text>;
 
   return (
     <View>
-      <Text>Modo actual: {userModes.currentMode}</Text>
+      <Text>Tipo de usuario actual: {currentUserType}</Text>
 
-      <Button onPress={() => switchMode.mutate({ mode: 'client' })}>
+      <Button onPress={() => switchUserType.mutate({ userType: 'client' })}>
         Modo Cliente
       </Button>
 
-      <Button onPress={() => switchMode.mutate({ mode: 'business', businessId: 'biz123' })}>
+      <Button onPress={() => switchUserType.mutate({ userType: 'business', businessId: 'biz123' })}>
         Modo Negocio
       </Button>
     </View>

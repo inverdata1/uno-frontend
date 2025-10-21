@@ -3,15 +3,15 @@ import { View, TouchableOpacity } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import BottomSheet, { BottomSheetView } from '@gorhom/bottom-sheet';
 import { Text } from '../../ui';
-import { useCurrentMode, useSwitchMode, useBusinessContexts } from '../../../hooks/use-user-modes';
+import { useCurrentUserType, useSwitchUserType, useBusinessContexts } from '../../../hooks/use-user-type';
 import { getUserTypeConfig } from '../../../config/user-types';
 import { colors } from '../../../utils/colors';
 
 export const ModeSwitcherModal = ({ visible, onClose, onModeSwitch }) => {
-  const { currentMode, availableModes = [], isLoading } = useCurrentMode();
+  const { currentUserType, availableUserTypes = [], isLoading } = useCurrentUserType();
   const businessContexts = useBusinessContexts() || [];
-  const switchModeMutation = useSwitchMode();
-  const [selectedMode, setSelectedMode] = useState(currentMode);
+  const switchUserTypeMutation = useSwitchUserType();
+  const [selectedUserType, setSelectedUserType] = useState(currentUserType);
   const [selectedBusiness, setSelectedBusiness] = useState(null);
 
   // Bottom sheet ref
@@ -34,13 +34,13 @@ export const ModeSwitcherModal = ({ visible, onClose, onModeSwitch }) => {
     }
   }, [visible]);
 
-  const handleModeSwitch = async (mode, businessId = null, branchId = null) => {
+  const handleUserTypeSwitch = async (userType, businessId = null, branchId = null) => {
     try {
-      await switchModeMutation.mutateAsync({ mode, businessId, branchId });
-      onModeSwitch?.({ mode, businessId, branchId });
+      await switchUserTypeMutation.mutateAsync({ userType, businessId, branchId });
+      onModeSwitch?.({ mode: userType, businessId, branchId });
       onClose();
     } catch (error) {
-      console.error('Failed to switch mode:', error);
+      console.error('Failed to switch user type:', error);
     }
   };
 
@@ -235,14 +235,14 @@ export const ModeSwitcherModal = ({ visible, onClose, onModeSwitch }) => {
               Cargando modos disponibles...
             </Text>
           </View>
-        ) : availableModes.length > 0 ? (
-          availableModes.map((mode) => (
+        ) : availableUserTypes.length > 0 ? (
+          availableUserTypes.map((userType) => (
             <ModeCard
-              key={mode}
-              mode={mode}
-              isActive={currentMode === mode}
+              key={userType}
+              mode={userType}
+              isActive={currentUserType === userType}
               isAvailable={true}
-              onPress={handleModeSwitch}
+              onPress={handleUserTypeSwitch}
             />
           ))
         ) : (

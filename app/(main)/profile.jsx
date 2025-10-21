@@ -7,7 +7,7 @@ import { Button, Card, Text } from '../../shared/components/ui';
 import { ModeSwitcher } from '../../shared/components/layout/mode-switcher';
 import { ModeSwitcherModal } from '../../shared/components/layout/mode-switcher/mode-switcher-modal';
 import { useAuthStore } from '../../auth/stores/auth-store';
-import { useCurrentMode } from '../../shared/hooks/use-user-modes';
+import { useCurrentUserType } from '../../shared/hooks/use-user-type';
 import { getUserTypeConfig } from '../../shared/config/user-types';
 import { cn } from '../../shared/utils/cn';
 import { seedStories } from '../../shared/api/stories/seeder';
@@ -15,7 +15,7 @@ import { seedPosts } from '../../shared/api/posts/seeder';
 
 export default function ProfileScreen() {
   const { user, signOut } = useAuthStore();
-  const { currentMode, availableModes = [] } = useCurrentMode();
+  const { currentUserType, availableUserTypes = [] } = useCurrentUserType();
 
   // Bottom sheet for mode switcher
   const bottomSheetRef = useRef(null);
@@ -39,7 +39,7 @@ export default function ProfileScreen() {
     setModalVisible(false);
   };
 
-  const getModeInfo = () => getUserTypeConfig(currentMode);
+  const getModeInfo = () => getUserTypeConfig(currentUserType);
 
   const handleLogout = () => {
     Alert.alert(
@@ -209,7 +209,7 @@ export default function ProfileScreen() {
             </Text>
 
             {/* Active Mode Badge - Conditional Pressable */}
-            {availableModes.length > 1 ? (
+            {availableUserTypes.length > 1 ? (
               <TouchableOpacity
                 onPress={handleOpenModeSwitcher}
                 style={{
@@ -326,20 +326,20 @@ export default function ProfileScreen() {
                 icon="card-outline"
                 title="Métodos de Pago"
                 onPress={() => console.log('Payment methods')}
-                showBorder={!availableModes.includes('business') && !availableModes.includes('delivery')}
+                showBorder={!availableUserTypes.includes('business') && !availableUserTypes.includes('delivery')}
               />
 
               {/* Business and Delivery Mode Options - Only show if not already active */}
-              {!availableModes.includes('business') && (
+              {!availableUserTypes.includes('business') && (
                 <SettingsItem
                   icon="briefcase-outline"
                   title="Vende con UNO"
                   onPress={() => console.log('Apply for business mode')}
-                  showBorder={!availableModes.includes('delivery')}
+                  showBorder={!availableUserTypes.includes('delivery')}
                   highlight={true}
                 />
               )}
-              {!availableModes.includes('delivery') && (
+              {!availableUserTypes.includes('delivery') && (
                 <SettingsItem
                   icon="bicycle-outline"
                   title="Entrega con UNO"
@@ -431,7 +431,7 @@ export default function ProfileScreen() {
       </ScrollView>
 
       {/* Mode Switcher Bottom Sheet - Only when user has multiple modes */}
-      {modalVisible && availableModes.length > 1 && (
+      {modalVisible && availableUserTypes.length > 1 && (
         <ModeSwitcherModal
           visible={modalVisible}
           onClose={() => setModalVisible(false)}

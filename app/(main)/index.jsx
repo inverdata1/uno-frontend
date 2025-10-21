@@ -4,13 +4,13 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import ClientHomeScreen from '../../features/client/home';
 import BusinessDashboardScreen from '../../features/business/dashboard';
 import DriverDeliveriesScreen from '../../features/driver/deliveries';
-import { useCurrentMode } from '../../shared/hooks/use-user-modes';
+import { useCurrentUserType } from '../../shared/hooks/use-user-type';
 
 export default function HomeScreen() {
-  const { currentMode } = useCurrentMode();
+  const { currentUserType } = useCurrentUserType();
 
   const renderModeContent = () => {
-    switch (currentMode) {
+    switch (currentUserType) {
       case 'business':
         return <BusinessDashboardScreen />;
       case 'delivery':

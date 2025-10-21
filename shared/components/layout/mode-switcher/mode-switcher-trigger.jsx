@@ -2,10 +2,10 @@ import React from 'react';
 import { View, TouchableOpacity } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { Text } from '../../ui/text';
-import { useCurrentMode } from '../../../hooks/use-user-modes';
+import { useCurrentUserType } from '../../../hooks/use-user-type';
 
 export const ModeSwitcherTrigger = ({ onPress, style }) => {
-  const { currentMode, isLoading } = useCurrentMode();
+  const { currentUserType, isLoading } = useCurrentUserType();
 
   const getModeConfig = () => {
     const configs = {
@@ -25,7 +25,7 @@ export const ModeSwitcherTrigger = ({ onPress, style }) => {
         color: '#f59e0b'
       }
     };
-    return configs[currentMode] || configs.client;
+    return configs[currentUserType] || configs.client;
   };
 
   const config = getModeConfig();

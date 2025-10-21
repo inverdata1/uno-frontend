@@ -6,7 +6,7 @@ import { apiClient } from '../../../shared/config/api-client';
 import { PostCard } from './components/post-card';
 import { StoryRing, AddStoryButton } from './components/story-ring';
 import { Text } from '../../../shared/components/ui/text';
-import { useCurrentMode } from '../../../shared/hooks/use-user-modes';
+import { useCurrentUserType } from '../../../shared/hooks/use-user-type';
 import StoryViewer from '../stories/story-viewer';
 
 /**
@@ -15,7 +15,7 @@ import StoryViewer from '../stories/story-viewer';
  * Shared between Client and Business user types
  */
 export default function FeedScreen() {
-  const { currentMode } = useCurrentMode();
+  const { currentUserType } = useCurrentUserType();
   const queryClient = useQueryClient();
   const [refreshing, setRefreshing] = useState(false);
   const [storyViewerVisible, setStoryViewerVisible] = useState(false);

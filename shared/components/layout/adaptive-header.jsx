@@ -4,7 +4,7 @@ import { Text, TouchableOpacity, View } from 'react-native';
 import { useAuthStore } from '../../../auth/stores/auth-store';
 import { getUserTypeConfig, getAddressBehavior } from '../../config/user-types';
 import { getCurrentAddressForMode, hasAddressesForMode, getAddressesForMode } from '../../utils/address-helpers';
-import { useCurrentMode } from '../../hooks/use-user-modes';
+import { useCurrentUserType } from '../../hooks/use-user-type';
 import { useAddresses, useCreateAddress, useUpdateAddress, useDeleteAddress, useSetDefaultAddress } from '../../hooks/use-addresses';
 import { AddressManager } from '../modals/address-bottom-sheet';
 
@@ -12,7 +12,7 @@ import { AddressManager } from '../modals/address-bottom-sheet';
  * Adaptive header that changes based on current mode
  */
 export const AdaptiveHeader = () => {
-  const { currentMode } = useCurrentMode();
+  const { currentUserType } = useCurrentUserType();
   const { user } = useAuthStore();
   const [showAddressManager, setShowAddressManager] = useState(false);
 
@@ -23,9 +23,9 @@ export const AdaptiveHeader = () => {
   const deleteAddressMutation = useDeleteAddress();
   const setDefaultAddressMutation = useSetDefaultAddress();
 
-  const modeSettings = getUserTypeConfig(currentMode);
-  const currentAddress = getCurrentAddressForMode(addresses, currentMode);
-  const hasAddresses = hasAddressesForMode(addresses, currentMode);
+  const modeSettings = getUserTypeConfig(currentUserType);
+  const currentAddress = getCurrentAddressForMode(addresses, currentUserType);
+  const hasAddresses = hasAddressesForMode(addresses, currentUserType);
 
   const handleAddressPress = () => {
     setShowAddressManager(true);
@@ -41,11 +41,11 @@ export const AdaptiveHeader = () => {
   };
 
   const handleAddAddress = async (addressData) => {
-    const behavior = getAddressBehavior(currentMode);
+    const behavior = getAddressBehavior(currentUserType);
 
     const firebaseAddressData = {
       ...addressData,
-      type: currentMode
+      type: currentUserType
     };
 
     return await createAddressMutation.mutateAsync({
@@ -112,7 +112,7 @@ export const AdaptiveHeader = () => {
         {/* User Actions */}
         <View style={{ flexDirection: 'row', gap: 8 }}>
           {/* Balance/Wallet - Only for client and delivery */}
-          {(currentMode === 'client' || currentMode === 'delivery') && (
+          {(currentUserType === 'client' || currentUserType === 'delivery') && (
             <TouchableOpacity style={{
               backgroundColor: 'rgba(255, 255, 255, 0.2)',
               paddingHorizontal: 12,
@@ -187,14 +187,14 @@ export const AdaptiveHeader = () => {
       <AddressManager
         visible={showAddressManager}
         onClose={() => setShowAddressManager(false)}
-        addresses={getAddressesForMode(addresses, currentMode)}
+        addresses={getAddressesForMode(addresses, currentUserType)}
         selectedAddress={currentAddress}
         onAddressSelect={handleAddressSelect}
         onAddAddress={handleAddAddress}
         onEditAddress={handleEditAddress}
         onDeleteAddress={handleDeleteAddress}
         onSetDefaultAddress={handleSetDefaultAddress}
-        userMode={currentMode}
+        userMode={currentUserType}
         isLoading={isLoading || createAddressMutation.isPending || updateAddressMutation.isPending || deleteAddressMutation.isPending || setDefaultAddressMutation.isPending}
       />
     </View>

@@ -1,7 +1,7 @@
 import React from 'react';
 import { View } from 'react-native';
 import { Button, Card, Text } from '../../../shared/components/ui';
-import { useBusinessContexts } from '../../../shared/hooks/use-user-modes';
+import { useBusinessContexts } from '../../../shared/hooks/use-user-type';
 
 /**
  * Business Dashboard Screen

@@ -1,5 +1,5 @@
 import React from 'react';
-import { LoginForm } from '../../auth/components/login';
+import { LoginForm } from '../../core/auth/components/login';
 
 export default function LoginScreen() {
   return <LoginForm />;

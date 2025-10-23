@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { WelcomeActions, WelcomeCarousel, WelcomeHeader } from '../../auth/components/welcome';
+import { WelcomeActions, WelcomeCarousel, WelcomeHeader } from '../../core/auth/components/welcome';
 
 export default function WelcomeScreen() {
   const [currentSlide, setCurrentSlide] = useState({

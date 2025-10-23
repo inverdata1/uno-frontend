@@ -23,7 +23,7 @@ export const useUserType = () => {
   return useQuery({
     queryKey: ['user-types'],
     queryFn: async () => {
-      const res = await apiClient.get('/user-modes'); // API endpoint unchanged for now
+      const res = await apiClient.get('/user-types'); // API endpoint unchanged for now
 
       // Safe defaults if API returns null
       if (!res.data) {
@@ -38,10 +38,10 @@ export const useUserType = () => {
 
       // Transform API response to use userType terminology
       return {
-        currentUserType: res.data.currentMode || 'client',
+        currentUserType: res.data.currentUserType || 'client',
         currentContext: res.data.currentContext || { businessId: null, branchId: null },
-        availableUserTypes: res.data.availableModes || ['client'],
-        userTypes: res.data.modes || { client: { status: 'active' } }
+        availableUserTypes: res.data.availableUserTypes || ['client'],
+        userTypes: res.data.userTypes || { client: { status: 'active' } }
       };
     },
     staleTime: 5 * 60 * 1000, // 5 minutes
@@ -124,9 +124,8 @@ export const useSwitchUserType = () => {
 
   return useMutation({
     mutationFn: ({ userType, businessId, branchId }) => {
-      // API still uses 'mode' terminology - transform here
-      return apiClient.post('/user-modes/switch', {
-        mode: userType,
+      return apiClient.post('/user-types/switch', {
+        userType: userType,
         businessId,
         branchId
       }).then(res => res.data);
@@ -174,11 +173,10 @@ export const useEnableUserType = () => {
 
   return useMutation({
     mutationFn: ({ userType, status = 'pending', typeData = {} }) => {
-      // API transformation
-      return apiClient.post('/user-modes', {
-        mode: userType,
+      return apiClient.post('/user-types', {
+        userType: userType,
         status,
-        modeData: typeData
+        userTypeData: typeData
       }).then(res => res.data);
     },
 
@@ -207,8 +205,8 @@ export const useUpdateUserTypeStatus = () => {
 
   return useMutation({
     mutationFn: ({ userType, status }) => {
-      return apiClient.patch('/user-modes/status', {
-        mode: userType,
+      return apiClient.patch('/user-types/status', {
+        userType: userType,
         status
       }).then(res => res.data);
     },

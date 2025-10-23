@@ -1,47 +1,30 @@
-import React, { useState, useCallback, useRef } from 'react';
-import { View, ScrollView, Alert, TouchableOpacity } from 'react-native';
+import React, { useState, useCallback } from 'react';
+import { View, ScrollView, Alert } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
-import BottomSheet, { BottomSheetView } from '@gorhom/bottom-sheet';
-import { Button, Card, Text } from '../../shared/components/ui';
-import { ModeSwitcher } from '../../shared/components/layout/mode-switcher';
-import { ModeSwitcherModal } from '../../shared/components/layout/mode-switcher/mode-switcher-modal';
-import { useAuthStore } from '../../auth/stores/auth-store';
+import { Text } from '../../shared/components/ui';
+import { ProfileHero, SettingsItem } from '../../shared/components/profile';
+import { UserTypeSwitcherModal } from '../../shared/components/layout/user-type-switcher/user-type-switcher-modal';
+import { useAuthStore } from '../../core/auth/stores/auth-store';
 import { useCurrentUserType } from '../../shared/hooks/use-user-type';
 import { getUserTypeConfig } from '../../shared/config/user-types';
-import { cn } from '../../shared/utils/cn';
-import { seedStories } from '../../shared/api/stories/seeder';
-import { seedPosts } from '../../shared/api/posts/seeder';
 
 export default function ProfileScreen() {
   const { user, signOut } = useAuthStore();
   const { currentUserType, availableUserTypes = [] } = useCurrentUserType();
-
-  // Bottom sheet for mode switcher
-  const bottomSheetRef = useRef(null);
   const [modalVisible, setModalVisible] = useState(false);
-  const [isSeeding, setIsSeeding] = useState(false);
 
-  const handleSheetChanges = useCallback((index) => {
-    console.log('Profile bottom sheet index changed to:', index);
-    if (index === -1) {
-      setModalVisible(false);
-    }
-  }, []);
+  const userTypeInfo = getUserTypeConfig(currentUserType);
 
-  const handleOpenModeSwitcher = useCallback(() => {
+  const handleOpenUserTypeSwitcher = useCallback(() => {
     setModalVisible(true);
-    bottomSheetRef.current?.expand();
   }, []);
 
-  const handleModeSwitch = (context) => {
-    console.log('Mode switched from profile:', context);
+  const handleUserTypeSwitch = useCallback(() => {
     setModalVisible(false);
-  };
+  }, []);
 
-  const getModeInfo = () => getUserTypeConfig(currentUserType);
-
-  const handleLogout = () => {
+  const handleLogout = useCallback(() => {
     Alert.alert(
       'Cerrar Sesión',
       '¿Estás seguro que quieres cerrar sesión?',
@@ -63,86 +46,7 @@ export default function ProfileScreen() {
         },
       ]
     );
-  };
-
-  const handleSeedData = async () => {
-    try {
-      setIsSeeding(true);
-      console.log('Seeding all data...');
-
-      await seedStories();
-      await seedPosts();
-
-      Alert.alert('Success', 'Data seeded successfully!');
-    } catch (error) {
-      console.error('Seeding error:', error);
-      Alert.alert('Error', 'Failed to seed data: ' + error.message);
-    } finally {
-      setIsSeeding(false);
-    }
-  };
-
-  const SettingsItem = ({ icon, title, subtitle, onPress, danger = false, highlight = false, showBorder = false }) => (
-    <TouchableOpacity
-      onPress={onPress}
-      style={{
-        flexDirection: 'row',
-        alignItems: 'center',
-        paddingVertical: 16,
-        paddingHorizontal: 20,
-        backgroundColor: '#ffffff',
-        borderBottomWidth: showBorder ? 1 : 0,
-        borderBottomColor: '#f1f5f9',
-      }}
-      activeOpacity={0.7}
-    >
-      <View style={{
-        width: 36,
-        height: 36,
-        borderRadius: 10,
-        backgroundColor: danger ? '#fef2f2' : highlight ? '#f0f9ff' : '#f8fafc',
-        alignItems: 'center',
-        justifyContent: 'center',
-        marginRight: 16
-      }}>
-        <Ionicons
-          name={icon}
-          size={18}
-          color={danger ? '#ef4444' : highlight ? '#0ea5e9' : '#64748b'}
-        />
-      </View>
-      <View style={{ flex: 1 }}>
-        <Text
-          variant="body"
-          style={{
-            fontWeight: '500',
-            color: danger ? '#ef4444' : highlight ? '#0ea5e9' : '#1f2937',
-            fontSize: 16
-          }}
-        >
-          {title}
-        </Text>
-        {subtitle && (
-          <Text
-            style={{
-              fontSize: 13,
-              color: '#64748b',
-              marginTop: 2
-            }}
-          >
-            {subtitle}
-          </Text>
-        )}
-      </View>
-      <Ionicons
-        name="chevron-forward-outline"
-        size={16}
-        color="#cbd5e0"
-      />
-    </TouchableOpacity>
-  );
-
-  const modeInfo = getModeInfo();
+  }, [signOut]);
 
   return (
     <SafeAreaView className="flex-1" edges={['top']} style={{ backgroundColor: '#f8fafc' }}>
@@ -151,129 +55,16 @@ export default function ProfileScreen() {
         showsVerticalScrollIndicator={false}
         contentContainerStyle={{ paddingBottom: 32 }}
       >
-
         {/* Hero Profile Section */}
-        <View style={{
-          background: `linear-gradient(135deg, ${modeInfo.gradient[0]} 0%, ${modeInfo.gradient[1]} 100%)`,
-          backgroundColor: modeInfo.primary,
-          paddingTop: 32,
-          paddingBottom: 40,
-          paddingHorizontal: 24,
-          borderBottomLeftRadius: 32,
-          borderBottomRightRadius: 32,
-          shadowColor: modeInfo.primary,
-          shadowOffset: { width: 0, height: 8 },
-          shadowOpacity: 0.2,
-          shadowRadius: 24,
-          elevation: 12
-        }}>
-          <View style={{ alignItems: 'center' }}>
-            {/* Profile Picture with Status Ring */}
-            <View style={{
-              width: 100,
-              height: 100,
-              borderRadius: 50,
-              backgroundColor: 'rgba(255, 255, 255, 0.2)',
-              alignItems: 'center',
-              justifyContent: 'center',
-              marginBottom: 20,
-              borderWidth: 4,
-              borderColor: 'rgba(255, 255, 255, 0.3)'
-            }}>
-              <Text style={{
-                color: '#ffffff',
-                fontSize: 36,
-                fontWeight: '700'
-              }}>
-                {user?.firstName?.charAt(0)?.toUpperCase() || 'U'}
-              </Text>
-            </View>
-
-            <Text style={{
-              color: '#ffffff',
-              fontSize: 28,
-              fontWeight: '700',
-              marginBottom: 8,
-              textAlign: 'center'
-            }}>
-              {user?.firstName} {user?.lastName}
-            </Text>
-
-            <Text style={{
-              color: 'rgba(255, 255, 255, 0.9)',
-              fontSize: 16,
-              marginBottom: 16,
-              textAlign: 'center'
-            }}>
-              {user?.email}
-            </Text>
-
-            {/* Active Mode Badge - Conditional Pressable */}
-            {availableUserTypes.length > 1 ? (
-              <TouchableOpacity
-                onPress={handleOpenModeSwitcher}
-                style={{
-                  backgroundColor: 'rgba(255, 255, 255, 0.9)',
-                  paddingHorizontal: 20,
-                  paddingVertical: 10,
-                  borderRadius: 20,
-                  borderWidth: 1,
-                  borderColor: 'rgba(255, 255, 255, 1)',
-                  flexDirection: 'row',
-                  alignItems: 'center',
-                  shadowColor: '#000',
-                  shadowOffset: { width: 0, height: 2 },
-                  shadowOpacity: 0.15,
-                  shadowRadius: 6,
-                  elevation: 3
-                }}
-                activeOpacity={0.8}
-              >
-                <Ionicons name={modeInfo.icon} size={16} color={modeInfo.primary} style={{ marginRight: 8 }} />
-                <Text style={{
-                  color: modeInfo.primary,
-                  fontSize: 14,
-                  fontWeight: '600',
-                  marginRight: 8
-                }}>
-                  {modeInfo.title}
-                </Text>
-                {/* Visual indicator that it's pressable */}
-                <Ionicons name="chevron-down" size={14} color={modeInfo.primary} opacity={0.7} />
-              </TouchableOpacity>
-            ) : (
-              /* Static mode badge when only one mode */
-              <View style={{
-                backgroundColor: 'rgba(255, 255, 255, 0.9)',
-                paddingHorizontal: 20,
-                paddingVertical: 10,
-                borderRadius: 20,
-                borderWidth: 1,
-                borderColor: 'rgba(255, 255, 255, 1)',
-                flexDirection: 'row',
-                alignItems: 'center',
-                shadowColor: '#000',
-                shadowOffset: { width: 0, height: 2 },
-                shadowOpacity: 0.15,
-                shadowRadius: 6,
-                elevation: 3
-              }}>
-                <Ionicons name={modeInfo.icon} size={16} color={modeInfo.primary} style={{ marginRight: 8 }} />
-                <Text style={{
-                  color: modeInfo.primary,
-                  fontSize: 14,
-                  fontWeight: '600'
-                }}>
-                  {modeInfo.title}
-                </Text>
-              </View>
-            )}
-          </View>
-        </View>
+        <ProfileHero
+          user={user}
+          userTypeInfo={userTypeInfo}
+          availableUserTypes={availableUserTypes}
+          onUserTypeBadgePress={handleOpenUserTypeSwitcher}
+        />
 
         <View style={{ paddingHorizontal: 24, paddingTop: 24 }}>
-
-          {/* Subtle Stats - Small badge */}
+          {/* Verified Badge */}
           <View style={{
             flexDirection: 'row',
             justifyContent: 'center',
@@ -294,7 +85,7 @@ export default function ProfileScreen() {
             </View>
           </View>
 
-          {/* Essential Settings - Clean List */}
+          {/* Account Settings */}
           <View style={{ marginBottom: 32 }}>
             <Text style={{
               fontSize: 20,
@@ -319,31 +110,33 @@ export default function ProfileScreen() {
               <SettingsItem
                 icon="person-outline"
                 title="Editar Perfil"
-                onPress={() => console.log('Edit profile')}
+                onPress={() => Alert.alert('Próximamente', 'Función en desarrollo')}
                 showBorder={true}
               />
               <SettingsItem
                 icon="card-outline"
                 title="Métodos de Pago"
-                onPress={() => console.log('Payment methods')}
+                onPress={() => Alert.alert('Próximamente', 'Función en desarrollo')}
                 showBorder={!availableUserTypes.includes('business') && !availableUserTypes.includes('delivery')}
               />
 
-              {/* Business and Delivery Mode Options - Only show if not already active */}
+              {/* Business Mode Option - Only show if not active */}
               {!availableUserTypes.includes('business') && (
                 <SettingsItem
                   icon="briefcase-outline"
                   title="Vende con UNO"
-                  onPress={() => console.log('Apply for business mode')}
+                  onPress={() => Alert.alert('Próximamente', 'Función en desarrollo')}
                   showBorder={!availableUserTypes.includes('delivery')}
                   highlight={true}
                 />
               )}
+
+              {/* Delivery Mode Option - Only show if not active */}
               {!availableUserTypes.includes('delivery') && (
                 <SettingsItem
                   icon="bicycle-outline"
                   title="Entrega con UNO"
-                  onPress={() => console.log('Apply for delivery mode')}
+                  onPress={() => Alert.alert('Próximamente', 'Función en desarrollo')}
                   showBorder={false}
                   highlight={true}
                 />
@@ -351,7 +144,7 @@ export default function ProfileScreen() {
             </View>
           </View>
 
-          {/* Secondary Options - Compact */}
+          {/* More Options */}
           <View style={{ marginBottom: 32 }}>
             <View style={{
               backgroundColor: '#ffffff',
@@ -367,47 +160,13 @@ export default function ProfileScreen() {
                 icon="ellipsis-horizontal"
                 title="Más opciones"
                 subtitle="Notificaciones, privacidad, ayuda"
-                onPress={() => console.log('More options')}
+                onPress={() => Alert.alert('Próximamente', 'Función en desarrollo')}
                 showBorder={false}
               />
             </View>
           </View>
 
-          {/* Development Tools */}
-          {__DEV__ && (
-            <View style={{ marginBottom: 32 }}>
-              <Text style={{
-                fontSize: 20,
-                fontWeight: '700',
-                color: '#1f2937',
-                marginBottom: 16,
-                paddingHorizontal: 4
-              }}>
-                Desarrollo
-              </Text>
-              <View style={{
-                backgroundColor: '#ffffff',
-                borderRadius: 16,
-                overflow: 'hidden',
-                shadowColor: '#000',
-                shadowOffset: { width: 0, height: 2 },
-                shadowOpacity: 0.05,
-                shadowRadius: 8,
-                elevation: 2
-              }}>
-                <SettingsItem
-                  icon="cloud-download-outline"
-                  title={isSeeding ? "Cargando datos..." : "Seed Data"}
-                  subtitle="Cargar historias, posts y videos de prueba"
-                  onPress={handleSeedData}
-                  highlight={true}
-                  showBorder={false}
-                />
-              </View>
-            </View>
-          )}
-
-          {/* Logout - Standalone */}
+          {/* Logout */}
           <View style={{
             backgroundColor: '#ffffff',
             borderRadius: 16,
@@ -426,16 +185,15 @@ export default function ProfileScreen() {
               showBorder={false}
             />
           </View>
-
         </View>
       </ScrollView>
 
-      {/* Mode Switcher Bottom Sheet - Only when user has multiple modes */}
+      {/* User Type Switcher Modal */}
       {modalVisible && availableUserTypes.length > 1 && (
-        <ModeSwitcherModal
+        <UserTypeSwitcherModal
           visible={modalVisible}
           onClose={() => setModalVisible(false)}
-          onModeSwitch={handleModeSwitch}
+          onUserTypeSwitch={handleUserTypeSwitch}
         />
       )}
     </SafeAreaView>

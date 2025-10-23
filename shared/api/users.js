@@ -42,21 +42,21 @@ export class UsersResource extends BaseFirebaseService {
     }
 
     // Use the user ID from params as the document ID
-    const userWithModes = {
+    const userWithUserTypes = {
       ...data,
       id: userId,
-      modes: data.modes || {
+      userTypes: data.userTypes || {
         client: {
           status: 'active',
           createdAt: new Date()
         }
       },
-      currentMode: data.currentMode || 'client',
+      currentUserType: data.currentUserType || 'client',
       currentBusinessId: data.currentBusinessId || null,
       currentBranchId: data.currentBranchId || null
     };
 
-    return await this.create(userWithModes, userId);
+    return await this.create(userWithUserTypes, userId);
   }
 
   // === PROFILE ENDPOINTS ===
@@ -99,43 +99,43 @@ export class UsersResource extends BaseFirebaseService {
     return await this.update(userId, updateData);
   }
 
-  // === MODE MANAGEMENT ENDPOINTS ===
+  // === USER TYPE MANAGEMENT ENDPOINTS ===
 
   /**
-   * POST /users/switch-mode
-   * Switch user's active mode
+   * POST /users/switch-user-type
+   * Switch user's active userType
    */
-  async post_switch_mode(data, params) {
+  async post_switch_user_type(data, params) {
     const { userId } = params;
-    const { mode, businessId, branchId } = data;
+    const { userType, businessId, branchId } = data;
 
     if (!userId) {
       throw new Error('userId parameter is required');
     }
 
-    if (!mode) {
-      throw new Error('mode is required');
+    if (!userType) {
+      throw new Error('userType is required');
     }
 
-    // Validate mode
-    const validModes = ['client', 'business', 'delivery'];
-    if (!validModes.includes(mode)) {
-      throw new Error(`Invalid mode: ${mode}. Valid modes: ${validModes.join(', ')}`);
+    // Validate userType
+    const validUserTypes = ['client', 'business', 'delivery'];
+    if (!validUserTypes.includes(userType)) {
+      throw new Error(`Invalid userType: ${userType}. Valid userTypes: ${validUserTypes.join(', ')}`);
     }
 
     // Update user's current context
     const updateData = {
-      currentMode: mode,
+      currentUserType: userType,
       currentBusinessId: businessId || null,
       currentBranchId: branchId || null,
-      lastModeSwitch: serverTimestamp()
+      lastUserTypeSwitch: serverTimestamp()
     };
 
     const updatedUser = await this.update(userId, updateData);
 
     return {
       success: true,
-      currentMode: mode,
+      currentUserType: userType,
       currentBusinessId: businessId || null,
       currentBranchId: branchId || null,
       user: updatedUser
@@ -143,81 +143,81 @@ export class UsersResource extends BaseFirebaseService {
   }
 
   /**
-   * POST /users/enable-mode
-   * Enable a new mode for user (e.g., upgrade to business)
+   * POST /users/enable-user-type
+   * Enable a new userType for user (e.g., upgrade to business)
    */
-  async post_enable_mode(data, params) {
+  async post_enable_user_type(data, params) {
     const { userId } = params;
-    const { mode, status = 'pending', modeData = {} } = data;
+    const { userType, status = 'pending', userTypeData = {} } = data;
 
-    if (!userId || !mode) {
-      throw new Error('userId and mode are required');
+    if (!userId || !userType) {
+      throw new Error('userId and userType are required');
     }
 
     const user = await this.findById(userId);
 
-    // Update user modes
-    const updatedModes = {
-      ...user.modes,
-      [mode]: {
+    // Update user types
+    const updatedUserTypes = {
+      ...user.userTypes,
+      [userType]: {
         status,
         createdAt: new Date(),
-        ...modeData
+        ...userTypeData
       }
     };
 
-    return await this.update(userId, { modes: updatedModes });
+    return await this.update(userId, { userTypes: updatedUserTypes });
   }
 
   /**
-   * PATCH /users/mode-status
-   * Update mode status (e.g., pending -> active)
+   * PATCH /users/user-type-status
+   * Update userType status (e.g., pending -> active)
    */
-  async patch_mode_status(data, params) {
+  async patch_user_type_status(data, params) {
     const { userId } = params;
-    const { mode, status } = data;
+    const { userType, status } = data;
 
-    if (!userId || !mode || !status) {
-      throw new Error('userId, mode, and status are required');
+    if (!userId || !userType || !status) {
+      throw new Error('userId, userType, and status are required');
     }
 
     const user = await this.findById(userId);
 
-    if (!user.modes || !user.modes[mode]) {
-      throw new Error(`User does not have ${mode} mode`);
+    if (!user.userTypes || !user.userTypes[userType]) {
+      throw new Error(`User does not have ${userType} userType`);
     }
 
-    const updatedModes = {
-      ...user.modes,
-      [mode]: {
-        ...user.modes[mode],
+    const updatedUserTypes = {
+      ...user.userTypes,
+      [userType]: {
+        ...user.userTypes[userType],
         status,
         updatedAt: new Date()
       }
     };
 
-    return await this.update(userId, { modes: updatedModes });
+    return await this.update(userId, { userTypes: updatedUserTypes });
   }
 
   // === UTILITY METHODS ===
 
   /**
-   * Get user's available modes
+   * Get user's available userTypes
    * @param {string} userId - User ID
-   * @returns {Promise<Object>} User modes information
+   * @returns {Promise<Object>} User types information
    */
-  async getUserModes(userId) {
+  async getUserTypes(userId) {
     const user = await this.findById(userId);
 
-    const modes = [];
-    if (user.modes?.client) modes.push({ mode: 'client', ...user.modes.client });
-    if (user.modes?.business) modes.push({ mode: 'business', ...user.modes.business });
-    if (user.modes?.delivery) modes.push({ mode: 'delivery', ...user.modes.delivery });
+    const userTypesList = [];
+    if (user.userTypes?.client) userTypesList.push({ userType: 'client', ...user.userTypes.client });
+    if (user.userTypes?.business) userTypesList.push({ userType: 'business', ...user.userTypes.business });
+    if (user.userTypes?.delivery) userTypesList.push({ userType: 'delivery', ...user.userTypes.delivery });
 
     return {
-      availableModes: modes.filter(m => m.status === 'active').map(m => m.mode),
-      allModes: modes,
-      currentMode: user.currentMode || 'client',
+      availableUserTypes: userTypesList.filter(ut => ut.status === 'active').map(ut => ut.userType),
+      allUserTypes: userTypesList,
+      currentUserType: user.currentUserType || 'client',
       currentContext: {
         businessId: user.currentBusinessId,
         branchId: user.currentBranchId
@@ -226,24 +226,24 @@ export class UsersResource extends BaseFirebaseService {
   }
 
   /**
-   * Initialize new user with default modes
+   * Initialize new user with default userTypes
    * @param {Object} userData - User data
    * @returns {Promise<Object>} Created user
    */
-  async createWithDefaultModes(userData) {
-    const userWithModes = {
+  async createWithDefaultUserTypes(userData) {
+    const userWithUserTypes = {
       ...userData,
-      modes: {
+      userTypes: {
         client: {
           status: 'active',
           createdAt: new Date()
         }
       },
-      currentMode: 'client',
+      currentUserType: 'client',
       currentBusinessId: null,
       currentBranchId: null
     };
 
-    return await this.create(userWithModes);
+    return await this.create(userWithUserTypes);
   }
 }

@@ -13,7 +13,7 @@ import { BottomSheetModalProvider } from '@gorhom/bottom-sheet';
 import "../global.css";
 import { Text } from '../shared/components/ui';
 import { queryClient } from '../shared/config/query-client';
-import { useAuthStore } from '../auth/stores/auth-store';
+import { useAuthStore } from '../core/auth/stores/auth-store';
 
 // Keep the splash screen visible while we fetch resources
 SplashScreen.preventAutoHideAsync();
@@ -53,25 +53,20 @@ function AppNavigator() {
     return <LoadingScreen />;
   }
 
-  // Add debug logging
-  console.log('🔍 AppNavigator - Auth state:', { isAuthenticated, authLoading });
-
   // Redirect based on auth state
   if (isAuthenticated) {
-    console.log('🎯 User authenticated - showing main stack');
     return (
       <Stack screenOptions={{ headerShown: false }}>
         <Stack.Screen name="(main)" />
       </Stack>
     );
-  } else {
-    console.log('🎯 User not authenticated - showing auth stack');
-    return (
-      <Stack screenOptions={{ headerShown: false }}>
-        <Stack.Screen name="(auth)" />
-      </Stack>
-    );
   }
+
+  return (
+    <Stack screenOptions={{ headerShown: false }}>
+      <Stack.Screen name="(auth)" />
+    </Stack>
+  );
 }
 
 export default function RootLayout() {

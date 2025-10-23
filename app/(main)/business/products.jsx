@@ -1,1 +1,1 @@
-export { default } from '../../../features/business/products';
+export { default } from '../../../modules/analytics/products';

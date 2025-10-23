@@ -1,7 +1,7 @@
 import { Ionicons } from '@expo/vector-icons';
 import { useState } from 'react';
 import { Text, TouchableOpacity, View } from 'react-native';
-import { useAuthStore } from '../../../auth/stores/auth-store';
+import { useAuthStore } from '../../../core/auth/stores/auth-store';
 import { getUserTypeConfig, getAddressBehavior } from '../../config/user-types';
 import { getCurrentAddressForMode, hasAddressesForMode, getAddressesForMode } from '../../utils/address-helpers';
 import { useCurrentUserType } from '../../hooks/use-user-type';
@@ -23,7 +23,8 @@ export const AdaptiveHeader = () => {
   const deleteAddressMutation = useDeleteAddress();
   const setDefaultAddressMutation = useSetDefaultAddress();
 
-  const modeSettings = getUserTypeConfig(currentUserType);
+  const userTypeSettings = getUserTypeConfig(currentUserType);
+  const addressBehavior = getAddressBehavior(currentUserType);
   const currentAddress = getCurrentAddressForMode(addresses, currentUserType);
   const hasAddresses = hasAddressesForMode(addresses, currentUserType);
 
@@ -41,7 +42,7 @@ export const AdaptiveHeader = () => {
   };
 
   const handleAddAddress = async (addressData) => {
-    const behavior = getAddressBehavior(currentUserType);
+    const behavior = addressBehavior;
 
     const firebaseAddressData = {
       ...addressData,
@@ -80,12 +81,12 @@ export const AdaptiveHeader = () => {
     if (currentAddress) {
       return currentAddress.label || currentAddress.name;
     }
-    return modeSettings.placeholder;
+    return addressBehavior.placeholder;
   };
 
   return (
     <View style={{
-      backgroundColor: modeSettings.primary,
+      backgroundColor: userTypeSettings.primary,
       paddingTop: 20,
       paddingBottom: 20,
       paddingHorizontal: 24
@@ -161,7 +162,7 @@ export const AdaptiveHeader = () => {
               fontSize: 12,
               fontWeight: '500'
             }}>
-              {modeSettings.label}
+              {addressBehavior.label}
             </Text>
             <View style={{ flexDirection: 'row', alignItems: 'center' }}>
               <Text style={{
@@ -194,7 +195,7 @@ export const AdaptiveHeader = () => {
         onEditAddress={handleEditAddress}
         onDeleteAddress={handleDeleteAddress}
         onSetDefaultAddress={handleSetDefaultAddress}
-        userMode={currentUserType}
+        userType={currentUserType}
         isLoading={isLoading || createAddressMutation.isPending || updateAddressMutation.isPending || deleteAddressMutation.isPending || setDefaultAddressMutation.isPending}
       />
     </View>

@@ -1,15 +1,14 @@
-import { Ionicons } from '@expo/vector-icons';
 import { Tabs } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { theme } from '../../shared/config/theme';
 import { useCurrentUserType } from '../../shared/hooks/use-user-type';
-// Tab config removed - using inline configuration
+import { getTabIcon } from '../../shared/utils/tab-helpers';
 
 export default function TabLayout() {
   const { currentUserType, isLoading } = useCurrentUserType();
   const insets = useSafeAreaInsets();
 
-  // Show loading state while determining mode
+  // Show loading state while determining user type
   if (isLoading) {
     return (
       <Tabs screenOptions={{ headerShown: false }}>
@@ -17,20 +16,6 @@ export default function TabLayout() {
       </Tabs>
     );
   }
-
-  // Tabs are configured inline below based on currentUserType
-
-  // Define tab icons with fallbacks
-  const getTabIcon = (iconName, focused = false) => {
-    const finalIconName = focused ? iconName : `${iconName}-outline`;
-    return (
-      <Ionicons
-        name={finalIconName}
-        size={24}
-        color={focused ? theme.colors.primary[500] : theme.colors.text.secondary}
-      />
-    );
-  };
 
   return (
     <Tabs
@@ -65,6 +50,20 @@ export default function TabLayout() {
         } : { href: null }}
       />
 
+
+      {/* Hide layout screens from tabs */}
+      <Tabs.Screen
+        name="client"
+        options={{ href: null }}
+      />
+      <Tabs.Screen
+        name="business"
+        options={{ href: null }}
+      />
+      <Tabs.Screen
+        name="delivery"
+        options={{ href: null }}
+      />
 
       {/* Client mode tabs */}
       <Tabs.Screen

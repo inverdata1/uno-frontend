@@ -1,1 +1,1 @@
-export { default } from '../../../features/business/dashboard';
+export { default } from '../../../modules/analytics/dashboard';

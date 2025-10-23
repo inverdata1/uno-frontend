@@ -1,1 +1,1 @@
-export { default } from '../../../features/driver/deliveries';
+export { default } from '../../../modules/delivery/deliveries';

@@ -79,6 +79,24 @@ const requiresAuth = (url, method) => {
   if (method.toLowerCase() === 'post' && url === '/users') {
     return false;
   }
+
+  // Public read endpoints that don't require authentication
+  const publicReadEndpoints = [
+    '/posts',
+    '/products',
+    '/categories',
+    '/stories',
+    '/businesses'
+  ];
+
+  if (method.toLowerCase() === 'get') {
+    for (const endpoint of publicReadEndpoints) {
+      if (url.startsWith(endpoint)) {
+        return false;
+      }
+    }
+  }
+
   return true;
 };
 

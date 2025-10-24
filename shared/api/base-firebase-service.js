@@ -20,6 +20,7 @@ import {
  */
 export class BaseFirebaseService {
   constructor(client, collectionName) {
+    this.client = client; // Store client reference for accessing other resources
     this.db = client.db;
     this.collectionName = collectionName;
     this.collection = collection(this.db, collectionName);

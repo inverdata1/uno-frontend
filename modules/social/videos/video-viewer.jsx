@@ -1,9 +1,12 @@
+import { BottomSheetModalProvider } from '@gorhom/bottom-sheet';
 import { Ionicons } from '@expo/vector-icons';
 import { VideoView, useVideoPlayer } from 'expo-video';
 import { useEffect, useRef, useState } from 'react';
-import { Dimensions, FlatList, Modal, Pressable, StatusBar, TouchableOpacity, View } from 'react-native';
+import { Dimensions, FlatList, Image, Modal, Pressable, StatusBar, TouchableOpacity, View } from 'react-native';
+import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Text } from '../../../shared/components/ui';
+import ProductsBottomSheet from './products-bottom-sheet';
 
 const { height: SCREEN_HEIGHT, width: SCREEN_WIDTH } = Dimensions.get('window');
 
@@ -11,7 +14,7 @@ const { height: SCREEN_HEIGHT, width: SCREEN_WIDTH } = Dimensions.get('window');
  * VideoItem Component
  * Individual video with its own player
  */
-function VideoItem({ video, isActive, isPaused, onTogglePause, onLike, onSave, onShare, onProfilePress, onProductPress }) {
+function VideoItem({ video, isActive, isPaused, onTogglePause, onLike, onSave, onShare, onProfilePress, onProductPress, taggedProduct, totalProducts, onShowAllProducts }) {
   const player = useVideoPlayer(video.media[0]?.url, (player) => {
     player.loop = true;
     player.muted = false;
@@ -132,37 +135,81 @@ function VideoItem({ video, isActive, isPaused, onTogglePause, onLike, onSave, o
         </View>
 
         {/* Tagged Products */}
-        {video.taggedProducts && video.taggedProducts.length > 0 && (
-          <TouchableOpacity
-            onPress={() => onProductPress(video.taggedProducts[0])}
-            style={{
-              backgroundColor: 'rgba(255, 255, 255, 0.2)',
-              paddingHorizontal: 16,
-              paddingVertical: 12,
-              borderRadius: 12,
-              borderWidth: 1,
-              borderColor: 'rgba(255, 255, 255, 0.3)',
-              flexDirection: 'row',
-              alignItems: 'center',
-              gap: 12
-            }}
-          >
-            <View style={{
-              width: 48,
-              height: 48,
-              borderRadius: 8,
-              backgroundColor: 'rgba(255, 255, 255, 0.3)'
-            }} />
-            <View style={{ flex: 1 }}>
-              <Text style={{ color: '#ffffff', fontSize: 14, fontWeight: '600' }}>
-                Producto destacado
-              </Text>
-              <Text style={{ color: 'rgba(255, 255, 255, 0.8)', fontSize: 12 }}>
-                Toca para ver detalles
-              </Text>
-            </View>
-            <Ionicons name="chevron-forward" size={20} color="#ffffff" />
-          </TouchableOpacity>
+        {taggedProduct && (
+          <View>
+            <TouchableOpacity
+              onPress={() => onProductPress(taggedProduct)}
+              style={{
+                backgroundColor: 'rgba(255, 255, 255, 0.2)',
+                paddingHorizontal: 16,
+                paddingVertical: 12,
+                borderRadius: 12,
+                borderWidth: 1,
+                borderColor: 'rgba(255, 255, 255, 0.3)',
+                flexDirection: 'row',
+                alignItems: 'center',
+                gap: 12
+              }}
+            >
+              <View style={{
+                width: 48,
+                height: 48,
+                borderRadius: 8,
+                backgroundColor: 'rgba(255, 255, 255, 0.3)',
+                overflow: 'hidden'
+              }}>
+                {taggedProduct.thumbnailUrl ? (
+                  <Image
+                    source={{ uri: taggedProduct.thumbnailUrl }}
+                    style={{ width: '100%', height: '100%' }}
+                    resizeMode="cover"
+                  />
+                ) : (
+                  <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center' }}>
+                    <Ionicons name="image-outline" size={24} color="rgba(255, 255, 255, 0.6)" />
+                  </View>
+                )}
+              </View>
+              <View style={{ flex: 1 }}>
+                <Text style={{ color: '#ffffff', fontSize: 14, fontWeight: '600' }} numberOfLines={1}>
+                  {taggedProduct.name}
+                </Text>
+                <Text style={{ color: 'rgba(255, 255, 255, 0.8)', fontSize: 12 }}>
+                  ${taggedProduct.price}
+                </Text>
+              </View>
+              <Ionicons name="chevron-forward" size={20} color="#ffffff" />
+            </TouchableOpacity>
+
+            {/* Multiple products indicator - Tappable */}
+            {totalProducts > 1 && (
+              <TouchableOpacity
+                onPress={onShowAllProducts}
+                activeOpacity={0.7}
+                style={{
+                  marginTop: 8,
+                  flexDirection: 'row',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  gap: 6,
+                  paddingVertical: 6,
+                  paddingHorizontal: 12,
+                  borderRadius: 12,
+                  backgroundColor: 'rgba(255, 255, 255, 0.15)'
+                }}
+              >
+                <Ionicons name="bag-outline" size={14} color="rgba(255, 255, 255, 0.9)" />
+                <Text style={{
+                  color: 'rgba(255, 255, 255, 0.9)',
+                  fontSize: 12,
+                  fontWeight: '600'
+                }}>
+                  + {totalProducts - 1} {totalProducts - 1 === 1 ? 'producto más' : 'productos más'}
+                </Text>
+                <Ionicons name="chevron-forward" size={14} color="rgba(255, 255, 255, 0.9)" />
+              </TouchableOpacity>
+            )}
+          </View>
         )}
       </View>
     </View>
@@ -177,8 +224,25 @@ function VideoItem({ video, isActive, isPaused, onTogglePause, onLike, onSave, o
  * @param {array} videos - Array of video posts
  * @param {number} initialIndex - Starting video index
  * @param {function} onClose - Callback when viewer closes
+ * @param {function} onShowAllProducts - Callback when user wants to see all tagged products
+ * @param {function} onProductPress - Callback when user selects a product
+ * @param {boolean} productsBottomSheetVisible - Whether products bottom sheet is visible
+ * @param {array} taggedProducts - Products to show in bottom sheet
+ * @param {function} onCloseBottomSheet - Callback when bottom sheet closes
+ * @param {function} onProductSelectFromSheet - Callback when product selected from sheet
  */
-export default function VideoViewer({ visible, videos = [], initialIndex = 0, onClose }) {
+export default function VideoViewer({
+  visible,
+  videos = [],
+  initialIndex = 0,
+  onClose,
+  onShowAllProducts,
+  onProductPress,
+  productsBottomSheetVisible = false,
+  taggedProducts = [],
+  onCloseBottomSheet,
+  onProductSelectFromSheet
+}) {
   const [currentIndex, setCurrentIndex] = useState(initialIndex);
   const [isPaused, setIsPaused] = useState(false);
   const flatListRef = useRef(null);
@@ -223,13 +287,32 @@ export default function VideoViewer({ visible, videos = [], initialIndex = 0, on
     console.log('Go to profile');
   };
 
-  const handleProductPress = (productId) => {
-    // TODO: Navigate to product detail
-    console.log('Go to product:', productId);
+  const handleProductPress = (product) => {
+    // Product is already populated with full data
+    if (product && onProductPress) {
+      setIsPaused(true); // Pause video when opening product
+      onProductPress(product);
+    } else {
+      console.log('Product not available');
+    }
+  };
+
+  const handleShowAllProducts = (products) => {
+    if (onShowAllProducts) {
+      setIsPaused(true); // Pause video when showing products
+      onShowAllProducts(products);
+    }
   };
 
   const renderVideo = ({ item: video, index }) => {
     const isActive = index === currentIndex;
+
+    // Get first tagged product (already populated with full data from API)
+    const taggedProduct = video.taggedProducts && video.taggedProducts.length > 0
+      ? video.taggedProducts[0]
+      : null;
+
+    const totalProducts = video.taggedProducts ? video.taggedProducts.length : 0;
 
     return (
       <VideoItem
@@ -242,59 +325,76 @@ export default function VideoViewer({ visible, videos = [], initialIndex = 0, on
         onShare={handleShare}
         onProfilePress={handleProfilePress}
         onProductPress={handleProductPress}
+        taggedProduct={taggedProduct}
+        totalProducts={totalProducts}
+        onShowAllProducts={() => handleShowAllProducts(video.taggedProducts)}
       />
     );
   };
 
-  if (!visible) return null;
-
   return (
-     <Modal
-      visible={visible}
-      animationType="slide"
-      onRequestClose={onClose}
-      statusBarTranslucent
-    >
-      <StatusBar barStyle="light-content" />
-      <View style={{ width: SCREEN_WIDTH, height: SCREEN_HEIGHT, backgroundColor: '#000000' }}>
-        {/* Top Bar */}
-        <SafeAreaView edges={['top']} style={{ position: 'absolute', top: 0, left: 0, right: 0, zIndex: 20 }}>
-          <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', paddingHorizontal: 16, paddingVertical: 12 }}>
-            <TouchableOpacity onPress={onClose} style={{ width: 40, height: 40, justifyContent: 'center', alignItems: 'center' }}>
-              <Ionicons name="close" size={28} color="#ffffff" />
-            </TouchableOpacity>
-            <Text style={{ color: '#ffffff', fontSize: 16, fontWeight: '600' }}>
-              Videos
-            </Text>
-            <View style={{ width: 40 }} />
-          </View>
-        </SafeAreaView>
+    <>
+      <Modal
+        visible={visible}
+        animationType="slide"
+        onRequestClose={onClose}
+        statusBarTranslucent
+        presentationStyle="overFullScreen"
+      >
+        <GestureHandlerRootView style={{ flex: 1 }}>
+          <BottomSheetModalProvider>
+            <StatusBar barStyle="light-content" />
+            <View style={{ width: SCREEN_WIDTH, height: SCREEN_HEIGHT, backgroundColor: '#000000' }}>
+          {/* Top Bar */}
+          <SafeAreaView edges={['top']} style={{ position: 'absolute', top: 0, left: 0, right: 0, zIndex: 20 }}>
+            <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', paddingHorizontal: 16, paddingVertical: 12 }}>
+              <TouchableOpacity onPress={onClose} style={{ width: 40, height: 40, justifyContent: 'center', alignItems: 'center' }}>
+                <Ionicons name="close" size={28} color="#ffffff" />
+              </TouchableOpacity>
+              <Text style={{ color: '#ffffff', fontSize: 16, fontWeight: '600' }}>
+                Videos
+              </Text>
+              <View style={{ width: 40 }} />
+            </View>
+          </SafeAreaView>
 
-        <FlatList
-          style={{ width: SCREEN_WIDTH, height: SCREEN_HEIGHT }}
-          ref={flatListRef}
-          data={videos}
-          renderItem={renderVideo}
-          keyExtractor={(item) => item.id}
-          pagingEnabled
-          showsVerticalScrollIndicator={false}
-          snapToInterval={SCREEN_HEIGHT}
-          snapToAlignment="start"
-          decelerationRate="fast"
-          onViewableItemsChanged={onViewableItemsChanged}
-          viewabilityConfig={viewabilityConfig}
-          initialScrollIndex={initialIndex}
-          getItemLayout={(data, index) => ({
-            length: SCREEN_HEIGHT,
-            offset: SCREEN_HEIGHT * index,
-            index
-          })}
-          windowSize={3}
-          maxToRenderPerBatch={1}
-          removeClippedSubviews={true}
-          overScrollMode="never"
-        />
-      </View>
-    </Modal>
+          <FlatList
+            style={{ width: SCREEN_WIDTH, height: SCREEN_HEIGHT }}
+            ref={flatListRef}
+            data={videos}
+            renderItem={renderVideo}
+            keyExtractor={(item) => item.id}
+            pagingEnabled
+            showsVerticalScrollIndicator={false}
+            snapToInterval={SCREEN_HEIGHT}
+            snapToAlignment="start"
+            decelerationRate="fast"
+            onViewableItemsChanged={onViewableItemsChanged}
+            viewabilityConfig={viewabilityConfig}
+            initialScrollIndex={initialIndex}
+            getItemLayout={(data, index) => ({
+              length: SCREEN_HEIGHT,
+              offset: SCREEN_HEIGHT * index,
+              index
+            })}
+            windowSize={3}
+            maxToRenderPerBatch={1}
+            removeClippedSubviews={true}
+            overScrollMode="never"
+          />
+
+            </View>
+
+            {/* Products Bottom Sheet - Inside Modal */}
+            <ProductsBottomSheet
+              visible={productsBottomSheetVisible}
+              products={taggedProducts}
+              onClose={onCloseBottomSheet}
+              onProductSelect={onProductSelectFromSheet}
+            />
+          </BottomSheetModalProvider>
+        </GestureHandlerRootView>
+      </Modal>
+    </>
   );
 }

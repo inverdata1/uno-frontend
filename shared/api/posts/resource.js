@@ -24,11 +24,54 @@ export class PostsResource extends BaseFirebaseService {
     return await this[handler](data, params);
   }
 
+  // === HELPER METHODS ===
+
+  /**
+   * Populate tagged products with full product data
+   * Converts array of product IDs to array of product objects
+   */
+  async populateTaggedProducts(posts) {
+    if (!posts || posts.length === 0) return posts;
+
+    // Get all unique product IDs from all posts
+    const allProductIds = [...new Set(
+      posts.flatMap(post => post.taggedProducts || [])
+    )];
+
+    if (allProductIds.length === 0) return posts;
+
+    // Fetch all products at once using the client's registered resource
+    const productsResource = this.client.getResource('products');
+    const allProducts = await productsResource.findWhere([]);
+
+    // Create a map for quick lookup with FULL product data
+    const productMap = new Map();
+    allProducts.forEach(product => {
+      productMap.set(product.id, product); // Store complete product object
+    });
+
+    // Replace product IDs with full product objects
+    return posts.map(post => {
+      if (post.taggedProducts && post.taggedProducts.length > 0) {
+        const populatedProducts = post.taggedProducts
+          .map(productId => productMap.get(productId))
+          .filter(product => product !== undefined); // Remove products that don't exist
+
+        return {
+          ...post,
+          taggedProducts: populatedProducts
+        };
+      }
+      return post;
+    });
+  }
+
   // === POST CRUD ENDPOINTS ===
 
   /**
    * GET /posts
    * Get feed posts (paginated, sorted by recent)
+   * Automatically populates tagged products with full product data
    */
   async get_index(data, params) {
     const {
@@ -59,9 +102,12 @@ export class PostsResource extends BaseFirebaseService {
     const posts = await this.findWhere(filters);
 
     // Sort by published date (newest first) and paginate
-    return posts
+    const paginatedPosts = posts
       .sort((a, b) => b.publishedAt?.toMillis() - a.publishedAt?.toMillis())
       .slice(parseInt(offset), parseInt(offset) + parseInt(limit));
+
+    // Populate tagged products with full data
+    return await this.populateTaggedProducts(paginatedPosts);
   }
 
   /**

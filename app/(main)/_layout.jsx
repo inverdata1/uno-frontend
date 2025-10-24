@@ -51,7 +51,7 @@ export default function TabLayout() {
       />
 
 
-      {/* Hide layout screens from tabs */}
+      {/* Hide nested layout folders from tabs - their routes are managed by their own layouts */}
       <Tabs.Screen
         name="client"
         options={{ href: null }}
@@ -63,47 +63,6 @@ export default function TabLayout() {
       <Tabs.Screen
         name="delivery"
         options={{ href: null }}
-      />
-
-      {/* Client mode tabs */}
-      <Tabs.Screen
-        name="client/stores"
-        options={currentUserType === 'client' ? {
-          title: 'Tiendas',
-          tabBarIcon: ({ focused }) => getTabIcon('storefront', focused),
-        } : { href: null }}
-      />
-      <Tabs.Screen
-        name="client/orders"
-        options={currentUserType === 'client' ? {
-          title: 'Pedidos',
-          tabBarIcon: ({ focused }) => getTabIcon('receipt', focused),
-        } : { href: null }}
-      />
-
-      {/* Business mode tabs */}
-      <Tabs.Screen
-        name="business/dashboard"
-        options={currentUserType === 'business' ? {
-          title: 'Dashboard',
-          tabBarIcon: ({ focused }) => getTabIcon('analytics', focused),
-        } : { href: null }}
-      />
-      <Tabs.Screen
-        name="business/products"
-        options={currentUserType === 'business' ? {
-          title: 'Productos',
-          tabBarIcon: ({ focused }) => getTabIcon('storefront', focused),
-        } : { href: null }}
-      />
-
-      {/* Delivery mode tabs */}
-      <Tabs.Screen
-        name="delivery/dashboard"
-        options={currentUserType === 'delivery' ? {
-          title: 'Entregas',
-          tabBarIcon: ({ focused }) => getTabIcon('bicycle', focused),
-        } : { href: null }}
       />
 
       {/* Profile tab - always visible */}

@@ -1,16 +1,18 @@
 import { Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useState } from 'react';
-import { Dimensions, Image, ScrollView, TouchableOpacity, View } from 'react-native';
+import { Dimensions, Image, Modal, ScrollView, TouchableOpacity, View } from 'react-native';
 import { AdaptiveHeader } from '../../../shared/components/layout/adaptive-header';
 import { Text } from '../../../shared/components/ui';
-import StoryViewer from '../../social/stories/story-viewer';
-import VideoViewer from '../../social/videos/video-viewer';
-import OffersBanner from './offers-banner';
+import { useProducts } from '../../commerce/hooks/use-products';
+import ProductDetail from '../../commerce/products/product-detail';
+import { useCategories } from '../../social/hooks/use-categories';
 import { useStories } from '../../social/hooks/use-stories';
 import { useVideos } from '../../social/hooks/use-videos';
-import { useCategories } from '../../social/hooks/use-categories';
-import { useProducts } from '../../commerce/hooks/use-products';
+import StoryViewer from '../../social/stories/story-viewer';
+import ProductsBottomSheet from '../../social/videos/products-bottom-sheet';
+import VideoViewer from '../../social/videos/video-viewer';
+import OffersBanner from './offers-banner';
 
 const { width } = Dimensions.get('window');
 
@@ -23,6 +25,10 @@ export default function ClientHomeScreen() {
   const [selectedStories, setSelectedStories] = useState([]);
   const [videoViewerVisible, setVideoViewerVisible] = useState(false);
   const [selectedVideoIndex, setSelectedVideoIndex] = useState(0);
+  const [productDetailVisible, setProductDetailVisible] = useState(false);
+  const [selectedProduct, setSelectedProduct] = useState(null);
+  const [productsBottomSheetVisible, setProductsBottomSheetVisible] = useState(false);
+  const [taggedProducts, setTaggedProducts] = useState([]);
 
   // Use domain hooks instead of inline queries
   const { data: categories = [] } = useCategories();
@@ -270,6 +276,10 @@ export default function ClientHomeScreen() {
             <TouchableOpacity
               key={product.id}
               activeOpacity={0.9}
+              onPress={() => {
+                setSelectedProduct(product);
+                setProductDetailVisible(true);
+              }}
               style={{
                 width: cardWidth,
                 backgroundColor: '#ffffff',
@@ -376,13 +386,46 @@ export default function ClientHomeScreen() {
         stories={selectedStories}
         onClose={() => setStoryViewerVisible(false)}
       />
-            {/* Video Viewer Modal */}
+
+      {/* Video Viewer Modal */}
       <VideoViewer
         visible={videoViewerVisible}
         videos={videos}
         initialIndex={selectedVideoIndex}
         onClose={() => setVideoViewerVisible(false)}
+        onShowAllProducts={(products) => {
+          setTaggedProducts(products);
+          setProductsBottomSheetVisible(true);
+        }}
+        onProductPress={(product) => {
+          setSelectedProduct(product);
+          setProductDetailVisible(true);
+        }}
+        // Pass bottom sheet props
+        productsBottomSheetVisible={productsBottomSheetVisible}
+        taggedProducts={taggedProducts}
+        onCloseBottomSheet={() => setProductsBottomSheetVisible(false)}
+        onProductSelectFromSheet={(product) => {
+          setProductsBottomSheetVisible(false);
+          setSelectedProduct(product);
+          setProductDetailVisible(true);
+        }}
       />
+
+      {/* Product Detail Modal */}
+      <Modal
+        visible={productDetailVisible}
+        animationType="slide"
+        presentationStyle="fullScreen"
+        onRequestClose={() => setProductDetailVisible(false)}
+      >
+        {selectedProduct && (
+          <ProductDetail
+            product={selectedProduct}
+            onClose={() => setProductDetailVisible(false)}
+          />
+        )}
+      </Modal>
     </ScrollView>
   );
 }

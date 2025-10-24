@@ -25,8 +25,6 @@ export const SAMPLE_PRODUCTS = [
     variants: [
       { name: 'Tamaño', options: ['Personal', 'Mediana', 'Familiar'] }
     ],
-    ingredients: ['Salsa de tomate', 'Mozzarella', 'Albahaca', 'Aceite de oliva'],
-    allergens: ['Gluten', 'Lácteos'],
     isActive: true,
     isAvailable: true,
     isFeatured: true

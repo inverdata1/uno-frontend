@@ -36,10 +36,6 @@
  *   specifications: object,        // Custom specifications
  *   // Example: { weight: '500g', material: 'Cotton' }
  *
- *   // Food-specific (if category is food)
- *   allergens: array,              // Allergen information
- *   ingredients: array,            // List of ingredients
- *
  *   // Status & Visibility
  *   isActive: boolean,             // Whether product is active
  *   isAvailable: boolean,          // Whether currently available
@@ -83,8 +79,6 @@ export const COLLECTION_SCHEMA = {
   hasVariants: 'boolean (default false)',
   variants: 'array (optional)',
   specifications: 'object (optional)',
-  allergens: 'array (optional)',
-  ingredients: 'array (optional)',
   isActive: 'boolean (default true)',
   isAvailable: 'boolean (default true)',
   isFeatured: 'boolean (default false)',

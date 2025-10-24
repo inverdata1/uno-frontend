@@ -70,126 +70,132 @@ export default function BusinessProfile({ business, onClose }) {
             {/* Back Button Overlay */}
             <TouchableOpacity
               onPress={onClose}
-              className="absolute z-50 p-3"
-              style={{ top: 12, left: 8 }}
+              className="absolute w-10 h-10 rounded-full bg-black/40 items-center justify-center"
+              style={{ top: 12, left: 16 }}
               activeOpacity={0.7}
             >
-              <Ionicons name="arrow-back" size={28} color="#ffffff" />
+              <Ionicons name="arrow-back" size={24} color="#ffffff" />
             </TouchableOpacity>
           </View>
 
           {/* Business Info Section */}
           <View className="px-4 bg-white" style={{ paddingTop: 0 }}>
-            {/* Logo overlapping banner with heart button */}
+            {/* Logo overlapping banner */}
             <View style={{ marginTop: -40, marginBottom: 12 }}>
-              <View className="flex-row items-end justify-between">
-                <View
-                  className="rounded-full bg-white overflow-hidden"
-                  style={{
-                    width: 80,
-                    height: 80,
-                    borderWidth: 4,
-                    borderColor: '#ffffff',
-                    shadowColor: '#000',
-                    shadowOffset: { width: 0, height: 2 },
-                    shadowOpacity: 0.1,
-                    shadowRadius: 4,
-                    elevation: 3
-                  }}
-                >
-                  {business?.logoUrl ? (
-                    <Image
-                      source={{ uri: business.logoUrl }}
-                      style={{ width: '100%', height: '100%' }}
-                      resizeMode="cover"
-                    />
-                  ) : (
-                    <View className="flex-1 justify-center items-center bg-gray-100">
-                      <Ionicons name="storefront" size={36} color="#9ca3af" />
-                    </View>
-                  )}
-                </View>
-
-                {/* Heart button next to logo */}
-                <TouchableOpacity
-                  className="w-10 h-10 rounded-full bg-gray-50 items-center justify-center mb-1"
-                  style={{ marginRight: 4 }}
-                >
-                  <Ionicons name="heart-outline" size={24} color="#1f2937" />
-                </TouchableOpacity>
+              <View
+                className="rounded-full bg-white overflow-hidden"
+                style={{
+                  width: 88,
+                  height: 88,
+                  borderWidth: 4,
+                  borderColor: '#ffffff',
+                  shadowColor: '#000',
+                  shadowOffset: { width: 0, height: 4 },
+                  shadowOpacity: 0.12,
+                  shadowRadius: 8,
+                  elevation: 5
+                }}
+              >
+                {business?.logoUrl ? (
+                  <Image
+                    source={{ uri: business.logoUrl }}
+                    style={{ width: '100%', height: '100%' }}
+                    resizeMode="cover"
+                  />
+                ) : (
+                  <View className="flex-1 justify-center items-center bg-gray-100">
+                    <Ionicons name="storefront" size={40} color="#9ca3af" />
+                  </View>
+                )}
               </View>
             </View>
 
             {/* Business Name */}
-            <Text className="text-lg font-bold text-gray-900 mb-0.5">
+            <Text className="text-xl font-bold text-gray-900 mb-1">
               {business?.name || 'Nombre'}
             </Text>
 
             {/* Category */}
-            <Text className="text-sm text-gray-600 mb-0.5">
+            <Text className="text-sm text-gray-500 mb-1">
               {business?.category || 'Categoria'}
             </Text>
 
             {/* Address / Hours */}
-            <Text className="text-sm text-gray-600 mb-3">
+            <Text className="text-sm text-gray-500 mb-4">
               {business?.address || business?.hours || 'Dirección / Horario'}
             </Text>
 
-            {/* Followers and Follow Button */}
-            <View className="flex-row items-center mb-3" style={{ justifyContent: 'space-between' }}>
-              <Text className="text-sm text-gray-900">
-                <Text className="font-bold">Seguidores {business?.followersCount || 150}</Text>
-              </Text>
-              <TouchableOpacity
-                onPress={handleFollowToggle}
-                className="rounded-full"
-                style={{
-                  backgroundColor: isFollowing ? '#ffffff' : '#ef4444',
-                  borderWidth: 1,
-                  borderColor: isFollowing ? '#d1d5db' : '#ef4444',
-                  paddingHorizontal: 24,
-                  paddingVertical: 6,
-                }}
-              >
-                <Text
-                  className="text-sm font-semibold"
-                  style={{ color: isFollowing ? '#1f2937' : '#ffffff' }}
-                >
-                  {isFollowing ? 'Siguiendo' : 'Seguir'}
-                </Text>
-              </TouchableOpacity>
-            </View>
+            {/* Followers */}
+            <Text className="text-sm text-gray-900 mb-3">
+              <Text className="font-bold">{business?.followersCount || 150}</Text>
+              <Text className="text-gray-500"> seguidores</Text>
+            </Text>
 
             {/* Description */}
             <Text className="text-sm text-gray-700 leading-5 mb-4">
               {business?.description || 'Descripcion'}
             </Text>
 
-            {/* Description Carousel - Circular avatars */}
-            <ScrollView
-              horizontal
-              showsHorizontalScrollIndicator={false}
-              className="mb-4"
-              contentContainerStyle={{ gap: 12 }}
+            {/* Follow Button - Full Width */}
+            <TouchableOpacity
+              onPress={handleFollowToggle}
+              className="rounded-xl mb-5"
+              style={{
+                backgroundColor: isFollowing ? '#f3f4f6' : '#ef4444',
+                paddingVertical: 12,
+                alignItems: 'center'
+              }}
+              activeOpacity={0.8}
             >
-              {['SAS', 'SUMMER', 'PRESS', 'ALTUZARRA', 'MOTHERS'].map((label, index) => (
-                <View key={index} className="items-center">
-                  <View
-                    className="rounded-full bg-gray-200 overflow-hidden mb-1"
-                    style={{ width: 56, height: 56 }}
-                  >
-                    <View className="flex-1 justify-center items-center">
-                      <Ionicons name="person-circle-outline" size={32} color="#9ca3af" />
+              <Text
+                className="text-sm font-bold"
+                style={{ color: isFollowing ? '#1f2937' : '#ffffff' }}
+              >
+                {isFollowing ? 'Siguiendo' : 'Seguir'}
+              </Text>
+            </TouchableOpacity>
+
+            {/* Story Highlights - Instagram style */}
+            <View className="mb-6" style={{ marginTop: 8 }}>
+              <ScrollView
+                horizontal
+                showsHorizontalScrollIndicator={false}
+                contentContainerStyle={{ gap: 16 }}
+              >
+                {['Nuevos', 'Ofertas', 'Destacados', 'Colecciones', 'Más'].map((label, index) => (
+                  <TouchableOpacity key={index} className="items-center" activeOpacity={0.7}>
+                    <View
+                      className="rounded-full bg-gray-100 overflow-hidden mb-2"
+                      style={{
+                        width: 64,
+                        height: 64,
+                        borderWidth: 2,
+                        borderColor: '#e5e7eb'
+                      }}
+                    >
+                      <View className="flex-1 justify-center items-center">
+                        <Ionicons
+                          name={
+                            index === 0 ? 'sparkles-outline' :
+                            index === 1 ? 'pricetag-outline' :
+                            index === 2 ? 'star-outline' :
+                            index === 3 ? 'grid-outline' :
+                            'ellipsis-horizontal'
+                          }
+                          size={28}
+                          color="#9ca3af"
+                        />
+                      </View>
                     </View>
-                  </View>
-                  <Text className="text-xs text-gray-600">{label}</Text>
-                </View>
-              ))}
-            </ScrollView>
+                    <Text className="text-xs text-gray-600 font-medium">{label}</Text>
+                  </TouchableOpacity>
+                ))}
+              </ScrollView>
+            </View>
 
             {/* Promotional Banner */}
             {business?.promotionalBanner ? (
-              <View className="w-full rounded-xl overflow-hidden mb-4" style={{ height: 140 }}>
+              <View className="w-full rounded-2xl overflow-hidden mb-4" style={{ height: 120 }}>
                 <Image
                   source={{ uri: business.promotionalBanner }}
                   style={{ width: '100%', height: '100%' }}
@@ -197,23 +203,39 @@ export default function BusinessProfile({ business, onClose }) {
                 />
               </View>
             ) : (
-              <View className="w-full rounded-xl overflow-hidden mb-4" style={{ height: 140, backgroundColor: '#e7a5a5' }}>
-                <View className="flex-1 justify-center items-center">
-                  <Text className="text-white text-lg font-bold">Victoria's Secret Body Care</Text>
+              <View
+                className="w-full rounded-2xl overflow-hidden mb-4"
+                style={{
+                  height: 120,
+                  backgroundColor: '#e7a5a5',
+                  shadowColor: '#000',
+                  shadowOffset: { width: 0, height: 2 },
+                  shadowOpacity: 0.08,
+                  shadowRadius: 4,
+                  elevation: 2
+                }}
+              >
+                <View className="flex-1 justify-center items-center px-6">
+                  <Text className="text-white text-base font-bold text-center">
+                    Victoria's Secret Body Care
+                  </Text>
                 </View>
               </View>
             )}
 
             {/* Search Bar (only in shop tab) */}
             {activeTab === 'shop' && (
-              <View className="bg-gray-50 rounded-lg flex-row items-center mb-4" style={{ paddingHorizontal: 12, paddingVertical: 10 }}>
+              <View
+                className="bg-gray-50 rounded-xl flex-row items-center mb-4"
+                style={{ paddingHorizontal: 14, paddingVertical: 12 }}
+              >
                 <Ionicons name="search" size={20} color="#9ca3af" />
                 <TextInput
                   value={searchQuery}
                   onChangeText={setSearchQuery}
                   placeholder="Buscar productos..."
                   placeholderTextColor="#9ca3af"
-                  className="text-gray-900 text-sm flex-1 ml-2"
+                  className="text-gray-900 text-base flex-1 ml-3"
                 />
               </View>
             )}
@@ -235,7 +257,7 @@ export default function BusinessProfile({ business, onClose }) {
                 activeTab === 'shop' ? 'text-gray-900' : 'text-gray-400'
               }`}
             >
-              Shop
+              Tienda
             </Text>
           </TouchableOpacity>
           <TouchableOpacity

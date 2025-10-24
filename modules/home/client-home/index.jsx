@@ -392,7 +392,12 @@ export default function ClientHomeScreen() {
         visible={videoViewerVisible}
         videos={videos}
         initialIndex={selectedVideoIndex}
-        onClose={() => setVideoViewerVisible(false)}
+        onClose={() => {
+          setVideoViewerVisible(false);
+          // Reset bottom sheet state when video viewer closes
+          setProductsBottomSheetVisible(false);
+          setTaggedProducts([]);
+        }}
         onShowAllProducts={(products) => {
           setTaggedProducts(products);
           setProductsBottomSheetVisible(true);

@@ -2,9 +2,9 @@ import { BottomSheetModalProvider } from '@gorhom/bottom-sheet';
 import { Ionicons } from '@expo/vector-icons';
 import { VideoView, useVideoPlayer } from 'expo-video';
 import { useEffect, useRef, useState } from 'react';
-import { Dimensions, FlatList, Image, Modal, Pressable, StatusBar, TouchableOpacity, View } from 'react-native';
+import { Dimensions, FlatList, Image, Modal, Platform, Pressable, StatusBar, TouchableOpacity, View } from 'react-native';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
-import { SafeAreaView } from 'react-native-safe-area-context';
+import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Text } from '../../../shared/components/ui';
 import ProductsBottomSheet from './products-bottom-sheet';
 
@@ -246,6 +246,10 @@ export default function VideoViewer({
   const [currentIndex, setCurrentIndex] = useState(initialIndex);
   const [isPaused, setIsPaused] = useState(false);
   const flatListRef = useRef(null);
+  const insets = useSafeAreaInsets();
+
+  // Calculate actual viewport height including bottom inset
+  const viewportHeight = SCREEN_HEIGHT + insets.bottom;
 
   // Reset to initial index when modal opens
   useEffect(() => {
@@ -254,6 +258,18 @@ export default function VideoViewer({
       setIsPaused(false);
     }
   }, [visible, initialIndex]);
+
+  // Handle Android back button
+  const handleModalClose = () => {
+    // If bottom sheet is open, close it first
+    if (productsBottomSheetVisible && onCloseBottomSheet) {
+      onCloseBottomSheet();
+      return true; // Prevent default back behavior
+    }
+    // Otherwise close the video viewer
+    onClose();
+    return true;
+  };
 
   // Handle viewable items change (when user scrolls)
   const onViewableItemsChanged = useRef(({ viewableItems }) => {
@@ -315,20 +331,22 @@ export default function VideoViewer({
     const totalProducts = video.taggedProducts ? video.taggedProducts.length : 0;
 
     return (
-      <VideoItem
-        video={video}
-        isActive={isActive}
-        isPaused={isPaused}
-        onTogglePause={() => setIsPaused(!isPaused)}
-        onLike={handleLike}
-        onSave={handleSave}
-        onShare={handleShare}
-        onProfilePress={handleProfilePress}
-        onProductPress={handleProductPress}
-        taggedProduct={taggedProduct}
-        totalProducts={totalProducts}
-        onShowAllProducts={() => handleShowAllProducts(video.taggedProducts)}
-      />
+      <View style={{ height: viewportHeight, width: SCREEN_WIDTH }}>
+        <VideoItem
+          video={video}
+          isActive={isActive}
+          isPaused={isPaused}
+          onTogglePause={() => setIsPaused(!isPaused)}
+          onLike={handleLike}
+          onSave={handleSave}
+          onShare={handleShare}
+          onProfilePress={handleProfilePress}
+          onProductPress={handleProductPress}
+          taggedProduct={taggedProduct}
+          totalProducts={totalProducts}
+          onShowAllProducts={() => handleShowAllProducts(video.taggedProducts)}
+        />
+      </View>
     );
   };
 
@@ -337,14 +355,14 @@ export default function VideoViewer({
       <Modal
         visible={visible}
         animationType="slide"
-        onRequestClose={onClose}
+        onRequestClose={handleModalClose}
         statusBarTranslucent
         presentationStyle="overFullScreen"
       >
         <GestureHandlerRootView style={{ flex: 1 }}>
           <BottomSheetModalProvider>
-            <StatusBar barStyle="light-content" />
-            <View style={{ width: SCREEN_WIDTH, height: SCREEN_HEIGHT, backgroundColor: '#000000' }}>
+            <StatusBar barStyle="light-content" translucent backgroundColor="transparent" />
+            <View style={{ flex: 1, backgroundColor: '#000000' }}>
           {/* Top Bar */}
           <SafeAreaView edges={['top']} style={{ position: 'absolute', top: 0, left: 0, right: 0, zIndex: 20 }}>
             <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', paddingHorizontal: 16, paddingVertical: 12 }}>
@@ -359,22 +377,22 @@ export default function VideoViewer({
           </SafeAreaView>
 
           <FlatList
-            style={{ width: SCREEN_WIDTH, height: SCREEN_HEIGHT }}
+            style={{ flex: 1 }}
             ref={flatListRef}
             data={videos}
             renderItem={renderVideo}
             keyExtractor={(item) => item.id}
             pagingEnabled
             showsVerticalScrollIndicator={false}
-            snapToInterval={SCREEN_HEIGHT}
+            snapToInterval={viewportHeight}
             snapToAlignment="start"
             decelerationRate="fast"
             onViewableItemsChanged={onViewableItemsChanged}
             viewabilityConfig={viewabilityConfig}
             initialScrollIndex={initialIndex}
             getItemLayout={(data, index) => ({
-              length: SCREEN_HEIGHT,
-              offset: SCREEN_HEIGHT * index,
+              length: viewportHeight,
+              offset: viewportHeight * index,
               index
             })}
             windowSize={3}

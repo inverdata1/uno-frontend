@@ -1,7 +1,7 @@
 import { FirebaseClient } from './firebase-client';
-import { UsersResource } from './users';
-import { UserTypesApiResource } from './user-types-api';
-import { BusinessesResource } from './businesses';
+import { UsersResource } from './users/resource';
+import { UserTypesApiResource } from './user-types-api/resource';
+import { BusinessesResource } from './businesses/resource';
 import { AddressesResource } from './addresses/resource';
 import { AddressTypesResource } from './address-types/resource';
 import { VenezuelanStatesResource } from './venezuelan-states/resource';

@@ -1,5 +1,6 @@
-import { BaseFirebaseService } from './base-firebase-service';
+import { BaseFirebaseService } from '../base-firebase-service';
 import { serverTimestamp } from 'firebase/firestore';
+import { COLLECTION_NAME } from './collection';
 
 /**
  * Users resource - handles all user-related operations
@@ -7,7 +8,7 @@ import { serverTimestamp } from 'firebase/firestore';
  */
 export class UsersResource extends BaseFirebaseService {
   constructor(client) {
-    super(client, 'users');
+    super(client, COLLECTION_NAME);
   }
 
   /**

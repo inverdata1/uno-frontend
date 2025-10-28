@@ -5,6 +5,7 @@ import { UserTypeSelector } from '../../../../shared/components/layout/user-type
 import { Button, Text } from '../../../../shared/components/ui';
 import { useRegistration } from '../../hooks/register/use-registration';
 import { BasicInfoStep } from './basic-info-step';
+import BusinessOnboardingStep from '../../../../modules/commerce/businesses/business-onboarding-step';
 
 export const RegistrationForm = ({ onComplete }) => {
   const {
@@ -20,6 +21,9 @@ export const RegistrationForm = ({ onComplete }) => {
     // User Type
     selectedUserType,
     setSelectedUserType,
+    // Business Data
+    businessData,
+    setBusinessData,
     // Validation
     triggerUpdate,
     // Refs
@@ -61,10 +65,10 @@ export const RegistrationForm = ({ onComplete }) => {
 
             {/* Progress Bar */}
             <View className="flex-row mb-8 px-2">
-              {[1, 2, 3].map((step) => (
-                <View key={step} className="flex-1 mx-1">
+              {Array.from({ length: totalSteps }).map((_, index) => (
+                <View key={index + 1} className="flex-1 mx-1">
                   <View className={`h-2 rounded-full ${
-                    step <= currentStep ? 'bg-primary-500' : 'bg-gray-200'
+                    index + 1 <= currentStep ? 'bg-primary-500' : 'bg-gray-200'
                   }`} />
                 </View>
               ))}
@@ -90,8 +94,17 @@ export const RegistrationForm = ({ onComplete }) => {
                 />
               )}
 
-              {/* Step 3: Confirmation */}
-              {currentStep === 3 && (
+              {/* Step 3: Business Info (only for business users) */}
+              {currentStep === 3 && selectedUserType === 'business' && (
+                <BusinessOnboardingStep
+                  businessData={businessData}
+                  onBusinessDataChange={setBusinessData}
+                  scrollViewRef={scrollViewRef}
+                />
+              )}
+
+              {/* Step 3 or 4 (depending on user type): Confirmation */}
+              {((currentStep === 3 && selectedUserType !== 'business') || (currentStep === 4 && selectedUserType === 'business')) && (
                 <View>
                   {/* Hero User Type Highlight */}
                   <View style={{

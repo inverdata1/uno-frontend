@@ -1,8 +1,8 @@
-import { BottomSheetModalProvider } from '@gorhom/bottom-sheet';
 import { Ionicons } from '@expo/vector-icons';
+import { BottomSheetModalProvider } from '@gorhom/bottom-sheet';
 import { VideoView, useVideoPlayer } from 'expo-video';
 import { useEffect, useRef, useState } from 'react';
-import { Dimensions, FlatList, Image, Modal, Platform, Pressable, StatusBar, TouchableOpacity, View } from 'react-native';
+import { Dimensions, FlatList, Image, Modal, Pressable, StatusBar, TouchableOpacity, View } from 'react-native';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Text } from '../../../shared/components/ui';
@@ -279,8 +279,10 @@ export default function VideoViewer({
     }
   }).current;
 
+  // Require 75% visibility before switching videos (more resistance)
   const viewabilityConfig = useRef({
-    itemVisiblePercentThreshold: 50
+    itemVisiblePercentThreshold: 75,
+    minimumViewTime: 100
   }).current;
 
   const handleLike = () => {
@@ -386,7 +388,8 @@ export default function VideoViewer({
             showsVerticalScrollIndicator={false}
             snapToInterval={viewportHeight}
             snapToAlignment="start"
-            decelerationRate="fast"
+            decelerationRate={0.98}
+            scrollEventThrottle={16}
             onViewableItemsChanged={onViewableItemsChanged}
             viewabilityConfig={viewabilityConfig}
             initialScrollIndex={initialIndex}

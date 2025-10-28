@@ -1,4 +1,5 @@
-import { BaseFirebaseService } from './base-firebase-service';
+import { BaseFirebaseService } from '../base-firebase-service';
+import { COLLECTION_NAME } from './collection';
 
 /**
  * UserTypes resource - handles user type management

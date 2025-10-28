@@ -11,7 +11,7 @@ export const authService = {
   /**
    * Register a new user
    */
-  async signUp({ firstName, lastName, email, phone, dateOfBirth, password, selectedUserType = 'client' }) {
+  async signUp({ firstName, lastName, email, phone, dateOfBirth, password, selectedUserType = 'client', businessData }) {
     try {
       // Create Firebase auth user
       const userCredential = await createUserWithEmailAndPassword(auth, email, password);
@@ -61,6 +61,31 @@ export const authService = {
 
       // Create user document using our API client
       await apiClient.post('/users', userData, { params: { userId: user.uid } });
+
+      // If user is registering as a business, create business profile
+      if (selectedUserType === 'business' && businessData) {
+        console.log('📊 Creating business profile during registration...');
+
+        const business = await apiClient.post('/businesses', {
+          businessName: businessData.businessName,
+          category: businessData.category,
+          description: businessData.description || '',
+          address: businessData.address,
+          phone: businessData.phone,
+          logoUrl: businessData.logoUrl || null,
+          bannerUrl: businessData.bannerUrl || null,
+        }, { params: { userId: user.uid } });
+
+        console.log('✅ Business profile created:', business.data.id);
+
+        // Update user with business ID
+        userData.currentBusinessId = business.data.id;
+
+        // Update the user document in Firebase with the business ID
+        await apiClient.put('/users/profile', {
+          currentBusinessId: business.data.id
+        }, { params: { userId: user.uid } });
+      }
 
       return {
         user: {

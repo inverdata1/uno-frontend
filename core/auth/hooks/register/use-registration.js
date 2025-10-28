@@ -3,6 +3,7 @@ import { useForm } from '@tanstack/react-form';
 import { useAuthStore } from '../../stores/auth-store';
 import { useFocusManager } from '../../../../shared/hooks';
 import { registerSchema } from '../../schemas/register/register-schema';
+import { isBusinessDataValid } from '../../../../modules/commerce/businesses/business-onboarding-step';
 
 export const useRegistration = ({ onComplete }) => {
   const { signUp, isLoading } = useAuthStore();
@@ -14,8 +15,13 @@ export const useRegistration = ({ onComplete }) => {
   // Multi-step state
   const [currentStep, setCurrentStep] = useState(1);
   const [selectedUserType, setSelectedUserType] = useState('client');
+  const [businessData, setBusinessData] = useState({});
   const [forceUpdate, setForceUpdate] = useState(0);
-  const totalSteps = 3;
+
+  // Calculate total steps based on user type
+  // Business: 1. Basic Info -> 2. User Type -> 3. Business Info -> 4. Confirmation
+  // Client/Driver: 1. Basic Info -> 2. User Type -> 3. Confirmation
+  const totalSteps = selectedUserType === 'business' ? 4 : 3;
 
   const form = useForm({
     defaultValues: {
@@ -32,10 +38,11 @@ export const useRegistration = ({ onComplete }) => {
       onSubmit: registerSchema,
     },
     onSubmit: async ({ value }) => {
-      // Include selected user type in registration data
+      // Include selected user type and business data in registration
       const registrationData = {
         ...value,
-        selectedUserType
+        selectedUserType,
+        ...(selectedUserType === 'business' && { businessData })
       };
 
       const result = await signUp(registrationData);
@@ -112,6 +119,13 @@ export const useRegistration = ({ onComplete }) => {
       case 2:
         // User type selection step - ensure user type is selected
         return selectedUserType !== null;
+      case 3:
+        // For business users, step 3 is business info (must be valid)
+        // For others, step 3 is confirmation (always valid)
+        if (selectedUserType === 'business') {
+          return isBusinessDataValid(businessData);
+        }
+        return true;
       default:
         return true;
     }
@@ -137,6 +151,10 @@ export const useRegistration = ({ onComplete }) => {
     // User Type
     selectedUserType,
     setSelectedUserType,
+
+    // Business Data
+    businessData,
+    setBusinessData,
 
     // Validation
     isStep1Valid,

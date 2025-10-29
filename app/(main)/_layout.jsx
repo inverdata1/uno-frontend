@@ -30,42 +30,61 @@ export default function TabLayout() {
         }
       }}>
 
-      {/* Render all possible tabs, showing only current mode's tabs */}
-
-      {/* Common tabs */}
+      {/* Index/Home - Always present, label changes by mode */}
       <Tabs.Screen
         name="index"
         options={{
-          title: 'Inicio',
-          tabBarIcon: ({ focused }) => getTabIcon('home', focused),
+          title: currentUserType === 'business' ? 'Dashboard' : currentUserType === 'driver' ? 'Entregas' : 'Inicio',
+          tabBarIcon: ({ focused }) => getTabIcon(
+            currentUserType === 'business' ? 'stats-chart' : currentUserType === 'driver' ? 'list' : 'home',
+            focused
+          ),
         }}
       />
 
-      {/* Feed - Visible for client and business */}
+      {/* Feed - Shows for client (Feed) and business (Productos), hidden for driver */}
       <Tabs.Screen
         name="feed"
-        options={(currentUserType === 'client' || currentUserType === 'business') ? {
-          title: 'Feed',
-          tabBarIcon: ({ focused }) => getTabIcon('apps', focused),
+        options={currentUserType === 'driver' ? { href: null } : {
+          title: currentUserType === 'business' ? 'Productos' : 'Feed',
+          tabBarIcon: ({ focused }) => getTabIcon(
+            currentUserType === 'business' ? 'cube' : 'apps',
+            focused
+          ),
+        }}
+      />
+
+      {/* Client folder - Shows for client (Pedidos) and driver (Historial), hidden for business */}
+      <Tabs.Screen
+        name="client"
+        options={currentUserType === 'business' ? { href: null } : {
+          title: currentUserType === 'driver' ? 'Historial' : 'Pedidos',
+          tabBarIcon: ({ focused }) => getTabIcon(
+            currentUserType === 'driver' ? 'checkmark-done' : 'receipt',
+            focused
+          ),
+        }}
+      />
+
+      {/* Business folder - Shows for business only (Pedidos), hidden for others */}
+      <Tabs.Screen
+        name="business"
+        options={currentUserType === 'business' ? {
+          title: 'Pedidos',
+          tabBarIcon: ({ focused }) => getTabIcon('receipt', focused),
         } : { href: null }}
       />
 
-
-      {/* Hide nested layout folders from tabs - their routes are managed by their own layouts */}
-      <Tabs.Screen
-        name="client"
-        options={{ href: null }}
-      />
-      <Tabs.Screen
-        name="business"
-        options={{ href: null }}
-      />
+      {/* Delivery folder - Shows for driver only (Activas), hidden for others */}
       <Tabs.Screen
         name="delivery"
-        options={{ href: null }}
+        options={currentUserType === 'driver' ? {
+          title: 'Activas',
+          tabBarIcon: ({ focused }) => getTabIcon('navigate-circle', focused),
+        } : { href: null }}
       />
 
-      {/* Profile tab - always visible */}
+      {/* Profile - Always visible for all modes */}
       <Tabs.Screen
         name="profile"
         options={{

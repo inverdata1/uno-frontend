@@ -1,6 +1,7 @@
 import { FirebaseClient } from './firebase-client';
 import { UsersResource } from './users/resource';
 import { BusinessesResource } from './businesses/resource';
+import { BranchesResource } from './branches/resource';
 import { AddressesResource } from './addresses/resource';
 import { AddressTypesResource } from './address-types/resource';
 import { VenezuelanStatesResource } from './venezuelan-states/resource';
@@ -22,6 +23,7 @@ const firebaseClient = new FirebaseClient();
 // Register all resources
 firebaseClient.registerResource('users', UsersResource);
 firebaseClient.registerResource('businesses', BusinessesResource);
+firebaseClient.registerResource('branches', BranchesResource);
 firebaseClient.registerResource('addresses', AddressesResource);
 firebaseClient.registerResource('address-types', AddressTypesResource);
 firebaseClient.registerResource('venezuelan-states', VenezuelanStatesResource);
@@ -44,6 +46,7 @@ export { firebaseClient };
 export {
   UsersResource,
   BusinessesResource,
+  BranchesResource,
   AddressesResource,
   AddressTypesResource,
   VenezuelanStatesResource,

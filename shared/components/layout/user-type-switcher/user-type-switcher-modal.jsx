@@ -1,5 +1,5 @@
 import React, { useState, useCallback, useRef, useEffect } from 'react';
-import { View, TouchableOpacity } from 'react-native';
+import { View, TouchableOpacity, ActivityIndicator } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import BottomSheet, { BottomSheetView } from '@gorhom/bottom-sheet';
 import { Text } from '../../ui';
@@ -13,6 +13,7 @@ export const UserTypeSwitcherModal = ({ visible, onClose, onUserTypeSwitch }) =>
   const switchUserTypeMutation = useSwitchUserType();
   const [selectedUserType, setSelectedUserType] = useState(currentUserType);
   const [selectedBusiness, setSelectedBusiness] = useState(null);
+  const [switchingTo, setSwitchingTo] = useState(null);
 
   // Bottom sheet ref
   const bottomSheetRef = useRef(null);
@@ -35,12 +36,21 @@ export const UserTypeSwitcherModal = ({ visible, onClose, onUserTypeSwitch }) =>
   }, [visible]);
 
   const handleUserTypeSwitch = async (userType, businessId = null, branchId = null) => {
+    if (userType === currentUserType) return; // Already on this type
+
     try {
+      setSwitchingTo(userType);
       await switchUserTypeMutation.mutateAsync({ userType, businessId, branchId });
       onUserTypeSwitch?.({ userType, businessId, branchId });
-      onClose();
+
+      // Small delay to show success state before closing
+      setTimeout(() => {
+        setSwitchingTo(null);
+        onClose();
+      }, 300);
     } catch (error) {
       console.error('Failed to switch user type:', error);
+      setSwitchingTo(null);
     }
   };
 
@@ -48,28 +58,30 @@ export const UserTypeSwitcherModal = ({ visible, onClose, onUserTypeSwitch }) =>
 
   const UserTypeCard = ({ userType, isActive, onPress, isAvailable }) => {
     const config = getUserTypeConfig(userType);
+    const isSwitching = switchingTo === userType;
+    const isDisabled = !isAvailable || switchingTo !== null;
 
     return (
       <TouchableOpacity
-        onPress={() => isAvailable && onPress(userType)}
+        onPress={() => !isDisabled && onPress(userType)}
         style={{
-          marginBottom: 12,
-          opacity: isAvailable ? 1 : 0.5
+          marginBottom: 12
         }}
         activeOpacity={0.95}
-        disabled={!isAvailable}
+        disabled={isDisabled}
       >
         <View style={{
-          backgroundColor: isActive ? config.primary : colors.bg.primary,
+          backgroundColor: isSwitching ? config.primary : isActive ? config.primary : colors.bg.primary,
           borderRadius: 16,
           padding: 16,
           borderWidth: 1.5,
-          borderColor: isActive ? config.primary : colors.border.light,
-          shadowColor: isActive ? config.primary : '#000',
-          shadowOffset: { width: 0, height: isActive ? 4 : 2 },
-          shadowOpacity: isActive ? 0.2 : 0.08,
-          shadowRadius: isActive ? 8 : 4,
-          elevation: isActive ? 6 : 2,
+          borderColor: isSwitching ? config.primary : isActive ? config.primary : colors.border.light,
+          shadowColor: isSwitching ? config.primary : isActive ? config.primary : '#000',
+          shadowOffset: { width: 0, height: isSwitching ? 6 : isActive ? 4 : (isDisabled ? 1 : 2) },
+          shadowOpacity: isSwitching ? 0.3 : isActive ? 0.2 : (isDisabled ? 0.03 : 0.08),
+          shadowRadius: isSwitching ? 10 : isActive ? 8 : (isDisabled ? 2 : 4),
+          elevation: isSwitching ? 8 : isActive ? 6 : (isDisabled ? 1 : 2),
+          opacity: isDisabled && !isSwitching ? 0.5 : 1
         }}>
           {/* Header */}
           <View style={{ flexDirection: 'row', alignItems: 'center', marginBottom: 12 }}>
@@ -77,7 +89,7 @@ export const UserTypeSwitcherModal = ({ visible, onClose, onUserTypeSwitch }) =>
               width: 40,
               height: 40,
               borderRadius: 12,
-              backgroundColor: isActive ? 'rgba(255, 255, 255, 0.2)' : config.background,
+              backgroundColor: (isSwitching || isActive) ? 'rgba(255, 255, 255, 0.2)' : config.background,
               alignItems: 'center',
               justifyContent: 'center',
               marginRight: 12
@@ -85,7 +97,7 @@ export const UserTypeSwitcherModal = ({ visible, onClose, onUserTypeSwitch }) =>
               <Ionicons
                 name={config.icon}
                 size={20}
-                color={isActive ? colors.text.inverse : config.primary}
+                color={(isSwitching || isActive) ? colors.text.inverse : config.primary}
               />
             </View>
 
@@ -93,20 +105,22 @@ export const UserTypeSwitcherModal = ({ visible, onClose, onUserTypeSwitch }) =>
               <Text style={{
                 fontSize: 16,
                 fontWeight: '700',
-                color: isActive ? colors.text.inverse : colors.text.primary,
+                color: (isSwitching || isActive) ? colors.text.inverse : colors.text.primary,
                 marginBottom: 2
               }}>
                 {config.title}
               </Text>
               <Text style={{
                 fontSize: 12,
-                color: isActive ? 'rgba(255, 255, 255, 0.8)' : colors.text.secondary
+                color: (isSwitching || isActive) ? 'rgba(255, 255, 255, 0.8)' : colors.text.secondary
               }}>
                 {config.subtitle}
               </Text>
             </View>
 
-            {isActive && (
+            {isSwitching ? (
+              <ActivityIndicator size="small" color={colors.text.inverse} />
+            ) : isActive ? (
               <View style={{
                 width: 24,
                 height: 24,
@@ -117,14 +131,14 @@ export const UserTypeSwitcherModal = ({ visible, onClose, onUserTypeSwitch }) =>
               }}>
                 <Ionicons name="checkmark" size={14} color={colors.text.inverse} />
               </View>
-            )}
+            ) : null}
           </View>
 
           {/* Description */}
           <Text style={{
             fontSize: 13,
             lineHeight: 18,
-            color: isActive ? 'rgba(255, 255, 255, 0.9)' : colors.text.secondary,
+            color: (isSwitching || isActive) ? 'rgba(255, 255, 255, 0.9)' : colors.text.secondary,
             marginBottom: 10
           }}>
             {config.description}
@@ -136,18 +150,18 @@ export const UserTypeSwitcherModal = ({ visible, onClose, onUserTypeSwitch }) =>
               <View
                 key={index}
                 style={{
-                  backgroundColor: isActive ? 'rgba(255, 255, 255, 0.15)' : config.background,
+                  backgroundColor: (isSwitching || isActive) ? 'rgba(255, 255, 255, 0.15)' : config.background,
                   paddingHorizontal: 8,
                   paddingVertical: 4,
                   borderRadius: 8,
                   borderWidth: 1,
-                  borderColor: isActive ? 'rgba(255, 255, 255, 0.2)' : config.primary + '20'
+                  borderColor: (isSwitching || isActive) ? 'rgba(255, 255, 255, 0.2)' : config.primary + '20'
                 }}
               >
                 <Text style={{
                   fontSize: 10,
                   fontWeight: '500',
-                  color: isActive ? colors.text.inverse : config.primary
+                  color: (isSwitching || isActive) ? colors.text.inverse : config.primary
                 }}>
                   {benefit}
                 </Text>
@@ -187,13 +201,13 @@ export const UserTypeSwitcherModal = ({ visible, onClose, onUserTypeSwitch }) =>
             color: colors.text.primary,
             marginBottom: 4
           }}>
-            Cambiar Modo
+            ¿Qué vas a hacer?
           </Text>
           <Text style={{
             fontSize: 16,
             color: colors.text.secondary
           }}>
-            Selecciona cómo quieres usar UNO
+            Selecciona tu actividad
           </Text>
         </View>
 

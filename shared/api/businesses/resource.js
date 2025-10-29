@@ -1,4 +1,5 @@
 import { BaseFirebaseService } from '../base-firebase-service';
+import { BranchesResource } from '../branches/resource';
 import { COLLECTION_NAME } from './collection';
 
 /**
@@ -8,6 +9,7 @@ import { COLLECTION_NAME } from './collection';
 export class BusinessesResource extends BaseFirebaseService {
   constructor(client) {
     super(client, COLLECTION_NAME);
+    this.branchesService = new BranchesResource(client);
   }
 
   /**
@@ -53,6 +55,21 @@ export class BusinessesResource extends BaseFirebaseService {
     console.log('📊 Creating business:', businessData);
 
     const createdBusiness = await this.create(businessData);
+
+    // Auto-create default branch for the business
+    console.log('🏢 Creating default branch for business:', createdBusiness.id);
+    const defaultBranch = await this.branchesService.create({
+      businessId: createdBusiness.id,
+      name: 'Principal', // Main branch
+      isMain: true,
+      isActive: true,
+      address: data.address || null,
+      phone: data.phone || null,
+      createdAt: now,
+      updatedAt: now,
+    });
+
+    console.log('✅ Default branch created:', defaultBranch.id);
 
     return createdBusiness;
   }

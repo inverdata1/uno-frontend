@@ -1,4 +1,5 @@
 import { BaseFirebaseService } from '../base-firebase-service';
+import { BranchesResource } from '../branches/resource';
 import { serverTimestamp } from 'firebase/firestore';
 import { COLLECTION_NAME } from './collection';
 
@@ -10,7 +11,7 @@ export class UsersResource extends BaseFirebaseService {
   constructor(client) {
     super(client, COLLECTION_NAME);
     this.businessesService = new BaseFirebaseService(client, 'businesses');
-    this.branchesService = new BaseFirebaseService(client, 'branches');
+    this.branchesService = new BranchesResource(client);
   }
 
   /**

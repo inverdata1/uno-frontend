@@ -83,6 +83,7 @@ export const getUserTypeConfig = (userType) => {
   const config = USER_TYPE_CONFIG[userType] || USER_TYPE_CONFIG.client;
   return {
     ...config,
+    title: config.label, // Alias label as title for consistency
     gradient: [config.primary, config.secondary], // Add gradient array
   };
 };

@@ -42,16 +42,22 @@ export default function TabLayout() {
         }}
       />
 
-      {/* Feed - Shows for client (Feed) and business (Productos), hidden for driver */}
+      {/* Social - Shows for business (Crear), hidden for others */}
+      <Tabs.Screen
+        name="social"
+        options={currentUserType === 'business' ? {
+          title: 'Crear',
+          tabBarIcon: ({ focused }) => getTabIcon('add-circle', focused),
+        } : { href: null }}
+      />
+
+      {/* Feed - Shows for client only (social feed), hidden for business and driver */}
       <Tabs.Screen
         name="feed"
-        options={currentUserType === 'driver' ? { href: null } : {
-          title: currentUserType === 'business' ? 'Productos' : 'Feed',
-          tabBarIcon: ({ focused }) => getTabIcon(
-            currentUserType === 'business' ? 'cube' : 'apps',
-            focused
-          ),
-        }}
+        options={currentUserType === 'client' ? {
+          title: 'Feed',
+          tabBarIcon: ({ focused }) => getTabIcon('apps', focused),
+        } : { href: null }}
       />
 
       {/* Client folder - Shows for client (Pedidos) and driver (Historial), hidden for business */}
@@ -66,12 +72,12 @@ export default function TabLayout() {
         }}
       />
 
-      {/* Business folder - Shows for business only (Pedidos), hidden for others */}
+      {/* Business folder - Shows for business (Pedidos and Productos in sub-navigation), hidden for others */}
       <Tabs.Screen
         name="business"
         options={currentUserType === 'business' ? {
-          title: 'Pedidos',
-          tabBarIcon: ({ focused }) => getTabIcon('receipt', focused),
+          title: 'Tienda',
+          tabBarIcon: ({ focused }) => getTabIcon('storefront', focused),
         } : { href: null }}
       />
 

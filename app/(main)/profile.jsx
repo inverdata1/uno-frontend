@@ -6,6 +6,7 @@ import { Text } from '../../shared/components/ui';
 import { ProfileHero, SettingsItem } from '../../shared/components/profile';
 import { UserTypeSwitcherModal } from '../../shared/components/layout/user-type-switcher/user-type-switcher-modal';
 import BusinessUpgradeModal from '../../modules/commerce/businesses/business-upgrade-modal';
+import BusinessProfileScreen from '../../modules/business/profile/business-profile-screen';
 import { useAuthStore } from '../../core/auth/stores/auth-store';
 import { useCurrentUserType } from '../../shared/hooks/use-user-type';
 import { getUserTypeConfig } from '../../shared/config/user-types';
@@ -17,6 +18,11 @@ export default function ProfileScreen() {
   const [businessUpgradeModalVisible, setBusinessUpgradeModalVisible] = useState(false);
 
   const userTypeInfo = getUserTypeConfig(currentUserType);
+
+  // Show business profile when in business mode
+  if (currentUserType === 'business') {
+    return <BusinessProfileScreen />;
+  }
 
   // Debug logging
   React.useEffect(() => {

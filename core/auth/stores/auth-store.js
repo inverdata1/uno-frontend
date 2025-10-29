@@ -1,5 +1,6 @@
 import { create } from 'zustand';
 import { authService } from '../services/auth-service';
+import { queryClient } from '../../../shared/config/query-client';
 
 // Auth state store (not persisted - Firebase handles persistence)
 export const useAuthStore = create((set, get) => ({
@@ -50,6 +51,13 @@ export const useAuthStore = create((set, get) => ({
         isLoading: false,
         error: null,
       });
+
+      // Invalidate user-types query to ensure correct user type is loaded
+      queryClient.invalidateQueries({ queryKey: ['user-types'] });
+      queryClient.invalidateQueries({ queryKey: ['users', 'profile'] });
+
+      console.log('✅ Registration successful, refreshed user type data');
+
       return result;
     }
   },
@@ -106,6 +114,13 @@ export const useAuthStore = create((set, get) => ({
       });
       console.log('✅ Auth state listener set store state:', { isAuthenticated: !!user });
     });
+  },
+
+  // Refresh user data from React Query cache
+  refreshUser: async () => {
+    queryClient.invalidateQueries({ queryKey: ['user-types'] });
+    queryClient.invalidateQueries({ queryKey: ['users', 'profile'] });
+    console.log('🔄 Refreshed user data');
   },
 
   // Getters

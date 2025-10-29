@@ -82,33 +82,38 @@ export class BaseFirebaseService {
    * @returns {Promise<Object>} Created document with ID
    */
   async create(data, customId = null) {
-    const docData = {
-      ...data,
-      createdAt: serverTimestamp(),
-      updatedAt: serverTimestamp()
-    };
+    const now = new Date();
 
-    let docRef;
     let documentId;
 
     if (customId) {
-      // Use setDoc with custom ID
-      docRef = doc(this.db, this.collectionName, customId);
-      await setDoc(docRef, docData);
       documentId = customId;
     } else {
-      // Use addDoc for auto-generated ID
-      docRef = await addDoc(collection(this.db, this.collectionName), docData);
-      documentId = docRef.id;
+      // Pre-generate ID for auto-generated case so we can store it in the document
+      const tempRef = doc(collection(this.db, this.collectionName));
+      documentId = tempRef.id;
     }
 
-    // Return with actual timestamp since serverTimestamp() returns null initially
-    return {
-      id: documentId,
+    // Use provided timestamps or create new ones
+    // Use JavaScript Date objects instead of serverTimestamp() for immediate consistency
+    // ALWAYS include id field in the document data
+    const docData = {
       ...data,
-      createdAt: new Date(),
-      updatedAt: new Date()
+      id: documentId,  // Store document ID in the document itself
+      createdAt: data.createdAt || now,
+      updatedAt: data.updatedAt || now
     };
+
+    if (customId) {
+      // Use setDoc with custom ID
+      await setDoc(doc(this.db, this.collectionName, customId), docData);
+    } else {
+      // Use setDoc with pre-generated ID
+      await setDoc(doc(this.db, this.collectionName, documentId), docData);
+    }
+
+    // Return the document data (id already included)
+    return docData;
   }
 
   /**

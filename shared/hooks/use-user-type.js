@@ -23,7 +23,7 @@ export const useUserType = () => {
   return useQuery({
     queryKey: ['user-types'],
     queryFn: async () => {
-      const res = await apiClient.get('/user-types'); // API endpoint unchanged for now
+      const res = await apiClient.get('/users/user-types');
 
       // Safe defaults if API returns null
       if (!res.data) {
@@ -124,7 +124,7 @@ export const useSwitchUserType = () => {
 
   return useMutation({
     mutationFn: ({ userType, businessId, branchId }) => {
-      return apiClient.post('/user-types/switch', {
+      return apiClient.post('/users/switch-user-type', {
         userType: userType,
         businessId,
         branchId
@@ -173,7 +173,7 @@ export const useEnableUserType = () => {
 
   return useMutation({
     mutationFn: ({ userType, status = 'pending', typeData = {} }) => {
-      return apiClient.post('/user-types', {
+      return apiClient.post('/users/enable-user-type', {
         userType: userType,
         status,
         userTypeData: typeData
@@ -205,7 +205,7 @@ export const useUpdateUserTypeStatus = () => {
 
   return useMutation({
     mutationFn: ({ userType, status }) => {
-      return apiClient.patch('/user-types/status', {
+      return apiClient.patch('/users/user-type-status', {
         userType: userType,
         status
       }).then(res => res.data);

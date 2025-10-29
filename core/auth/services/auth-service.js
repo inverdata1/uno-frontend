@@ -34,6 +34,26 @@ export const authService = {
         };
       }
 
+      // If user is registering as a business, create business profile FIRST
+      let businessId = null;
+      if (selectedUserType === 'business' && businessData) {
+        console.log('📊 Creating business profile during registration...');
+
+        const business = await apiClient.post('/businesses', {
+          businessName: businessData.businessName,
+          category: businessData.category,
+          description: businessData.description || '',
+          address: businessData.address,
+          phone: businessData.phone,
+          logoUrl: businessData.logoUrl || null,
+          bannerUrl: businessData.bannerUrl || null,
+        }, { params: { userId: user.uid } });
+
+        businessId = business.data.id;
+        console.log('✅ Business profile created:', businessId);
+      }
+
+      // Create user document with business ID already included
       const userData = {
         id: user.uid,
         firstName,
@@ -45,7 +65,7 @@ export const authService = {
         isActive: true,
         userTypes: userTypes, // API field name (will transform in backend later)
         currentUserType: selectedUserType, // API field name (will transform in backend later)
-        currentBusinessId: null,
+        currentBusinessId: businessId,
         currentBranchId: null,
         // User preferences
         preferences: {
@@ -61,31 +81,7 @@ export const authService = {
 
       // Create user document using our API client
       await apiClient.post('/users', userData, { params: { userId: user.uid } });
-
-      // If user is registering as a business, create business profile
-      if (selectedUserType === 'business' && businessData) {
-        console.log('📊 Creating business profile during registration...');
-
-        const business = await apiClient.post('/businesses', {
-          businessName: businessData.businessName,
-          category: businessData.category,
-          description: businessData.description || '',
-          address: businessData.address,
-          phone: businessData.phone,
-          logoUrl: businessData.logoUrl || null,
-          bannerUrl: businessData.bannerUrl || null,
-        }, { params: { userId: user.uid } });
-
-        console.log('✅ Business profile created:', business.data.id);
-
-        // Update user with business ID
-        userData.currentBusinessId = business.data.id;
-
-        // Update the user document in Firebase with the business ID
-        await apiClient.put('/users/profile', {
-          currentBusinessId: business.data.id
-        }, { params: { userId: user.uid } });
-      }
+      console.log('✅ User document created with businessId:', businessId);
 
       return {
         user: {
@@ -110,7 +106,7 @@ export const authService = {
 
       // Get user data through our API system
       const userProfile = await apiClient.get('/users/profile', { params: { userId: user.uid } });
-      const userTypesData = await apiClient.get('/user-types', { params: { userId: user.uid } });
+      const userTypesData = await apiClient.get('/users/user-types', { params: { userId: user.uid } });
 
       return {
         user: {
@@ -147,7 +143,7 @@ export const authService = {
       if (!currentUser) return null;
 
       const userProfile = await apiClient.get('/users/profile', { params: { userId: currentUser.uid } });
-      const userTypesData = await apiClient.get('/user-types', { params: { userId: currentUser.uid } });
+      const userTypesData = await apiClient.get('/users/user-types', { params: { userId: currentUser.uid } });
 
       return {
         uid: currentUser.uid,
@@ -169,7 +165,7 @@ export const authService = {
         // Get user data through our API system
         try {
           const userProfile = await apiClient.get('/users/profile', { params: { userId: user.uid } });
-          const userTypesData = await apiClient.get('/user-types', { params: { userId: user.uid } });
+          const userTypesData = await apiClient.get('/users/user-types', { params: { userId: user.uid } });
 
           callback({
             uid: user.uid,

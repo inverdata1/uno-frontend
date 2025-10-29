@@ -1,11 +1,9 @@
 import { FirebaseClient } from './firebase-client';
 import { UsersResource } from './users/resource';
-import { UserTypesApiResource } from './user-types-api/resource';
 import { BusinessesResource } from './businesses/resource';
 import { AddressesResource } from './addresses/resource';
 import { AddressTypesResource } from './address-types/resource';
 import { VenezuelanStatesResource } from './venezuelan-states/resource';
-import { UserTypesResource } from './user-types/resource';
 import { CategoriesResource } from './categories/resource';
 import { ProductsResource } from './products/resource';
 import { PostsResource } from './posts/resource';
@@ -23,12 +21,10 @@ const firebaseClient = new FirebaseClient();
 
 // Register all resources
 firebaseClient.registerResource('users', UsersResource);
-firebaseClient.registerResource('user-types', UserTypesApiResource); // User's active types (client/business/delivery)
 firebaseClient.registerResource('businesses', BusinessesResource);
 firebaseClient.registerResource('addresses', AddressesResource);
 firebaseClient.registerResource('address-types', AddressTypesResource);
 firebaseClient.registerResource('venezuelan-states', VenezuelanStatesResource);
-firebaseClient.registerResource('user-type-definitions', UserTypesResource); // User type metadata/permissions
 
 // Social Commerce Resources
 firebaseClient.registerResource('categories', CategoriesResource);
@@ -47,12 +43,10 @@ export { firebaseClient };
 // Export individual resources for direct access if needed
 export {
   UsersResource,
-  UserTypesApiResource,
   BusinessesResource,
   AddressesResource,
   AddressTypesResource,
   VenezuelanStatesResource,
-  UserTypesResource,
   CategoriesResource,
   ProductsResource,
   PostsResource,

@@ -1,6 +1,5 @@
 import { seedAddressTypes, checkAddressTypesExist } from './address-types/seeder';
 import { seedVenezuelanStates, checkVenezuelanStatesExist } from './venezuelan-states/seeder';
-import { seedUserTypesOnly } from './user-types/seeder';
 import { seedCategories } from './categories/seeder';
 import { seedProducts } from './products/seeder';
 import { seedPosts } from './posts/seeder';
@@ -9,6 +8,9 @@ import { seedStories } from './stories/seeder';
 /**
  * Main Data Seeder
  * Manages seeding of all lookup and demo collections
+ *
+ * NOTE: User types configuration is hardcoded in shared/config/user-types.js
+ * No need to seed user types to the database.
  */
 
 /**
@@ -18,7 +20,6 @@ export const seedAllLookupData = async () => {
   console.log('🚀 Starting lookup data seeding...');
 
   try {
-    await seedUserTypesOnly();
     await seedAddressTypes();
     await seedVenezuelanStates();
     await seedCategories();

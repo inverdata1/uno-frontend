@@ -1,6 +1,5 @@
 import { BaseFirebaseService } from '../base-firebase-service';
 import { COLLECTION_NAME } from './collection';
-import { serverTimestamp } from 'firebase/firestore';
 
 /**
  * Businesses Resource
@@ -37,6 +36,8 @@ export class BusinessesResource extends BaseFirebaseService {
       throw new Error('userId is required to create a business');
     }
 
+    const now = new Date();
+
     const businessData = {
       ...data,
       ownerId: userId,
@@ -45,16 +46,15 @@ export class BusinessesResource extends BaseFirebaseService {
       followersCount: 0,
       rating: 0,
       reviewsCount: 0,
-      createdAt: serverTimestamp(),
-      updatedAt: serverTimestamp(),
+      createdAt: now,
+      updatedAt: now,
     };
 
     console.log('📊 Creating business:', businessData);
 
-    const businessId = await this.create(businessData);
-    const business = await this.findById(businessId);
+    const createdBusiness = await this.create(businessData);
 
-    return business;
+    return createdBusiness;
   }
 
   /**
@@ -118,7 +118,7 @@ export class BusinessesResource extends BaseFirebaseService {
 
     const updateData = {
       ...data,
-      updatedAt: serverTimestamp(),
+      updatedAt: new Date(),
     };
 
     await this.update(businessId, updateData);
@@ -144,7 +144,7 @@ export class BusinessesResource extends BaseFirebaseService {
 
     await this.update(businessId, {
       isActive: false,
-      updatedAt: serverTimestamp(),
+      updatedAt: new Date(),
     });
 
     return { success: true };

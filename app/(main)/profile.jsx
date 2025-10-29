@@ -5,6 +5,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { Text } from '../../shared/components/ui';
 import { ProfileHero, SettingsItem } from '../../shared/components/profile';
 import { UserTypeSwitcherModal } from '../../shared/components/layout/user-type-switcher/user-type-switcher-modal';
+import BusinessUpgradeModal from '../../modules/commerce/businesses/business-upgrade-modal';
 import { useAuthStore } from '../../core/auth/stores/auth-store';
 import { useCurrentUserType } from '../../shared/hooks/use-user-type';
 import { getUserTypeConfig } from '../../shared/config/user-types';
@@ -13,8 +14,16 @@ export default function ProfileScreen() {
   const { user, signOut } = useAuthStore();
   const { currentUserType, availableUserTypes = [] } = useCurrentUserType();
   const [modalVisible, setModalVisible] = useState(false);
+  const [businessUpgradeModalVisible, setBusinessUpgradeModalVisible] = useState(false);
 
   const userTypeInfo = getUserTypeConfig(currentUserType);
+
+  // Debug logging
+  React.useEffect(() => {
+    console.log('📱 Profile Screen - Available User Types:', availableUserTypes);
+    console.log('📱 Profile Screen - Current User Type:', currentUserType);
+    console.log('📱 Profile Screen - Can Switch?', availableUserTypes.length > 1);
+  }, [availableUserTypes, currentUserType]);
 
   const handleOpenUserTypeSwitcher = useCallback(() => {
     setModalVisible(true);
@@ -125,7 +134,7 @@ export default function ProfileScreen() {
                 <SettingsItem
                   icon="briefcase-outline"
                   title="Vende con UNO"
-                  onPress={() => Alert.alert('Próximamente', 'Función en desarrollo')}
+                  onPress={() => setBusinessUpgradeModalVisible(true)}
                   showBorder={!availableUserTypes.includes('delivery')}
                   highlight={true}
                 />
@@ -196,6 +205,16 @@ export default function ProfileScreen() {
           onUserTypeSwitch={handleUserTypeSwitch}
         />
       )}
+
+      {/* Business Upgrade Modal */}
+      <BusinessUpgradeModal
+        visible={businessUpgradeModalVisible}
+        onClose={() => setBusinessUpgradeModalVisible(false)}
+        onSuccess={() => {
+          // Modal will close itself after success
+          // User types will be refreshed automatically by the modal
+        }}
+      />
     </SafeAreaView>
   );
 }

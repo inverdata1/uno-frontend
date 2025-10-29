@@ -9,6 +9,8 @@ import { COLLECTION_NAME } from './collection';
 export class UsersResource extends BaseFirebaseService {
   constructor(client) {
     super(client, COLLECTION_NAME);
+    this.businessesService = new BaseFirebaseService(client, 'businesses');
+    this.branchesService = new BaseFirebaseService(client, 'branches');
   }
 
   /**
@@ -20,7 +22,9 @@ export class UsersResource extends BaseFirebaseService {
    * @returns {Promise<any>} Response data
    */
   async handle(method, action, data, params) {
-    const handler = `${method.toLowerCase()}_${action.replace('/', '_')}`;
+    // Replace hyphens with underscores for method names
+    const normalizedAction = (action || 'index').replace(/-/g, '_');
+    const handler = `${method.toLowerCase()}_${normalizedAction}`;
 
     if (typeof this[handler] !== 'function') {
       throw new Error(`Handler ${handler} not found in UsersResource`);
@@ -200,20 +204,66 @@ export class UsersResource extends BaseFirebaseService {
     return await this.update(userId, { userTypes: updatedUserTypes });
   }
 
+  /**
+   * GET /users/user-types
+   * Get user's available userTypes and current context
+   */
+  async get_user_types(_data, params) {
+    const { userId } = params;
+
+    if (!userId) {
+      throw new Error('userId parameter is required');
+    }
+
+    try {
+      console.log(`🔍 Attempting to find user document: ${userId}`);
+      console.log(`📁 Collection: ${this.collectionName}`);
+
+      const user = await this.findById(userId);
+
+      console.log(`✅ User document found:`, {
+        id: user.id,
+        hasUserTypes: !!user.userTypes,
+        currentUserType: user.currentUserType,
+        fields: Object.keys(user)
+      });
+
+      const userTypesData = this.extractUserTypesFromUser(user);
+
+      // If user has business userType, load business contexts
+      if (userTypesData.availableUserTypes.includes('business')) {
+        userTypesData.businessContexts = await this.getBusinessContexts(userId);
+      }
+
+      return userTypesData;
+    } catch (error) {
+      console.error(`❌ ERROR in get_user_types for ${userId}:`, error.message);
+      console.error('Full error:', error);
+      return null;
+    }
+  }
+
   // === UTILITY METHODS ===
 
   /**
-   * Get user's available userTypes
-   * @param {string} userId - User ID
-   * @returns {Promise<Object>} User types information
+   * Extract userTypes information from user document
    */
-  async getUserTypes(userId) {
-    const user = await this.findById(userId);
-
+  extractUserTypesFromUser(user) {
     const userTypesList = [];
-    if (user.userTypes?.client) userTypesList.push({ userType: 'client', ...user.userTypes.client });
-    if (user.userTypes?.business) userTypesList.push({ userType: 'business', ...user.userTypes.business });
-    if (user.userTypes?.delivery) userTypesList.push({ userType: 'delivery', ...user.userTypes.delivery });
+
+    // Process each userType
+    Object.entries(user.userTypes || {}).forEach(([userType, config]) => {
+      userTypesList.push({ userType, ...config });
+    });
+
+    // If no userTypes exist, default to client
+    if (userTypesList.length === 0) {
+      userTypesList.push({
+        userType: 'client',
+        status: 'active',
+        createdAt: user.createdAt || new Date()
+      });
+    }
 
     return {
       availableUserTypes: userTypesList.filter(ut => ut.status === 'active').map(ut => ut.userType),
@@ -222,29 +272,56 @@ export class UsersResource extends BaseFirebaseService {
       currentContext: {
         businessId: user.currentBusinessId,
         branchId: user.currentBranchId
-      }
+      },
+      lastUserTypeSwitch: user.lastUserTypeSwitch
     };
   }
 
   /**
-   * Initialize new user with default userTypes
-   * @param {Object} userData - User data
-   * @returns {Promise<Object>} Created user
+   * Get business contexts for userType switcher
    */
-  async createWithDefaultUserTypes(userData) {
-    const userWithUserTypes = {
-      ...userData,
-      userTypes: {
-        client: {
-          status: 'active',
-          createdAt: new Date()
-        }
-      },
-      currentUserType: 'client',
-      currentBusinessId: null,
-      currentBranchId: null
-    };
+  async getBusinessContexts(userId) {
+    try {
+      const businesses = await this.businessesService.findAll({ ownerId: userId });
+      const contexts = [];
 
-    return await this.create(userWithUserTypes);
+      for (const business of businesses) {
+        try {
+          // Load branches for this business
+          const branches = await this.branchesService.findAll({
+            businessId: business.id
+          }, { orderBy: 'createdAt', order: 'asc' });
+
+          contexts.push({
+            businessId: business.id,
+            businessName: business.name,
+            businessType: business.businessType,
+            status: business.status,
+            branches: branches.map(branch => ({
+              id: branch.id,
+              name: branch.name,
+              isMain: branch.isMain,
+              address: branch.address,
+              status: branch.status
+            }))
+          });
+        } catch (branchError) {
+          // If branch query fails (e.g., missing index), still include business without branches
+          console.warn(`⚠️ Could not load branches for business ${business.id}:`, branchError.message);
+          contexts.push({
+            businessId: business.id,
+            businessName: business.name,
+            businessType: business.businessType,
+            status: business.status,
+            branches: []
+          });
+        }
+      }
+
+      return contexts;
+    } catch (error) {
+      console.error('❌ Error loading business contexts:', error.message);
+      return [];
+    }
   }
 }

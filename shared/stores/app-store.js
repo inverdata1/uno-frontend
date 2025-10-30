@@ -23,6 +23,9 @@ export const useAppStore = create(
       isLoading: false,
       error: null,
 
+      // UI Modals
+      userTypeSwitcherVisible: false,
+
       // Actions
       setTheme: (theme) =>
         set({ theme }),
@@ -46,6 +49,13 @@ export const useAppStore = create(
 
       clearError: () =>
         set({ error: null }),
+
+      // Modal actions
+      openUserTypeSwitcher: () =>
+        set({ userTypeSwitcherVisible: true }),
+
+      closeUserTypeSwitcher: () =>
+        set({ userTypeSwitcherVisible: false }),
 
       // Reset store
       reset: () =>

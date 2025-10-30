@@ -4,13 +4,16 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
 import { Text } from '../../../shared/components/ui';
-import { useBusinessContexts } from '../../../shared/hooks/use-user-type';
+import { useBusinessContexts, useCurrentUserType } from '../../../shared/hooks/use-user-type';
+import { useAppStore } from '../../../shared/stores/app-store';
 import { colors } from '../../../shared/utils/colors';
 import { getModeColors } from '../../../shared/utils/colors';
 
 export default function BusinessProfileScreen() {
   const businessContexts = useBusinessContexts();
   const currentBusiness = businessContexts[0] || null;
+  const { availableUserTypes = [] } = useCurrentUserType();
+  const { openUserTypeSwitcher } = useAppStore();
   const [activeTab, setActiveTab] = useState('posts');
   const businessColors = getModeColors('business');
 
@@ -34,6 +37,35 @@ export default function BusinessProfileScreen() {
             end={{ x: 1, y: 1 }}
             style={{ width: '100%', height: '100%' }}
           />
+
+          {/* Mode Switcher Button - Top Left */}
+          {availableUserTypes.length > 1 && (
+            <TouchableOpacity
+              onPress={openUserTypeSwitcher}
+              style={{
+                position: 'absolute',
+                top: 16,
+                left: 16,
+                paddingHorizontal: 16,
+                paddingVertical: 10,
+                borderRadius: 12,
+                backgroundColor: 'rgba(0, 0, 0, 0.6)',
+                flexDirection: 'row',
+                alignItems: 'center',
+                gap: 8
+              }}
+            >
+              <Ionicons name="briefcase" size={18} color="#fff" />
+              <Text style={{
+                fontSize: 13,
+                fontWeight: '600',
+                color: '#fff'
+              }}>
+                Negocio
+              </Text>
+              <Ionicons name="chevron-down" size={16} color="#fff" />
+            </TouchableOpacity>
+          )}
 
           {/* Edit Cover Button */}
           <TouchableOpacity
@@ -560,6 +592,7 @@ export default function BusinessProfileScreen() {
           </View>
         </View>
       </ScrollView>
+
     </SafeAreaView>
   );
 }

@@ -1,12 +1,16 @@
+import React from 'react';
 import { Tabs } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { theme } from '../../shared/config/theme';
 import { useCurrentUserType } from '../../shared/hooks/use-user-type';
 import { getTabIcon } from '../../shared/utils/tab-helpers';
+import { UserTypeSwitcherModal } from '../../shared/components/layout/user-type-switcher/user-type-switcher-modal';
+import { useAppStore } from '../../shared/stores/app-store';
 
 export default function TabLayout() {
   const { currentUserType, isLoading } = useCurrentUserType();
   const insets = useSafeAreaInsets();
+  const { userTypeSwitcherVisible, closeUserTypeSwitcher } = useAppStore();
 
   // Show loading state while determining user type
   if (isLoading) {
@@ -18,17 +22,18 @@ export default function TabLayout() {
   }
 
   return (
-    <Tabs
-      screenOptions={{
-        headerShown: false,
-        tabBarActiveTintColor: theme.colors.primary[500],
-        tabBarInactiveTintColor: theme.colors.text.secondary,
-        tabBarStyle: {
-          paddingBottom: Math.max(insets.bottom, 5),
-          paddingTop: 5,
-          height: 60 + Math.max(insets.bottom - 5, 0)
-        }
-      }}>
+    <>
+      <Tabs
+        screenOptions={{
+          headerShown: false,
+          tabBarActiveTintColor: theme.colors.primary[500],
+          tabBarInactiveTintColor: theme.colors.text.secondary,
+          tabBarStyle: {
+            paddingBottom: Math.max(insets.bottom, 5),
+            paddingTop: 5,
+            height: 60 + Math.max(insets.bottom - 5, 0)
+          }
+        }}>
 
       {/* Index/Home - Always present, label changes by mode */}
       <Tabs.Screen
@@ -99,6 +104,14 @@ export default function TabLayout() {
         }}
       />
 
-    </Tabs>
+      </Tabs>
+
+      {/* Global User Type Switcher Modal */}
+      <UserTypeSwitcherModal
+        visible={userTypeSwitcherVisible}
+        onClose={closeUserTypeSwitcher}
+        onUserTypeSwitch={closeUserTypeSwitcher}
+      />
+    </>
   );
 }

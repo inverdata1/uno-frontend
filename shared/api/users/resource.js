@@ -1,6 +1,6 @@
+import { serverTimestamp } from 'firebase/firestore';
 import { BaseFirebaseService } from '../base-firebase-service';
 import { BranchesResource } from '../branches/resource';
-import { serverTimestamp } from 'firebase/firestore';
 import { COLLECTION_NAME } from './collection';
 
 /**
@@ -221,13 +221,6 @@ export class UsersResource extends BaseFirebaseService {
       console.log(`📁 Collection: ${this.collectionName}`);
 
       const user = await this.findById(userId);
-
-      console.log(`✅ User document found:`, {
-        id: user.id,
-        hasUserTypes: !!user.userTypes,
-        currentUserType: user.currentUserType,
-        fields: Object.keys(user)
-      });
 
       const userTypesData = this.extractUserTypesFromUser(user);
 

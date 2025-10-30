@@ -15,6 +15,14 @@ export const UserTypeSwitcherModal = ({ visible, onClose, onUserTypeSwitch }) =>
   const [selectedBusiness, setSelectedBusiness] = useState(null);
   const [switchingTo, setSwitchingTo] = useState(null);
 
+  // Debug logging for business contexts
+  React.useEffect(() => {
+    if (visible) {
+      console.log('📊 UserTypeSwitcher opened - businessContexts:', businessContexts);
+      console.log('📊 businessContexts.length:', businessContexts.length);
+    }
+  }, [visible, businessContexts]);
+
   // Bottom sheet ref
   const bottomSheetRef = useRef(null);
 
@@ -36,17 +44,43 @@ export const UserTypeSwitcherModal = ({ visible, onClose, onUserTypeSwitch }) =>
   }, [visible]);
 
   const handleUserTypeSwitch = async (userType, businessId = null, branchId = null) => {
-    if (userType === currentUserType) return; // Already on this type
+    console.log('🔄 handleUserTypeSwitch called:', { userType, currentUserType, businessId });
+
+    if (userType === currentUserType) {
+      console.log('⏭️ Already on this type, skipping switch');
+      onClose(); // Close the modal even if already on this type
+      return;
+    }
 
     try {
       setSwitchingTo(userType);
-      await switchUserTypeMutation.mutateAsync({ userType, businessId, branchId });
-      onUserTypeSwitch?.({ userType, businessId, branchId });
 
-      // Small delay to show success state before closing
+      // If switching to business and no businessId provided, use first available business
+      let finalBusinessId = businessId;
+      let finalBranchId = branchId;
+
+      if (userType === 'business' && !businessId && businessContexts.length > 0) {
+        finalBusinessId = businessContexts[0].businessId;
+        // Use first branch if available
+        if (businessContexts[0].branches?.length > 0) {
+          finalBranchId = businessContexts[0].branches[0].id;
+        }
+        console.log('🔄 Switching to business mode with auto-selected business:', finalBusinessId);
+      }
+
+      await switchUserTypeMutation.mutateAsync({
+        userType,
+        businessId: finalBusinessId,
+        branchId: finalBranchId
+      });
+
+      // Close immediately to prevent modal from reopening after component switch
+      onClose();
+      onUserTypeSwitch?.({ userType, businessId: finalBusinessId, branchId: finalBranchId });
+
+      // Reset switching state after a small delay
       setTimeout(() => {
         setSwitchingTo(null);
-        onClose();
       }, 300);
     } catch (error) {
       console.error('Failed to switch user type:', error);

@@ -4,25 +4,20 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { Text } from '../../shared/components/ui';
 import { ProfileHero, SettingsItem } from '../../shared/components/profile';
-import { UserTypeSwitcherModal } from '../../shared/components/layout/user-type-switcher/user-type-switcher-modal';
 import BusinessUpgradeModal from '../../modules/commerce/businesses/business-upgrade-modal';
 import BusinessProfileScreen from '../../modules/business/profile/business-profile-screen';
 import { useAuthStore } from '../../core/auth/stores/auth-store';
+import { useAppStore } from '../../shared/stores/app-store';
 import { useCurrentUserType } from '../../shared/hooks/use-user-type';
 import { getUserTypeConfig } from '../../shared/config/user-types';
 
 export default function ProfileScreen() {
   const { user, signOut } = useAuthStore();
   const { currentUserType, availableUserTypes = [] } = useCurrentUserType();
-  const [modalVisible, setModalVisible] = useState(false);
+  const { openUserTypeSwitcher } = useAppStore();
   const [businessUpgradeModalVisible, setBusinessUpgradeModalVisible] = useState(false);
 
   const userTypeInfo = getUserTypeConfig(currentUserType);
-
-  // Show business profile when in business mode
-  if (currentUserType === 'business') {
-    return <BusinessProfileScreen />;
-  }
 
   // Debug logging
   React.useEffect(() => {
@@ -32,12 +27,8 @@ export default function ProfileScreen() {
   }, [availableUserTypes, currentUserType]);
 
   const handleOpenUserTypeSwitcher = useCallback(() => {
-    setModalVisible(true);
-  }, []);
-
-  const handleUserTypeSwitch = useCallback(() => {
-    setModalVisible(false);
-  }, []);
+    openUserTypeSwitcher();
+  }, [openUserTypeSwitcher]);
 
   const handleLogout = useCallback(() => {
     Alert.alert(
@@ -62,6 +53,11 @@ export default function ProfileScreen() {
       ]
     );
   }, [signOut]);
+
+  // Show business profile when in business mode - AFTER all hooks
+  if (currentUserType === 'business') {
+    return <BusinessProfileScreen />;
+  }
 
   return (
     <SafeAreaView className="flex-1" edges={['top']} style={{ backgroundColor: '#f8fafc' }}>
@@ -202,15 +198,6 @@ export default function ProfileScreen() {
           </View>
         </View>
       </ScrollView>
-
-      {/* User Type Switcher Modal */}
-      {modalVisible && availableUserTypes.length > 1 && (
-        <UserTypeSwitcherModal
-          visible={modalVisible}
-          onClose={() => setModalVisible(false)}
-          onUserTypeSwitch={handleUserTypeSwitch}
-        />
-      )}
 
       {/* Business Upgrade Modal */}
       <BusinessUpgradeModal

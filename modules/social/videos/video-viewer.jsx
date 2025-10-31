@@ -83,9 +83,22 @@ function VideoItem({ video, isActive, isPaused, onTogglePause, onLike, onSave, o
             borderRadius: 24,
             backgroundColor: '#d1d5db',
             borderWidth: 2,
-            borderColor: '#ffffff'
+            borderColor: '#ffffff',
+            overflow: 'hidden',
+            justifyContent: 'center',
+            alignItems: 'center'
           }}>
-            {/* TODO: Add business profile picture */}
+            {video.logoUrl ? (
+              <Image
+                source={{ uri: video.logoUrl }}
+                style={{ width: '100%', height: '100%' }}
+                resizeMode="cover"
+              />
+            ) : (
+              <Text style={{ color: '#6b7280', fontSize: 18, fontWeight: '700' }}>
+                {(video.businessName || 'B').charAt(0).toUpperCase()}
+              </Text>
+            )}
           </View>
         </TouchableOpacity>
 
@@ -127,10 +140,10 @@ function VideoItem({ video, isActive, isPaused, onTogglePause, onLike, onSave, o
         {/* Caption */}
         <View style={{ marginBottom: 12 }}>
           <Text style={{ color: '#ffffff', fontSize: 15, fontWeight: '600', marginBottom: 4 }}>
-            Business Name
+            @{video.businessName || 'Business'}
           </Text>
           <Text style={{ color: '#ffffff', fontSize: 14, lineHeight: 20 }} numberOfLines={3}>
-            {video.caption}
+            {video.caption || 'Check out this video!'}
           </Text>
         </View>
 
@@ -238,6 +251,7 @@ export default function VideoViewer({
   onClose,
   onShowAllProducts,
   onProductPress,
+  onBusinessPress,
   productsBottomSheetVisible = false,
   taggedProducts = [],
   onCloseBottomSheet,
@@ -300,9 +314,12 @@ export default function VideoViewer({
     console.log('Share video');
   };
 
-  const handleProfilePress = () => {
-    // TODO: Navigate to business profile
-    console.log('Go to profile');
+  const handleProfilePress = (video) => {
+    if (onBusinessPress && video?.businessId) {
+      onBusinessPress(video.businessId);
+    } else {
+      console.log('Go to profile', video?.businessId);
+    }
   };
 
   const handleProductPress = (product) => {
@@ -342,7 +359,7 @@ export default function VideoViewer({
           onLike={handleLike}
           onSave={handleSave}
           onShare={handleShare}
-          onProfilePress={handleProfilePress}
+          onProfilePress={() => handleProfilePress(video)}
           onProductPress={handleProductPress}
           taggedProduct={taggedProduct}
           totalProducts={totalProducts}

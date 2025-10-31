@@ -28,6 +28,46 @@ export class PostsResource extends BaseFirebaseService {
   // === HELPER METHODS ===
 
   /**
+   * Populate business information for posts
+   * Adds businessName, logoUrl, etc. to each post
+   */
+  async populateBusinessInfo(posts) {
+    if (!posts || posts.length === 0) return posts;
+
+    // Get all unique business IDs
+    const allBusinessIds = [...new Set(
+      posts.map(post => post.businessId).filter(Boolean)
+    )];
+
+    if (allBusinessIds.length === 0) return posts;
+
+    // Fetch all businesses at once
+    const businessesResource = this.client.getResource('businesses');
+    const allBusinesses = await businessesResource.findWhere([]);
+
+    // Create a map for quick lookup
+    const businessMap = new Map();
+    allBusinesses.forEach(business => {
+      businessMap.set(business.id, business);
+    });
+
+    // Add business info to each post
+    return posts.map(post => {
+      const business = businessMap.get(post.businessId);
+      if (business) {
+        return {
+          ...post,
+          businessName: business.businessName,
+          businessType: business.businessType,
+          logoUrl: business.logoUrl,
+          coverImageUrl: business.coverImageUrl,
+        };
+      }
+      return post;
+    });
+  }
+
+  /**
    * Populate tagged products with full product data
    * Converts array of product IDs to array of product objects
    */
@@ -116,8 +156,9 @@ export class PostsResource extends BaseFirebaseService {
       .sort((a, b) => b.publishedAt?.toMillis() - a.publishedAt?.toMillis())
       .slice(parseInt(offset), parseInt(offset) + parseInt(limit));
 
-    // Populate tagged products with full data
-    return await this.populateTaggedProducts(paginatedPosts);
+    // Populate business info first, then tagged products
+    const postsWithBusiness = await this.populateBusinessInfo(paginatedPosts);
+    return await this.populateTaggedProducts(postsWithBusiness);
   }
 
   /**

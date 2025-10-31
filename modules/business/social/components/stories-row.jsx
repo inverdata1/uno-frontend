@@ -1,12 +1,76 @@
 import React from 'react';
-import { View, ScrollView, TouchableOpacity, Image, ActivityIndicator } from 'react-native';
+import { View, ScrollView, TouchableOpacity, Image, ActivityIndicator, Alert } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { Text } from '../../../../shared/components/ui';
 import { colors } from '../../../../shared/utils/colors';
-import { useBusinessStories } from '../../../../shared/hooks/use-business-stories';
+import { useBusinessStories, useDeleteStory } from '../../../../shared/hooks/use-business-stories';
 
 export const StoriesRow = ({ onCreateStory }) => {
   const { data: stories = [], isLoading } = useBusinessStories();
+  const deleteStory = useDeleteStory();
+
+  const handleDeleteStory = (story) => {
+    Alert.alert(
+      'Eliminar historia',
+      '¿Estás seguro de que quieres eliminar esta historia?',
+      [
+        { text: 'Cancelar', style: 'cancel' },
+        {
+          text: 'Eliminar',
+          style: 'destructive',
+          onPress: () => deleteStory.mutate(story.id)
+        }
+      ]
+    );
+  };
+
+  const renderItems = () => {
+    const items = [];
+
+    items.push(
+      <TouchableOpacity
+        key="add-story"
+        style={{ alignItems: 'center' }}
+        onPress={onCreateStory}
+      >
+        <View style={{
+          width: 72,
+          height: 72,
+          borderRadius: 36,
+          backgroundColor: colors.bg.secondary,
+          borderWidth: 2,
+          borderStyle: 'dashed',
+          borderColor: colors.border.light,
+          alignItems: 'center',
+          justifyContent: 'center',
+          marginBottom: 6
+        }}>
+          <Ionicons name="add" size={32} color={colors.primary[500]} />
+        </View>
+        <Text style={{
+          fontSize: 12,
+          color: colors.text.primary,
+          fontWeight: '600'
+        }}>
+          Tu historia
+        </Text>
+      </TouchableOpacity>
+    );
+
+    if (isLoading) {
+      items.push(
+        <View key="loading" style={{ alignItems: 'center', justifyContent: 'center', width: 72 }}>
+          <ActivityIndicator size="small" color={colors.primary[500]} />
+        </View>
+      );
+    }
+
+    stories.forEach((story, index) => {
+      items.push(<StoryItem key={story.id || `story-${index}`} story={story} onDelete={() => handleDeleteStory(story)} />);
+    });
+
+    return items;
+  };
 
   return (
     <View style={{
@@ -21,55 +85,20 @@ export const StoriesRow = ({ onCreateStory }) => {
         showsHorizontalScrollIndicator={false}
         contentContainerStyle={{ gap: 12 }}
       >
-        {/* Add Story Button */}
-        <TouchableOpacity
-          style={{ alignItems: 'center' }}
-          onPress={onCreateStory}
-        >
-          <View style={{
-            width: 72,
-            height: 72,
-            borderRadius: 36,
-            backgroundColor: colors.bg.secondary,
-            borderWidth: 2,
-            borderStyle: 'dashed',
-            borderColor: colors.border.light,
-            alignItems: 'center',
-            justifyContent: 'center',
-            marginBottom: 6
-          }}>
-            <Ionicons name="add" size={32} color={colors.primary[500]} />
-          </View>
-          <Text style={{
-            fontSize: 12,
-            color: colors.text.primary,
-            fontWeight: '600'
-          }}>
-            Tu historia
-          </Text>
-        </TouchableOpacity>
-
-        {/* Loading State */}
-        {isLoading && (
-          <View style={{ alignItems: 'center', justifyContent: 'center', width: 72 }}>
-            <ActivityIndicator size="small" color={colors.primary[500]} />
-          </View>
-        )}
-
-        {/* Active Stories */}
-        {stories.map((story) => (
-          <StoryItem key={story.id} story={story} />
-        ))}
+        {renderItems()}
       </ScrollView>
     </View>
   );
 };
 
-const StoryItem = ({ story }) => {
+const StoryItem = ({ story, onDelete }) => {
   const timeRemaining = getTimeRemaining(story.expiresAt);
 
   return (
-    <View style={{ alignItems: 'center' }}>
+    <TouchableOpacity
+      style={{ alignItems: 'center' }}
+      onLongPress={onDelete}
+    >
       <View style={{
         width: 72,
         height: 72,
@@ -91,7 +120,7 @@ const StoryItem = ({ story }) => {
       }}>
         {timeRemaining}
       </Text>
-    </View>
+    </TouchableOpacity>
   );
 };
 

@@ -9,9 +9,11 @@ import ProductDetail from '../../commerce/products/product-detail';
 import { useCategories } from '../../social/hooks/use-categories';
 import { useStories } from '../../social/hooks/use-stories';
 import { useVideos } from '../../social/hooks/use-videos';
+import { useBusinesses } from '../../social/hooks/use-businesses';
 import StoryViewer from '../../social/stories/story-viewer';
 import ProductsBottomSheet from '../../social/videos/products-bottom-sheet';
 import VideoViewer from '../../social/videos/video-viewer';
+import BusinessProfileViewer from '../../commerce/businesses/business-profile-viewer';
 import OffersBanner from './offers-banner';
 
 const { width } = Dimensions.get('window');
@@ -29,12 +31,15 @@ export default function ClientHomeScreen() {
   const [selectedProduct, setSelectedProduct] = useState(null);
   const [productsBottomSheetVisible, setProductsBottomSheetVisible] = useState(false);
   const [taggedProducts, setTaggedProducts] = useState([]);
+  const [businessProfileVisible, setBusinessProfileVisible] = useState(false);
+  const [selectedBusinessId, setSelectedBusinessId] = useState(null);
 
   // Use domain hooks instead of inline queries
   const { data: categories = [] } = useCategories();
   const { data: products = [] } = useProducts({ limit: 20 });
   const { data: stories = [] } = useStories();
   const { data: videos = [] } = useVideos({ limit: 10 });
+  const { data: businesses = [] } = useBusinesses({ limit: 10 });
 
   const offers = [
     {
@@ -182,7 +187,7 @@ export default function ClientHomeScreen() {
                   </View>
 
                   <Text style={{ fontSize: 11, color: '#64748b', maxWidth: 72, textAlign: 'center' }} numberOfLines={1}>
-                    Business {index + 1}
+                    {businessStories.businessName || `Business ${index + 1}`}
                   </Text>
                 </TouchableOpacity>
               );
@@ -257,6 +262,83 @@ export default function ClientHomeScreen() {
             <View style={{ paddingHorizontal: 16, paddingVertical: 40 }}>
               <Text style={{ color: '#94a3b8', fontSize: 14 }}>
                 No hay videos disponibles
+              </Text>
+            </View>
+          )}
+        </ScrollView>
+      </View>
+
+      {/* Negocios Destacados (Featured Businesses) */}
+      <View style={{ paddingVertical: 20, borderBottomWidth: 1, borderBottomColor: '#f1f5f9' }}>
+        <View style={{ paddingHorizontal: 16, marginBottom: 16 }}>
+          <Text style={{ fontSize: 20, fontWeight: '700', color: '#0f172a' }}>
+            Negocios Destacados
+          </Text>
+        </View>
+        <ScrollView
+          horizontal
+          showsHorizontalScrollIndicator={false}
+          contentContainerStyle={{ paddingHorizontal: 16, gap: 12 }}
+        >
+          {businesses.slice(0, 5).map((business) => (
+            <TouchableOpacity
+              key={business.id}
+              activeOpacity={0.9}
+              onPress={() => {
+                setSelectedBusinessId(business.id);
+                setBusinessProfileVisible(true);
+              }}
+              style={{
+                width: 160,
+                backgroundColor: '#ffffff',
+                borderRadius: 12,
+                overflow: 'hidden',
+                borderWidth: 1,
+                borderColor: '#f1f5f9'
+              }}
+            >
+              {/* Business Logo/Image */}
+              <View style={{
+                width: '100%',
+                height: 120,
+                backgroundColor: '#f8fafc'
+              }}>
+                {business.logoUrl ? (
+                  <Image
+                    source={{ uri: business.logoUrl }}
+                    style={{ width: '100%', height: '100%' }}
+                    resizeMode="cover"
+                  />
+                ) : (
+                  <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center' }}>
+                    <Ionicons name="storefront" size={48} color="#cbd5e1" />
+                  </View>
+                )}
+              </View>
+
+              {/* Business Info */}
+              <View style={{ padding: 12 }}>
+                <Text style={{ fontSize: 14, fontWeight: '700', color: '#0f172a', marginBottom: 4 }} numberOfLines={1}>
+                  {business.businessName}
+                </Text>
+                <Text style={{ fontSize: 12, color: '#64748b', marginBottom: 6 }} numberOfLines={1}>
+                  {business.businessType || 'Negocio'}
+                </Text>
+                {business.rating > 0 && (
+                  <View style={{ flexDirection: 'row', alignItems: 'center' }}>
+                    <Ionicons name="star" size={12} color="#f59e0b" />
+                    <Text style={{ fontSize: 12, color: '#64748b', marginLeft: 4 }}>
+                      {business.rating.toFixed(1)} ({business.reviewsCount || 0})
+                    </Text>
+                  </View>
+                )}
+              </View>
+            </TouchableOpacity>
+          ))}
+          {businesses.length === 0 && (
+            <View style={{ paddingHorizontal: 16, paddingVertical: 40 }}>
+              <Text style={{ color: '#94a3b8', fontSize: 14 }}>
+                No hay negocios disponibles
               </Text>
             </View>
           )}
@@ -406,6 +488,11 @@ export default function ClientHomeScreen() {
           setSelectedProduct(product);
           setProductDetailVisible(true);
         }}
+        onBusinessPress={(businessId) => {
+          setVideoViewerVisible(false);
+          setSelectedBusinessId(businessId);
+          setBusinessProfileVisible(true);
+        }}
         // Pass bottom sheet props
         productsBottomSheetVisible={productsBottomSheetVisible}
         taggedProducts={taggedProducts}
@@ -428,6 +515,26 @@ export default function ClientHomeScreen() {
           <ProductDetail
             product={selectedProduct}
             onClose={() => setProductDetailVisible(false)}
+            onBusinessPress={(businessId) => {
+              setProductDetailVisible(false);
+              setSelectedBusinessId(businessId);
+              setBusinessProfileVisible(true);
+            }}
+          />
+        )}
+      </Modal>
+
+      {/* Business Profile Viewer Modal */}
+      <Modal
+        visible={businessProfileVisible}
+        animationType="slide"
+        presentationStyle="fullScreen"
+        onRequestClose={() => setBusinessProfileVisible(false)}
+      >
+        {selectedBusinessId && (
+          <BusinessProfileViewer
+            businessId={selectedBusinessId}
+            onClose={() => setBusinessProfileVisible(false)}
           />
         )}
       </Modal>

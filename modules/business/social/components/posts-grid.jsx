@@ -1,9 +1,9 @@
 import React, { useState } from 'react';
-import { View, TouchableOpacity, Image, ActivityIndicator } from 'react-native';
+import { View, TouchableOpacity, Image, ActivityIndicator, Alert } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { Text } from '../../../../shared/components/ui';
 import { colors } from '../../../../shared/utils/colors';
-import { useBusinessPosts } from '../../../../shared/hooks/use-business-posts';
+import { useBusinessPosts, useDeletePost } from '../../../../shared/hooks/use-business-posts';
 
 export const PostsGrid = ({ onCreatePost }) => {
   const [activeTab, setActiveTab] = useState('grid'); // grid, videos, promotions
@@ -67,6 +67,23 @@ export const PostsGrid = ({ onCreatePost }) => {
 };
 
 const PhotoGrid = ({ posts }) => {
+  const deletePost = useDeletePost();
+
+  const handleDeletePost = (post) => {
+    Alert.alert(
+      'Eliminar publicación',
+      '¿Estás seguro de que quieres eliminar esta publicación?',
+      [
+        { text: 'Cancelar', style: 'cancel' },
+        {
+          text: 'Eliminar',
+          style: 'destructive',
+          onPress: () => deletePost.mutate(post.id)
+        }
+      ]
+    );
+  };
+
   return (
     <View style={{
       flexDirection: 'row',
@@ -75,6 +92,7 @@ const PhotoGrid = ({ posts }) => {
       {posts.map((post) => (
         <TouchableOpacity
           key={post.id}
+          onLongPress={() => handleDeletePost(post)}
           style={{
             width: '33.33%',
             aspectRatio: 1,

@@ -1,25 +1,31 @@
 import React, { useState } from 'react';
-import { View, ScrollView, TouchableOpacity, Image, ActivityIndicator } from 'react-native';
+import { View, ScrollView, TouchableOpacity, Image, ActivityIndicator, Alert } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useRouter } from 'expo-router';
+import * as ImagePicker from 'expo-image-picker';
 import { Text } from '../../../shared/components/ui';
 import { useCurrentUserType } from '../../../shared/hooks/use-user-type';
-import { useBusinessProfile } from '../../../shared/hooks/use-business-profile';
+import { useBusinessProfile, useUpdateBusinessLogo, useUpdateBusinessBanner } from '../../../shared/hooks/use-business-profile';
 import { useAppStore } from '../../../shared/stores/app-store';
 import { colors } from '../../../shared/utils/colors';
 import { getModeColors } from '../../../shared/utils/colors';
+import { ProductsGrid } from '../social/components/products-grid';
 
 export default function BusinessProfileScreen() {
   const router = useRouter();
   const { availableUserTypes = [] } = useCurrentUserType();
   const { openUserTypeSwitcher } = useAppStore();
   const [activeTab, setActiveTab] = useState('posts');
+  const [uploadingLogo, setUploadingLogo] = useState(false);
+  const [uploadingBanner, setUploadingBanner] = useState(false);
   const businessColors = getModeColors('business');
 
   // Get real business data
   const { business, businessData, stats, isLoading } = useBusinessProfile();
+  const updateLogo = useUpdateBusinessLogo();
+  const updateBanner = useUpdateBusinessBanner();
 
   // Debug logging
   React.useEffect(() => {
@@ -29,6 +35,60 @@ export default function BusinessProfileScreen() {
       stats
     });
   }, [business, businessData, stats]);
+
+  const handlePickLogo = async () => {
+    try {
+      const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync();
+      if (status !== 'granted') {
+        Alert.alert('Permiso requerido', 'Necesitamos acceso a tus fotos para cambiar el logo');
+        return;
+      }
+
+      const result = await ImagePicker.launchImageLibraryAsync({
+        mediaTypes: ['images'],
+        allowsEditing: true,
+        aspect: [1, 1],
+        quality: 0.8,
+      });
+
+      if (!result.canceled && result.assets[0]) {
+        setUploadingLogo(true);
+        await updateLogo.mutateAsync(result.assets[0].uri);
+        setUploadingLogo(false);
+      }
+    } catch (error) {
+      console.error('Error picking logo:', error);
+      setUploadingLogo(false);
+      Alert.alert('Error', 'No se pudo actualizar el logo');
+    }
+  };
+
+  const handlePickBanner = async () => {
+    try {
+      const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync();
+      if (status !== 'granted') {
+        Alert.alert('Permiso requerido', 'Necesitamos acceso a tus fotos para cambiar el banner');
+        return;
+      }
+
+      const result = await ImagePicker.launchImageLibraryAsync({
+        mediaTypes: ['images'],
+        allowsEditing: true,
+        aspect: [16, 9],
+        quality: 0.8,
+      });
+
+      if (!result.canceled && result.assets[0]) {
+        setUploadingBanner(true);
+        await updateBanner.mutateAsync(result.assets[0].uri);
+        setUploadingBanner(false);
+      }
+    } catch (error) {
+      console.error('Error picking banner:', error);
+      setUploadingBanner(false);
+      Alert.alert('Error', 'No se pudo actualizar el banner');
+    }
+  };
 
   if (isLoading) {
     return (
@@ -43,12 +103,44 @@ export default function BusinessProfileScreen() {
       <ScrollView showsVerticalScrollIndicator={false}>
         {/* Cover Photo */}
         <View style={{ position: 'relative', height: 200 }}>
-          <LinearGradient
-            colors={businessColors.gradient}
-            start={{ x: 0, y: 0 }}
-            end={{ x: 1, y: 1 }}
-            style={{ width: '100%', height: '100%' }}
-          />
+          {businessData?.bannerUrl || business?.bannerUrl ? (
+            <Image
+              source={{ uri: businessData?.bannerUrl || business?.bannerUrl }}
+              style={{ width: '100%', height: '100%' }}
+              resizeMode="cover"
+            />
+          ) : (
+            <LinearGradient
+              colors={businessColors.gradient}
+              start={{ x: 0, y: 0 }}
+              end={{ x: 1, y: 1 }}
+              style={{ width: '100%', height: '100%' }}
+            />
+          )}
+
+          {/* Edit Banner Button */}
+          <TouchableOpacity
+            onPress={handlePickBanner}
+            disabled={uploadingBanner}
+            style={{
+              position: 'absolute',
+              bottom: 56,
+              right: 16,
+              width: 40,
+              height: 40,
+              borderRadius: 12,
+              backgroundColor: 'rgba(0, 0, 0, 0.6)',
+              alignItems: 'center',
+              justifyContent: 'center',
+              zIndex: 10
+            }}
+          >
+            {uploadingBanner ? (
+              <ActivityIndicator size="small" color="#fff" />
+            ) : (
+              <Ionicons name="camera" size={20} color="#fff" />
+            )}
+          </TouchableOpacity>
 
           {/* Mode Switcher Button - Top Left */}
           {availableUserTypes.length > 1 && (
@@ -123,19 +215,30 @@ export default function BusinessProfileScreen() {
               shadowOffset: { width: 0, height: 4 },
               shadowOpacity: 0.2,
               shadowRadius: 12,
-              elevation: 8
+              elevation: 8,
+              overflow: 'hidden'
             }}>
-              <Text style={{
-                fontSize: 40,
-                fontWeight: '700',
-                color: colors.text.inverse
-              }}>
-                {(businessData?.businessName || businessData?.name || business?.businessName || business?.name || 'N').charAt(0)}
-              </Text>
+              {businessData?.logoUrl || business?.logoUrl ? (
+                <Image
+                  source={{ uri: businessData?.logoUrl || business?.logoUrl }}
+                  style={{ width: '100%', height: '100%' }}
+                  resizeMode="cover"
+                />
+              ) : (
+                <Text style={{
+                  fontSize: 40,
+                  fontWeight: '700',
+                  color: colors.text.inverse
+                }}>
+                  {(businessData?.businessName || businessData?.name || business?.businessName || business?.name || 'N').charAt(0)}
+                </Text>
+              )}
             </View>
 
             {/* Edit Logo Button */}
             <TouchableOpacity
+              onPress={handlePickLogo}
+              disabled={uploadingLogo}
               style={{
                 position: 'absolute',
                 bottom: -8,
@@ -149,7 +252,11 @@ export default function BusinessProfileScreen() {
                 borderColor: colors.bg.primary
               }}
             >
-              <Ionicons name="camera" size={16} color={colors.text.inverse} />
+              {uploadingLogo ? (
+                <ActivityIndicator size="small" color={colors.text.inverse} />
+              ) : (
+                <Ionicons name="camera" size={16} color={colors.text.inverse} />
+              )}
             </TouchableOpacity>
           </View>
 
@@ -530,40 +637,7 @@ export default function BusinessProfileScreen() {
             )}
 
             {activeTab === 'products' && (
-              <View style={{
-                backgroundColor: colors.bg.secondary,
-                borderRadius: 16,
-                padding: 40,
-                alignItems: 'center'
-              }}>
-                <View style={{
-                  width: 80,
-                  height: 80,
-                  borderRadius: 40,
-                  backgroundColor: colors.bg.primary,
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  marginBottom: 16
-                }}>
-                  <Ionicons name="cube-outline" size={40} color={colors.text.secondary} />
-                </View>
-                <Text style={{
-                  fontSize: 18,
-                  fontWeight: '700',
-                  color: colors.text.primary,
-                  marginBottom: 8,
-                  textAlign: 'center'
-                }}>
-                  Sin productos
-                </Text>
-                <Text style={{
-                  fontSize: 14,
-                  color: colors.text.secondary,
-                  textAlign: 'center'
-                }}>
-                  Tus productos aparecerán aquí
-                </Text>
-              </View>
+              <ProductsGrid />
             )}
 
             {activeTab === 'reviews' && (

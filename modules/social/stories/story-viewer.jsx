@@ -169,11 +169,19 @@ export default function StoryViewer({ visible, stories = [], initialIndex = 0, o
     <Modal visible={visible} animationType="fade" onRequestClose={onClose}>
       <View style={styles.container}>
         {/* Story Image/Video */}
-        <Image
-          source={{ uri: currentStory.mediaUrl }}
-          style={styles.media}
-          resizeMode="cover"
-        />
+        {currentStory.mediaUrl ? (
+          <Image
+            source={{ uri: currentStory.mediaUrl }}
+            style={styles.media}
+            resizeMode="cover"
+            onError={(error) => console.error('Failed to load story media:', error)}
+          />
+        ) : (
+          <View style={[styles.media, { backgroundColor: '#1a1a1a', alignItems: 'center', justifyContent: 'center' }]}>
+            <Ionicons name="image-outline" size={64} color="#666" />
+            <Text style={{ color: '#666', marginTop: 12 }}>Media not available</Text>
+          </View>
+        )}
 
         {/* Gradient Overlay Top */}
         <LinearGradient
@@ -204,9 +212,17 @@ export default function StoryViewer({ visible, stories = [], initialIndex = 0, o
         <View style={styles.header}>
           <View style={styles.businessInfo}>
             <View style={styles.avatar}>
-              <Ionicons name="storefront" size={20} color="#ffffff" />
+              {currentStory.logoUrl ? (
+                <Image
+                  source={{ uri: currentStory.logoUrl }}
+                  style={{ width: '100%', height: '100%', borderRadius: 18 }}
+                  resizeMode="cover"
+                />
+              ) : (
+                <Ionicons name="storefront" size={20} color="#ffffff" />
+              )}
             </View>
-            <Text style={styles.businessName}>Business Name</Text>
+            <Text style={styles.businessName}>{currentStory.businessName || 'Business'}</Text>
             <Text style={styles.timeAgo}>12h</Text>
           </View>
           <TouchableOpacity onPress={onClose} style={styles.closeButton}>

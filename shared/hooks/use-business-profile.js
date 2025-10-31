@@ -1,4 +1,4 @@
-import { useQuery } from '@tanstack/react-query';
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { apiClient } from '../config/api-client';
 import { useBusinessContexts } from './use-user-type';
 import { useBusinessPosts } from './use-business-posts';
@@ -50,4 +50,58 @@ export const useBusinessProfile = () => {
     isLoading,
     error,
   };
+};
+
+/**
+ * Update business logo
+ */
+export const useUpdateBusinessLogo = () => {
+  const queryClient = useQueryClient();
+  const businessContexts = useBusinessContexts();
+  const currentBusiness = businessContexts[0] || null;
+  const businessId = currentBusiness?.businessId;
+
+  return useMutation({
+    mutationFn: async (logoUrl) => {
+      if (!businessId) {
+        throw new Error('No business context available');
+      }
+
+      return apiClient.put('/businesses/id/logo', { logoUrl }, {
+        params: { businessId, id: businessId }
+      }).then(res => res.data);
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['business-profile', businessId] });
+      queryClient.invalidateQueries({ queryKey: ['businesses', businessId] });
+      queryClient.invalidateQueries({ queryKey: ['businesses'] });
+    },
+  });
+};
+
+/**
+ * Update business banner
+ */
+export const useUpdateBusinessBanner = () => {
+  const queryClient = useQueryClient();
+  const businessContexts = useBusinessContexts();
+  const currentBusiness = businessContexts[0] || null;
+  const businessId = currentBusiness?.businessId;
+
+  return useMutation({
+    mutationFn: async (bannerUrl) => {
+      if (!businessId) {
+        throw new Error('No business context available');
+      }
+
+      return apiClient.put('/businesses/id/banner', { bannerUrl }, {
+        params: { businessId, id: businessId }
+      }).then(res => res.data);
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['business-profile', businessId] });
+      queryClient.invalidateQueries({ queryKey: ['businesses', businessId] });
+      queryClient.invalidateQueries({ queryKey: ['businesses'] });
+    },
+  });
 };

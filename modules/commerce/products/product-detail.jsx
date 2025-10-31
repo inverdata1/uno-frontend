@@ -11,7 +11,7 @@ const { width } = Dimensions.get('window');
  * Product Detail Screen
  * Instagram/TikTok Shop inspired design with floating header and modern layout
  */
-export default function ProductDetail({ product, onClose }) {
+export default function ProductDetail({ product, onClose, onBusinessPress }) {
   const [selectedImageIndex, setSelectedImageIndex] = useState(0);
   const [quantity, setQuantity] = useState(1);
   const [isFavorited, setIsFavorited] = useState(product?.isFavorited || false);
@@ -35,7 +35,13 @@ export default function ProductDetail({ product, onClose }) {
   };
 
   const handleBusinessPress = () => {
-    setBusinessProfileVisible(true);
+    // If parent provides onBusinessPress callback, use it (for navigation)
+    // Otherwise, open local modal (for standalone usage)
+    if (onBusinessPress && product?.storeId) {
+      onBusinessPress(product.storeId);
+    } else {
+      setBusinessProfileVisible(true);
+    }
   };
 
   const handleVideoPress = (video) => {

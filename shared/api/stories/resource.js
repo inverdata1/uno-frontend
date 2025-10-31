@@ -200,9 +200,12 @@ export class StoriesResource extends BaseFirebaseService {
     ]);
 
     // Filter expired and sort by creation time
-    return stories
+    const filteredStories = stories
       .filter(story => story.expiresAt && story.expiresAt.toMillis() > now.toMillis())
       .sort((a, b) => a.createdAt?.toMillis() - b.createdAt?.toMillis());
+
+    // Populate business info
+    return await this.populateBusinessInfo(filteredStories);
   }
 
   /**
@@ -317,15 +320,59 @@ export class StoriesResource extends BaseFirebaseService {
   // === UTILITY METHODS ===
 
   /**
+   * Populate business info for stories
+   */
+  async populateBusinessInfo(stories) {
+    if (!stories || stories.length === 0) return stories;
+
+    // Get all unique business IDs
+    const allBusinessIds = [...new Set(
+      stories.map(story => story.businessId).filter(Boolean)
+    )];
+
+    if (allBusinessIds.length === 0) return stories;
+
+    // Fetch all businesses at once
+    const businessesResource = this.client.getResource('businesses');
+    const allBusinesses = await businessesResource.findWhere([]);
+
+    // Create a map for quick lookup
+    const businessMap = new Map();
+    allBusinesses.forEach(business => {
+      businessMap.set(business.id, business);
+    });
+
+    // Add business info to each story
+    return stories.map(story => {
+      const business = businessMap.get(story.businessId);
+      if (business) {
+        return {
+          ...story,
+          businessName: business.businessName,
+          businessType: business.businessType,
+          logoUrl: business.logoUrl,
+          coverImageUrl: business.coverImageUrl,
+        };
+      }
+      return story;
+    });
+  }
+
+  /**
    * Group stories by business
    */
-  groupStoriesByBusiness(stories) {
+  async groupStoriesByBusiness(stories) {
+    // First populate business info
+    const storiesWithBusinessInfo = await this.populateBusinessInfo(stories);
+
     const grouped = {};
 
-    stories.forEach(story => {
+    storiesWithBusinessInfo.forEach(story => {
       if (!grouped[story.businessId]) {
         grouped[story.businessId] = {
           businessId: story.businessId,
+          businessName: story.businessName || 'Business',
+          logoUrl: story.logoUrl,
           stories: [],
           hasUnviewed: true, // TODO: Implement viewed tracking per user - set to true for now
           latestStoryTime: story.createdAt

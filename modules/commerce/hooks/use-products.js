@@ -4,20 +4,21 @@ import { apiClient } from '../../../shared/config/api-client';
 /**
  * Fetch all products
  * @param {Object} options - Query options
- * @param {string} options.storeId - Filter by store
+ * @param {string} options.businessId - Filter by business
  * @param {string} options.categoryId - Filter by category
  * @param {number} options.limit - Number of products to fetch
  * @returns {Object} Query result with products data
  */
-export const useProducts = ({ storeId, categoryId, limit = 20 } = {}) => {
+export const useProducts = ({ businessId, categoryId, limit = 20 } = {}) => {
   return useQuery({
-    queryKey: ['products', { storeId, categoryId, limit }],
+    queryKey: ['products', { businessId, categoryId, limit }],
     queryFn: () => {
       const params = { limit };
-      if (storeId) params.storeId = storeId;
+      if (businessId) params.businessId = businessId;
       if (categoryId) params.categoryId = categoryId;
       return apiClient.get('/products', { params }).then(res => res.data);
     },
+    enabled: !!businessId,
     staleTime: 5 * 60 * 1000,
   });
 };
@@ -64,8 +65,10 @@ export const useCreateProduct = () => {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: async (productData) => {
-      return apiClient.post('/products', productData).then(res => res.data);
+    mutationFn: async ({ productData, businessId }) => {
+      return apiClient.post('/products', productData, {
+        params: { businessId }
+      }).then(res => res.data);
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['products'] });
@@ -97,8 +100,10 @@ export const useDeleteProduct = () => {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: async (productId) => {
-      return apiClient.delete(`/products/${productId}`).then(res => res.data);
+    mutationFn: async ({ productId, businessId }) => {
+      return apiClient.delete(`/products/id`, {
+        params: { id: productId, businessId }
+      }).then(res => res.data);
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['products'] });

@@ -1,5 +1,6 @@
 import { ref, uploadBytesResumable, getDownloadURL } from 'firebase/storage';
 import { storage } from '../config/firebase';
+import * as VideoThumbnails from 'expo-video-thumbnails';
 
 /**
  * Upload image to Firebase Storage
@@ -129,11 +130,55 @@ export const uploadVideo = async (uri, folder = 'videos', onProgress) => {
 };
 
 /**
- * Generate thumbnail from video (for future implementation)
- * This would require expo-video-thumbnails or similar
+ * Generate thumbnail from video
+ * @param {string} videoUri - Local video URI
+ * @param {number} time - Time in milliseconds to capture thumbnail (default: 0ms - first frame)
+ * @returns {Promise<string>} - Local URI of generated thumbnail
  */
-export const generateVideoThumbnail = async (videoUri) => {
-  // TODO: Implement video thumbnail generation
-  // For now, return a placeholder or the video URI
-  return videoUri;
+export const generateVideoThumbnail = async (videoUri, time = 0) => {
+  try {
+    const { uri } = await VideoThumbnails.getThumbnailAsync(videoUri, {
+      time, // Time in ms
+      quality: 0.8,
+    });
+    return uri;
+  } catch (error) {
+    console.error('Error generating video thumbnail:', error);
+    throw error;
+  }
+};
+
+/**
+ * Upload video with thumbnail generation
+ * @param {string} videoUri - Local video URI
+ * @param {string} folder - Storage folder path
+ * @param {function} onProgress - Optional callback for upload progress
+ * @returns {Promise<{videoUrl: string, thumbnailUrl: string}>} - URLs of uploaded video and thumbnail
+ */
+export const uploadVideoWithThumbnail = async (videoUri, folder = 'videos', onProgress) => {
+  try {
+    // Generate thumbnail
+    onProgress?.(10); // 10% for thumbnail generation
+    const thumbnailUri = await generateVideoThumbnail(videoUri);
+
+    // Upload both video and thumbnail
+    onProgress?.(20); // 20% before uploads start
+
+    // Upload video (takes 20-80% of progress)
+    const videoUrl = await uploadVideo(videoUri, folder, (progress) => {
+      // Map video upload progress to 20-80% range
+      onProgress?.(20 + (progress * 0.6));
+    });
+
+    // Upload thumbnail (takes 80-100% of progress)
+    const thumbnailUrl = await uploadImage(thumbnailUri, `${folder}/thumbnails`, (progress) => {
+      // Map thumbnail upload progress to 80-100% range
+      onProgress?.(80 + (progress * 0.2));
+    });
+
+    return { videoUrl, thumbnailUrl };
+  } catch (error) {
+    console.error('Error uploading video with thumbnail:', error);
+    throw error;
+  }
 };

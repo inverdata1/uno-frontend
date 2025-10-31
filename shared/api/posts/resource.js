@@ -1,6 +1,7 @@
 import { BaseFirebaseService } from '../base-firebase-service';
 import { COLLECTION_NAME, POST_TYPES } from './collection';
 import { serverTimestamp } from 'firebase/firestore';
+import { MediaProcessingService } from '../media/service';
 
 /**
  * Posts Resource
@@ -144,7 +145,8 @@ export class PostsResource extends BaseFirebaseService {
 
   /**
    * POST /posts
-   * Create new post
+   * Create new post with media processing
+   * Expects: { caption, type, mediaFiles, taggedProducts }
    */
   async post_index(data, params) {
     const { businessId, userId } = params;
@@ -153,8 +155,46 @@ export class PostsResource extends BaseFirebaseService {
       throw new Error('businessId and userId are required');
     }
 
+    console.log('📤 [Posts API] Creating post with media processing');
+    console.log('   Type:', data.type);
+    console.log('   Media files:', data.mediaFiles?.length || 0);
+
+    let processedMedia = [];
+    let thumbnailUrl = '';
+
+    // Step 1: Process media through Media Service (backend simulation)
+    if (data.type === 'video' && data.mediaFiles && data.mediaFiles.length > 0) {
+      console.log('🎬 [Posts API] Processing video');
+      const { videoUrl, thumbnailUrl: vidThumbnail } = await MediaProcessingService.processVideo(
+        data.mediaFiles[0],
+        'posts'
+      );
+
+      processedMedia = [{
+        type: 'video',
+        url: videoUrl,
+        thumbnailUrl: vidThumbnail
+      }];
+      thumbnailUrl = vidThumbnail;
+
+    } else if ((data.type === 'image' || data.type === 'carousel') && data.mediaFiles && data.mediaFiles.length > 0) {
+      console.log(`🖼️ [Posts API] Processing ${data.mediaFiles.length} image(s)`);
+      const imageUrls = await MediaProcessingService.processImages(data.mediaFiles, 'posts');
+
+      processedMedia = imageUrls.map(url => ({
+        type: 'image',
+        url: url,
+        thumbnailUrl: url
+      }));
+      thumbnailUrl = imageUrls[0];
+    }
+
+    // Step 2: Create post document with processed media URLs
     const postData = {
-      ...data,
+      caption: data.caption || '',
+      type: data.type,
+      media: processedMedia,
+      thumbnailUrl,
       businessId,
       userId,
       isActive: true,
@@ -171,7 +211,11 @@ export class PostsResource extends BaseFirebaseService {
       taggedProducts: data.taggedProducts || []
     };
 
-    return await this.create(postData);
+    console.log('💾 [Posts API] Saving post to database');
+    const createdPost = await this.create(postData);
+    console.log('✅ [Posts API] Post created successfully:', createdPost.id);
+
+    return createdPost;
   }
 
   /**

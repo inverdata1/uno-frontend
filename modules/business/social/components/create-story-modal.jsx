@@ -5,15 +5,15 @@ import Modal from 'react-native-modal';
 import * as ImagePicker from 'expo-image-picker';
 import { Text } from '../../../../shared/components/ui';
 import { colors } from '../../../../shared/utils/colors';
-import { useCreateStory } from '../../../../shared/hooks/use-business-stories';
-import { uploadImage, uploadVideo } from '../../../../shared/utils/storage';
+import { useCreateStoryWithMedia } from '../../../../shared/hooks/use-create-story-with-media';
 
 export const CreateStoryModal = ({ visible, onClose }) => {
   const [selectedMedia, setSelectedMedia] = useState(null);
   const [mediaType, setMediaType] = useState(null); // 'image' | 'video'
   const [uploadProgress, setUploadProgress] = useState(0);
+  const [uploadMessage, setUploadMessage] = useState('');
   const [isUploading, setIsUploading] = useState(false);
-  const createStoryMutation = useCreateStory();
+  const createStoryMutation = useCreateStoryWithMedia();
 
   const pickImage = async () => {
     const permissionResult = await ImagePicker.requestMediaLibraryPermissionsAsync();
@@ -52,7 +52,11 @@ export const CreateStoryModal = ({ visible, onClose }) => {
     });
 
     if (!result.canceled) {
-      setSelectedMedia(result.assets[0].uri);
+      const asset = result.assets[0];
+      setSelectedMedia({
+        uri: asset.uri,
+        duration: asset.duration ? Math.ceil(asset.duration / 1000) : 15 // Convert ms to seconds, default to 15s
+      });
       setMediaType('video');
     }
   };
@@ -84,32 +88,20 @@ export const CreateStoryModal = ({ visible, onClose }) => {
 
     setIsUploading(true);
     setUploadProgress(0);
+    setUploadMessage('');
 
     try {
-      let uploadedUrl;
+      const mediaUri = typeof selectedMedia === 'string' ? selectedMedia : selectedMedia.uri;
+      const duration = mediaType === 'image' ? 5 : selectedMedia.duration;
 
-      // Upload to Firebase Storage
-      if (mediaType === 'image') {
-        uploadedUrl = await uploadImage(
-          selectedMedia,
-          'stories',
-          (progress) => setUploadProgress(progress)
-        );
-      } else {
-        uploadedUrl = await uploadVideo(
-          selectedMedia,
-          'stories',
-          (progress) => setUploadProgress(progress)
-        );
-      }
-
-      // Create story
+      // Create story with media processing (happens in the API)
+      setUploadMessage('Processing and uploading media...');
       await createStoryMutation.mutateAsync({
         type: mediaType,
-        mediaUrl: uploadedUrl,
-        thumbnailUrl: uploadedUrl, // For images, thumbnail is same as media
-        duration: mediaType === 'image' ? 5 : undefined, // 5 seconds for images
+        mediaFile: mediaUri,
+        duration
       });
+      setUploadProgress(100);
 
       // Reset and close
       setSelectedMedia(null);
@@ -363,6 +355,15 @@ export const CreateStoryModal = ({ visible, onClose }) => {
                     }}>
                       Video seleccionado
                     </Text>
+                    {selectedMedia?.duration && (
+                      <Text style={{
+                        marginTop: 4,
+                        fontSize: 12,
+                        color: colors.text.secondary
+                      }}>
+                        {selectedMedia.duration}s
+                      </Text>
+                    )}
                   </View>
                 )}
               </View>
@@ -411,7 +412,7 @@ export const CreateStoryModal = ({ visible, onClose }) => {
                       fontWeight: '600',
                       color: colors.text.primary
                     }}>
-                      Subiendo historia...
+                      {uploadMessage || 'Uploading story...'}
                     </Text>
                   </View>
                   <View style={{

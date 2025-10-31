@@ -1,6 +1,7 @@
 import { BaseFirebaseService } from '../base-firebase-service';
 import { COLLECTION_NAME, STORY_TYPES, STORY_DURATION, STORY_EXPIRATION_HOURS } from './collection';
 import { serverTimestamp, Timestamp } from 'firebase/firestore';
+import { MediaProcessingService } from '../media/service';
 
 /**
  * Stories Resource
@@ -84,7 +85,8 @@ export class StoriesResource extends BaseFirebaseService {
 
   /**
    * POST /stories
-   * Create new story
+   * Create new story with media processing
+   * Expects: { type, mediaFile, duration }
    */
   async post_index(data, params) {
     const { businessId, userId } = params;
@@ -93,15 +95,52 @@ export class StoriesResource extends BaseFirebaseService {
       throw new Error('businessId and userId are required');
     }
 
+    console.log('📤 [Stories API] Creating story with media processing');
+    console.log('   Type:', data.type);
+
+    let mediaUrl;
+    let thumbnailUrl;
+
+    // Step 1: Process media through Media Service
+    if (data.type === STORY_TYPES.VIDEO && data.mediaFile) {
+      console.log('🎬 [Stories API] Processing video');
+      const { videoUrl, thumbnailUrl: vidThumbnail } = await MediaProcessingService.processVideo(
+        data.mediaFile,
+        'stories'
+      );
+      mediaUrl = videoUrl;
+      thumbnailUrl = vidThumbnail;
+
+    } else if (data.type === STORY_TYPES.IMAGE && data.mediaFile) {
+      console.log('🖼️ [Stories API] Processing image');
+      mediaUrl = await MediaProcessingService.processImage(data.mediaFile, 'stories');
+      thumbnailUrl = mediaUrl; // For images, thumbnail is the same
+    }
+
     // Calculate expiration (24 hours from now)
     const now = new Date();
     const expiresAt = new Date(now.getTime() + (STORY_EXPIRATION_HOURS * 60 * 60 * 1000));
 
+    // Calculate duration with fallback
+    let duration = data.duration;
+    if (!duration || duration === undefined) {
+      if (data.type === STORY_TYPES.IMAGE) {
+        duration = STORY_DURATION.DEFAULT_IMAGE;
+      } else if (data.type === STORY_TYPES.VIDEO) {
+        duration = 15; // Default to 15 seconds for videos
+      } else {
+        duration = 5; // Default fallback
+      }
+    }
+
+    // Step 2: Create story document
     const storyData = {
-      ...data,
+      type: data.type,
+      mediaUrl,
+      thumbnailUrl,
+      duration,
       businessId,
       userId,
-      duration: data.duration || (data.type === STORY_TYPES.IMAGE ? STORY_DURATION.DEFAULT_IMAGE : data.videoDuration),
       taggedProducts: data.taggedProducts || [],
       stickers: data.stickers || [],
       isActive: true,
@@ -115,7 +154,11 @@ export class StoriesResource extends BaseFirebaseService {
       expiresAt: Timestamp.fromDate(expiresAt)
     };
 
-    return await this.create(storyData);
+    console.log('💾 [Stories API] Saving story to database');
+    const createdStory = await this.create(storyData);
+    console.log('✅ [Stories API] Story created successfully:', createdStory.id);
+
+    return createdStory;
   }
 
   /**

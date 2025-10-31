@@ -5,16 +5,16 @@ import Modal from 'react-native-modal';
 import * as ImagePicker from 'expo-image-picker';
 import { Text } from '../../../../shared/components/ui';
 import { colors } from '../../../../shared/utils/colors';
-import { useCreatePost } from '../../../../shared/hooks/use-business-posts';
-import { uploadMultipleImages } from '../../../../shared/utils/storage';
+import { useCreatePostWithMedia } from '../../../../shared/hooks/use-create-post-with-media';
 
 export const CreatePostModal = ({ visible, onClose }) => {
   const [postType, setPostType] = useState('image'); // 'image' or 'video'
   const [caption, setCaption] = useState('');
   const [selectedImages, setSelectedImages] = useState([]);
   const [uploadProgress, setUploadProgress] = useState(0);
+  const [uploadMessage, setUploadMessage] = useState('');
   const [isUploading, setIsUploading] = useState(false);
-  const createPostMutation = useCreatePost();
+  const createPostMutation = useCreatePostWithMedia();
 
   const pickMedia = async () => {
     const permissionResult = await ImagePicker.requestMediaLibraryPermissionsAsync();
@@ -63,32 +63,23 @@ export const CreatePostModal = ({ visible, onClose }) => {
 
     setIsUploading(true);
     setUploadProgress(0);
+    setUploadMessage('');
 
     try {
-      // Upload media to Firebase Storage
-      const uploadedUrls = await uploadMultipleImages(
-        selectedImages,
-        'posts',
-        (progress) => setUploadProgress(progress)
-      );
-
       // Determine final post type
       let finalType = postType;
       if (postType === 'image' && selectedImages.length > 1) {
         finalType = 'carousel';
       }
 
-      // Create post with uploaded URLs
+      // Create post with media processing (happens in the API)
+      setUploadMessage('Processing and uploading media...');
       await createPostMutation.mutateAsync({
         caption: caption.trim(),
-        media: uploadedUrls.map(url => ({
-          type: postType, // 'image' or 'video'
-          url: url,
-          thumbnailUrl: url
-        })),
-        type: finalType, // 'image', 'video', or 'carousel'
-        thumbnailUrl: uploadedUrls[0]
+        type: finalType,
+        mediaFiles: selectedImages
       });
+      setUploadProgress(100);
 
       // Reset and close
       setCaption('');
@@ -353,19 +344,29 @@ export const CreatePostModal = ({ visible, onClose }) => {
                 padding: 12,
                 marginBottom: 16
               }}>
-                <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ gap: 8 }}>
+                <ScrollView
+                  horizontal
+                  showsHorizontalScrollIndicator={false}
+                  contentContainerStyle={{ gap: 8, paddingVertical: 8, paddingHorizontal: 4 }}
+                >
                   {selectedImages.map((uri, index) => (
                     <View key={index} style={{ position: 'relative' }}>
-                      <Image
-                        source={{ uri }}
-                        style={{
-                          width: 80,
-                          height: 80,
-                          borderRadius: 12,
-                          backgroundColor: colors.border.light
-                        }}
-                        resizeMode="cover"
-                      />
+                      <View style={{
+                        width: 80,
+                        height: 80,
+                        borderRadius: 12,
+                        overflow: 'hidden',
+                        backgroundColor: colors.border.light
+                      }}>
+                        <Image
+                          source={{ uri }}
+                          style={{
+                            width: '100%',
+                            height: '100%'
+                          }}
+                          resizeMode="cover"
+                        />
+                      </View>
                       <TouchableOpacity
                         onPress={() => setSelectedImages(selectedImages.filter((_, i) => i !== index))}
                         style={{
@@ -440,7 +441,7 @@ export const CreatePostModal = ({ visible, onClose }) => {
                       fontWeight: '600',
                       color: colors.text.primary
                     }}>
-                      {postType === 'video' ? 'Subiendo video...' : 'Subiendo imágenes...'}
+                      {uploadMessage || (postType === 'video' ? 'Processing video...' : 'Uploading images...')}
                     </Text>
                   </View>
                   <View style={{

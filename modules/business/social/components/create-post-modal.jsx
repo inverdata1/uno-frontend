@@ -9,13 +9,14 @@ import { useCreatePost } from '../../../../shared/hooks/use-business-posts';
 import { uploadMultipleImages } from '../../../../shared/utils/storage';
 
 export const CreatePostModal = ({ visible, onClose }) => {
+  const [postType, setPostType] = useState('image'); // 'image' or 'video'
   const [caption, setCaption] = useState('');
   const [selectedImages, setSelectedImages] = useState([]);
   const [uploadProgress, setUploadProgress] = useState(0);
   const [isUploading, setIsUploading] = useState(false);
   const createPostMutation = useCreatePost();
 
-  const pickImage = async () => {
+  const pickMedia = async () => {
     const permissionResult = await ImagePicker.requestMediaLibraryPermissionsAsync();
 
     if (permissionResult.granted === false) {
@@ -24,10 +25,10 @@ export const CreatePostModal = ({ visible, onClose }) => {
     }
 
     const result = await ImagePicker.launchImageLibraryAsync({
-      mediaTypes: ['images'],
-      allowsMultipleSelection: true,
+      mediaTypes: postType === 'video' ? ['videos'] : ['images'],
+      allowsMultipleSelection: postType === 'image', // Only allow multiple for images
       quality: 0.8,
-      aspect: [1, 1],
+      videoMaxDuration: 60, // 60 seconds max for videos
     });
 
     if (!result.canceled) {
@@ -44,8 +45,9 @@ export const CreatePostModal = ({ visible, onClose }) => {
     }
 
     const result = await ImagePicker.launchCameraAsync({
+      mediaTypes: postType === 'video' ? ['videos'] : ['images'],
       quality: 0.8,
-      aspect: [1, 1],
+      videoMaxDuration: 60,
     });
 
     if (!result.canceled) {
@@ -55,7 +57,7 @@ export const CreatePostModal = ({ visible, onClose }) => {
 
   const handlePost = async () => {
     if (selectedImages.length === 0) {
-      Alert.alert('Error', 'Selecciona al menos una imagen');
+      Alert.alert('Error', `Selecciona al menos ${postType === 'video' ? 'un video' : 'una imagen'}`);
       return;
     }
 
@@ -63,22 +65,28 @@ export const CreatePostModal = ({ visible, onClose }) => {
     setUploadProgress(0);
 
     try {
-      // Upload images to Firebase Storage
+      // Upload media to Firebase Storage
       const uploadedUrls = await uploadMultipleImages(
         selectedImages,
         'posts',
         (progress) => setUploadProgress(progress)
       );
 
+      // Determine final post type
+      let finalType = postType;
+      if (postType === 'image' && selectedImages.length > 1) {
+        finalType = 'carousel';
+      }
+
       // Create post with uploaded URLs
       await createPostMutation.mutateAsync({
         caption: caption.trim(),
         media: uploadedUrls.map(url => ({
-          type: 'image',
+          type: postType, // 'image' or 'video'
           url: url,
           thumbnailUrl: url
         })),
-        type: selectedImages.length > 1 ? 'carousel' : 'image',
+        type: finalType, // 'image', 'video', or 'carousel'
         thumbnailUrl: uploadedUrls[0]
       });
 
@@ -110,6 +118,7 @@ export const CreatePostModal = ({ visible, onClose }) => {
   const handleClose = () => {
     setCaption('');
     setSelectedImages([]);
+    setPostType('image');
     onClose();
   };
 
@@ -166,11 +175,85 @@ export const CreatePostModal = ({ visible, onClose }) => {
         </View>
 
         <ScrollView style={{ maxHeight: 500 }}>
-          {/* Image Picker Buttons */}
+          {/* Post Type Selector */}
+          <View style={{
+            flexDirection: 'row',
+            padding: 20,
+            paddingBottom: 12,
+            gap: 8,
+            borderBottomWidth: 1,
+            borderBottomColor: colors.border.light
+          }}>
+            <TouchableOpacity
+              onPress={() => {
+                setPostType('image');
+                setSelectedImages([]);
+              }}
+              disabled={isUploading || createPostMutation.isLoading}
+              style={{
+                flex: 1,
+                paddingVertical: 12,
+                paddingHorizontal: 16,
+                borderRadius: 12,
+                backgroundColor: postType === 'image' ? colors.primary[500] : colors.bg.secondary,
+                alignItems: 'center',
+                flexDirection: 'row',
+                justifyContent: 'center',
+                gap: 8
+              }}
+            >
+              <Ionicons
+                name="image"
+                size={20}
+                color={postType === 'image' ? colors.text.inverse : colors.text.secondary}
+              />
+              <Text style={{
+                fontSize: 15,
+                fontWeight: '600',
+                color: postType === 'image' ? colors.text.inverse : colors.text.secondary
+              }}>
+                Imagen
+              </Text>
+            </TouchableOpacity>
+
+            <TouchableOpacity
+              onPress={() => {
+                setPostType('video');
+                setSelectedImages([]);
+              }}
+              disabled={isUploading || createPostMutation.isLoading}
+              style={{
+                flex: 1,
+                paddingVertical: 12,
+                paddingHorizontal: 16,
+                borderRadius: 12,
+                backgroundColor: postType === 'video' ? colors.primary[500] : colors.bg.secondary,
+                alignItems: 'center',
+                flexDirection: 'row',
+                justifyContent: 'center',
+                gap: 8
+              }}
+            >
+              <Ionicons
+                name="videocam"
+                size={20}
+                color={postType === 'video' ? colors.text.inverse : colors.text.secondary}
+              />
+              <Text style={{
+                fontSize: 15,
+                fontWeight: '600',
+                color: postType === 'video' ? colors.text.inverse : colors.text.secondary
+              }}>
+                Video
+              </Text>
+            </TouchableOpacity>
+          </View>
+
+          {/* Media Picker Buttons */}
           {selectedImages.length === 0 && (
             <View style={{ padding: 20, gap: 12 }}>
               <TouchableOpacity
-                onPress={pickImage}
+                onPress={pickMedia}
                 style={{
                   backgroundColor: colors.bg.secondary,
                   borderRadius: 16,
@@ -191,7 +274,11 @@ export const CreatePostModal = ({ visible, onClose }) => {
                   alignItems: 'center',
                   justifyContent: 'center'
                 }}>
-                  <Ionicons name="images" size={28} color={colors.primary[500]} />
+                  <Ionicons
+                    name={postType === 'video' ? 'videocam' : 'images'}
+                    size={28}
+                    color={colors.primary[500]}
+                  />
                 </View>
                 <View style={{ flex: 1 }}>
                   <Text style={{
@@ -206,7 +293,7 @@ export const CreatePostModal = ({ visible, onClose }) => {
                     fontSize: 14,
                     color: colors.text.secondary
                   }}>
-                    Elige fotos de tu dispositivo
+                    {postType === 'video' ? 'Elige un video de tu dispositivo' : 'Elige fotos de tu dispositivo'}
                   </Text>
                 </View>
                 <Ionicons name="chevron-forward" size={20} color={colors.text.secondary} />
@@ -243,7 +330,7 @@ export const CreatePostModal = ({ visible, onClose }) => {
                     color: colors.text.primary,
                     marginBottom: 2
                   }}>
-                    Tomar foto
+                    {postType === 'video' ? 'Grabar video' : 'Tomar foto'}
                   </Text>
                   <Text style={{
                     fontSize: 14,
@@ -297,22 +384,24 @@ export const CreatePostModal = ({ visible, onClose }) => {
                       </TouchableOpacity>
                     </View>
                   ))}
-                  <TouchableOpacity
-                    onPress={pickImage}
-                    style={{
-                      width: 80,
-                      height: 80,
-                      borderRadius: 12,
-                      backgroundColor: colors.bg.primary,
-                      borderWidth: 2,
-                      borderStyle: 'dashed',
-                      borderColor: colors.border.light,
-                      alignItems: 'center',
-                      justifyContent: 'center'
-                    }}
-                  >
-                    <Ionicons name="add" size={32} color={colors.text.secondary} />
-                  </TouchableOpacity>
+                  {postType === 'image' && (
+                    <TouchableOpacity
+                      onPress={pickMedia}
+                      style={{
+                        width: 80,
+                        height: 80,
+                        borderRadius: 12,
+                        backgroundColor: colors.bg.primary,
+                        borderWidth: 2,
+                        borderStyle: 'dashed',
+                        borderColor: colors.border.light,
+                        alignItems: 'center',
+                        justifyContent: 'center'
+                      }}
+                    >
+                      <Ionicons name="add" size={32} color={colors.text.secondary} />
+                    </TouchableOpacity>
+                  )}
                 </ScrollView>
               </View>
 
@@ -351,7 +440,7 @@ export const CreatePostModal = ({ visible, onClose }) => {
                       fontWeight: '600',
                       color: colors.text.primary
                     }}>
-                      Subiendo imágenes...
+                      {postType === 'video' ? 'Subiendo video...' : 'Subiendo imágenes...'}
                     </Text>
                   </View>
                   <View style={{

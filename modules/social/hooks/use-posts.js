@@ -10,7 +10,7 @@ import { apiClient } from '../../../shared/config/api-client';
 export const usePosts = ({ limit = 20 } = {}) => {
   return useQuery({
     queryKey: ['posts', 'feed', { limit }],
-    queryFn: () => apiClient.get('/posts/feed', { limit }).then(res => res.data),
+    queryFn: () => apiClient.get('/posts/feed', { params: { limit } }).then(res => res.data),
     staleTime: 5 * 60 * 1000, // 5 minutes
   });
 };

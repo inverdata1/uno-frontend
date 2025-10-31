@@ -16,7 +16,7 @@ export const useProducts = ({ storeId, categoryId, limit = 20 } = {}) => {
       const params = { limit };
       if (storeId) params.storeId = storeId;
       if (categoryId) params.categoryId = categoryId;
-      return apiClient.get('/products', params).then(res => res.data);
+      return apiClient.get('/products', { params }).then(res => res.data);
     },
     staleTime: 5 * 60 * 1000,
   });
@@ -40,7 +40,7 @@ export const useProduct = (productId) => {
 export const useFeaturedProducts = ({ limit = 10 } = {}) => {
   return useQuery({
     queryKey: ['products', 'featured', { limit }],
-    queryFn: () => apiClient.get('/products/featured', { limit }).then(res => res.data),
+    queryFn: () => apiClient.get('/products/featured', { params: { limit } }).then(res => res.data),
     staleTime: 10 * 60 * 1000,
   });
 };
@@ -51,7 +51,7 @@ export const useFeaturedProducts = ({ limit = 10 } = {}) => {
 export const useSearchProducts = (query, { enabled = false } = {}) => {
   return useQuery({
     queryKey: ['products', 'search', query],
-    queryFn: () => apiClient.get('/products/search', { q: query }).then(res => res.data),
+    queryFn: () => apiClient.get('/products/search', { params: { q: query } }).then(res => res.data),
     enabled: enabled && !!query,
     staleTime: 2 * 60 * 1000,
   });

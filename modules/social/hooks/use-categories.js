@@ -31,7 +31,7 @@ export const useCategory = (categoryId) => {
 export const useCategoryVideos = (categoryId, { limit = 20 } = {}) => {
   return useQuery({
     queryKey: ['categories', categoryId, 'videos', { limit }],
-    queryFn: () => apiClient.get(`/categories/${categoryId}/videos`, { limit }).then(res => res.data),
+    queryFn: () => apiClient.get(`/categories/${categoryId}/videos`, { params: { limit } }).then(res => res.data),
     enabled: !!categoryId,
     staleTime: 5 * 60 * 1000,
   });

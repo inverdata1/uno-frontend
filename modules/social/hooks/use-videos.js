@@ -15,7 +15,7 @@ export const useVideos = ({ categoryId, limit = 20 } = {}) => {
       // Videos are posts with type='video'
       const params = { limit, type: 'video' };
       if (categoryId) params.categoryId = categoryId;
-      return apiClient.get('/posts', params).then(res => res.data);
+      return apiClient.get('/posts', { params }).then(res => res.data);
     },
     staleTime: 5 * 60 * 1000,
   });

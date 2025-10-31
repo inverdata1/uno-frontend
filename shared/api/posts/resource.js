@@ -82,6 +82,8 @@ export class PostsResource extends BaseFirebaseService {
       offset = 0
     } = params;
 
+    console.log('📝 GET /posts - Params:', { businessId, userId, type, limit, offset });
+
     const filters = [
       ['isPublished', '==', true],
       ['isActive', '==', true]
@@ -97,9 +99,16 @@ export class PostsResource extends BaseFirebaseService {
 
     if (type) {
       filters.push(['type', '==', type]);
+      console.log('🔍 Filtering by type:', type);
     }
 
     const posts = await this.findWhere(filters);
+    console.log(`📊 Found ${posts.length} posts matching filters`);
+
+    // Log first few posts for debugging
+    if (posts.length > 0) {
+      console.log('🎬 First post types:', posts.slice(0, 3).map(p => ({ id: p.id, type: p.type })));
+    }
 
     // Sort by published date (newest first) and paginate
     const paginatedPosts = posts

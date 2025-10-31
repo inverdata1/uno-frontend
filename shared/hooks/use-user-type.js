@@ -60,9 +60,9 @@ export const useCurrentUserType = () => {
 
   if (!userTypeData || isLoading) {
     return {
-      currentUserType: 'client',
+      currentUserType: null,
       currentContext: { businessId: null, branchId: null },
-      availableUserTypes: ['client'],
+      availableUserTypes: [],
       isLoading: true
     };
   }

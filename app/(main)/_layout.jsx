@@ -17,18 +17,31 @@ export default function TabLayout() {
     console.log('🔍 TabLayout - userTypeSwitcherVisible:', userTypeSwitcherVisible);
   }, [userTypeSwitcherVisible]);
 
+  // Debug current user type
+  React.useEffect(() => {
+    console.log('🔍 TabLayout - currentUserType:', currentUserType, 'isLoading:', isLoading);
+    console.log('🔍 TabLayout - Will show loading?', isLoading || !currentUserType);
+  }, [currentUserType, isLoading]);
+
   // Show loading state while determining user type
-  if (isLoading) {
+  if (isLoading || !currentUserType) {
+    console.log('⏳ TabLayout - Showing loading state');
     return (
-      <Tabs screenOptions={{ headerShown: false }}>
-        <Tabs.Screen name="index" options={{ title: 'Home' }} />
+      <Tabs screenOptions={{
+        headerShown: false,
+        tabBarStyle: { display: 'none' } // Hide tab bar while loading
+      }}>
+        <Tabs.Screen name="index" options={{ title: 'Loading...' }} />
       </Tabs>
     );
   }
 
+  console.log('✅ TabLayout - Rendering full tabs for userType:', currentUserType);
+
   return (
     <>
       <Tabs
+        key={currentUserType}
         screenOptions={{
           headerShown: false,
           tabBarActiveTintColor: theme.colors.primary[500],
@@ -37,7 +50,9 @@ export default function TabLayout() {
             paddingBottom: Math.max(insets.bottom, 5),
             paddingTop: 5,
             height: 60 + Math.max(insets.bottom - 5, 0)
-          }
+          },
+          lazy: true,
+          unmountOnBlur: true,
         }}>
 
       {/* Index/Home - Always present, label changes by mode */}

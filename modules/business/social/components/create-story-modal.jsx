@@ -10,7 +10,6 @@ import { useCreateStoryWithMedia } from '../../../../shared/hooks/use-create-sto
 export const CreateStoryModal = ({ visible, onClose }) => {
   const [selectedMedia, setSelectedMedia] = useState(null);
   const [mediaType, setMediaType] = useState(null); // 'image' | 'video'
-  const [uploadProgress, setUploadProgress] = useState(0);
   const [uploadMessage, setUploadMessage] = useState('');
   const [isUploading, setIsUploading] = useState(false);
   const createStoryMutation = useCreateStoryWithMedia();
@@ -87,26 +86,22 @@ export const CreateStoryModal = ({ visible, onClose }) => {
     }
 
     setIsUploading(true);
-    setUploadProgress(0);
-    setUploadMessage('');
+    setUploadMessage('Processing and uploading media...');
 
     try {
       const mediaUri = typeof selectedMedia === 'string' ? selectedMedia : selectedMedia.uri;
       const duration = mediaType === 'image' ? 5 : selectedMedia.duration;
 
       // Create story with media processing (happens in the API)
-      setUploadMessage('Processing and uploading media...');
       await createStoryMutation.mutateAsync({
         type: mediaType,
         mediaFile: mediaUri,
         duration
       });
-      setUploadProgress(100);
 
       // Reset and close
       setSelectedMedia(null);
       setMediaType(null);
-      setUploadProgress(0);
       setIsUploading(false);
       onClose();
       Alert.alert('¡Listo!', 'Tu historia se ha publicado');
@@ -405,7 +400,7 @@ export const CreateStoryModal = ({ visible, onClose }) => {
                   borderRadius: 16,
                   padding: 16
                 }}>
-                  <View style={{ flexDirection: 'row', alignItems: 'center', gap: 12, marginBottom: 8 }}>
+                  <View style={{ flexDirection: 'row', alignItems: 'center', gap: 12 }}>
                     <ActivityIndicator size="small" color={colors.primary[500]} />
                     <Text style={{
                       fontSize: 14,
@@ -415,26 +410,12 @@ export const CreateStoryModal = ({ visible, onClose }) => {
                       {uploadMessage || 'Uploading story...'}
                     </Text>
                   </View>
-                  <View style={{
-                    height: 6,
-                    backgroundColor: colors.border.light,
-                    borderRadius: 3,
-                    overflow: 'hidden'
-                  }}>
-                    <View style={{
-                      height: '100%',
-                      width: `${uploadProgress}%`,
-                      backgroundColor: colors.primary[500],
-                      borderRadius: 3
-                    }} />
-                  </View>
                   <Text style={{
                     fontSize: 12,
                     color: colors.text.secondary,
-                    marginTop: 4,
-                    textAlign: 'right'
+                    marginTop: 8
                   }}>
-                    {Math.round(uploadProgress)}%
+                    {mediaType === 'video' ? 'Generating thumbnail and uploading...' : 'This may take a moment...'}
                   </Text>
                 </View>
               )}

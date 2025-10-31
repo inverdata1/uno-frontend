@@ -11,7 +11,6 @@ export const CreatePostModal = ({ visible, onClose }) => {
   const [postType, setPostType] = useState('image'); // 'image' or 'video'
   const [caption, setCaption] = useState('');
   const [selectedImages, setSelectedImages] = useState([]);
-  const [uploadProgress, setUploadProgress] = useState(0);
   const [uploadMessage, setUploadMessage] = useState('');
   const [isUploading, setIsUploading] = useState(false);
   const createPostMutation = useCreatePostWithMedia();
@@ -62,8 +61,7 @@ export const CreatePostModal = ({ visible, onClose }) => {
     }
 
     setIsUploading(true);
-    setUploadProgress(0);
-    setUploadMessage('');
+    setUploadMessage('Processing and uploading media...');
 
     try {
       // Determine final post type
@@ -73,25 +71,21 @@ export const CreatePostModal = ({ visible, onClose }) => {
       }
 
       // Create post with media processing (happens in the API)
-      setUploadMessage('Processing and uploading media...');
       await createPostMutation.mutateAsync({
         caption: caption.trim(),
         type: finalType,
         mediaFiles: selectedImages
       });
-      setUploadProgress(100);
 
       // Reset and close
       setCaption('');
       setSelectedImages([]);
-      setUploadProgress(0);
       setIsUploading(false);
       onClose();
       Alert.alert('¡Listo!', 'Tu publicación se ha compartido');
     } catch (error) {
       console.error('Error creating post:', error);
       setIsUploading(false);
-      setUploadProgress(0);
 
       // Better error message
       if (error.message?.includes('No business context available')) {
@@ -434,7 +428,7 @@ export const CreatePostModal = ({ visible, onClose }) => {
                   borderRadius: 16,
                   padding: 16
                 }}>
-                  <View style={{ flexDirection: 'row', alignItems: 'center', gap: 12, marginBottom: 8 }}>
+                  <View style={{ flexDirection: 'row', alignItems: 'center', gap: 12 }}>
                     <ActivityIndicator size="small" color={colors.primary[500]} />
                     <Text style={{
                       fontSize: 14,
@@ -444,26 +438,12 @@ export const CreatePostModal = ({ visible, onClose }) => {
                       {uploadMessage || (postType === 'video' ? 'Processing video...' : 'Uploading images...')}
                     </Text>
                   </View>
-                  <View style={{
-                    height: 6,
-                    backgroundColor: colors.border.light,
-                    borderRadius: 3,
-                    overflow: 'hidden'
-                  }}>
-                    <View style={{
-                      height: '100%',
-                      width: `${uploadProgress}%`,
-                      backgroundColor: colors.primary[500],
-                      borderRadius: 3
-                    }} />
-                  </View>
                   <Text style={{
                     fontSize: 12,
                     color: colors.text.secondary,
-                    marginTop: 4,
-                    textAlign: 'right'
+                    marginTop: 8
                   }}>
-                    {Math.round(uploadProgress)}%
+                    {postType === 'video' ? 'Generating thumbnail and uploading...' : 'This may take a moment...'}
                   </Text>
                 </View>
               )}

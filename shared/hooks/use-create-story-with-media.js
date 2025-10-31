@@ -52,6 +52,7 @@ export const useCreateStoryWithMedia = () => {
     onSuccess: () => {
       // Invalidate stories queries to refresh
       queryClient.invalidateQueries({ queryKey: ['stories'] });
+      queryClient.invalidateQueries({ queryKey: ['business-stories', businessId] });
     },
   });
 };

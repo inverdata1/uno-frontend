@@ -1,30 +1,42 @@
 import React, { useState } from 'react';
-import { View, ScrollView, TouchableOpacity, Image } from 'react-native';
+import { View, ScrollView, TouchableOpacity, Image, ActivityIndicator } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
+import { useRouter } from 'expo-router';
 import { Text } from '../../../shared/components/ui';
-import { useBusinessContexts, useCurrentUserType } from '../../../shared/hooks/use-user-type';
+import { useCurrentUserType } from '../../../shared/hooks/use-user-type';
+import { useBusinessProfile } from '../../../shared/hooks/use-business-profile';
 import { useAppStore } from '../../../shared/stores/app-store';
 import { colors } from '../../../shared/utils/colors';
 import { getModeColors } from '../../../shared/utils/colors';
 
 export default function BusinessProfileScreen() {
-  const businessContexts = useBusinessContexts();
-  const currentBusiness = businessContexts[0] || null;
+  const router = useRouter();
   const { availableUserTypes = [] } = useCurrentUserType();
   const { openUserTypeSwitcher } = useAppStore();
   const [activeTab, setActiveTab] = useState('posts');
   const businessColors = getModeColors('business');
 
-  // Mock data - replace with real data
-  const stats = {
-    followers: 1234,
-    posts: 45,
-    products: 28,
-    rating: 4.8,
-    reviews: 156
-  };
+  // Get real business data
+  const { business, businessData, stats, isLoading } = useBusinessProfile();
+
+  // Debug logging
+  React.useEffect(() => {
+    console.log('🏢 Business Profile Data:', {
+      business,
+      businessData,
+      stats
+    });
+  }, [business, businessData, stats]);
+
+  if (isLoading) {
+    return (
+      <SafeAreaView style={{ flex: 1, backgroundColor: colors.bg.secondary, alignItems: 'center', justifyContent: 'center' }} edges={['top']}>
+        <ActivityIndicator size="large" color={businessColors.primary} />
+      </SafeAreaView>
+    );
+  }
 
   return (
     <SafeAreaView style={{ flex: 1, backgroundColor: colors.bg.secondary }} edges={['top']}>
@@ -67,8 +79,9 @@ export default function BusinessProfileScreen() {
             </TouchableOpacity>
           )}
 
-          {/* Edit Cover Button */}
+          {/* Settings Button - Top Right */}
           <TouchableOpacity
+            onPress={() => router.push('/profile/settings')}
             style={{
               position: 'absolute',
               top: 16,
@@ -76,12 +89,12 @@ export default function BusinessProfileScreen() {
               width: 40,
               height: 40,
               borderRadius: 12,
-              backgroundColor: 'rgba(0, 0, 0, 0.5)',
+              backgroundColor: 'rgba(0, 0, 0, 0.6)',
               alignItems: 'center',
               justifyContent: 'center'
             }}
           >
-            <Ionicons name="camera" size={20} color="#fff" />
+            <Ionicons name="settings" size={20} color="#fff" />
           </TouchableOpacity>
         </View>
 
@@ -117,7 +130,7 @@ export default function BusinessProfileScreen() {
                 fontWeight: '700',
                 color: colors.text.inverse
               }}>
-                {currentBusiness?.businessName?.charAt(0) || 'N'}
+                {(businessData?.businessName || businessData?.name || business?.businessName || business?.name || 'N').charAt(0)}
               </Text>
             </View>
 
@@ -148,7 +161,7 @@ export default function BusinessProfileScreen() {
               color: colors.text.primary,
               marginBottom: 4
             }}>
-              {currentBusiness?.businessName || 'Mi Negocio'}
+              {businessData?.businessName || businessData?.name || business?.businessName || business?.name || 'Mi Negocio'}
             </Text>
 
             <View style={{
@@ -169,7 +182,7 @@ export default function BusinessProfileScreen() {
                   fontWeight: '600',
                   color: businessColors.primary
                 }}>
-                  {currentBusiness?.businessType || 'Restaurante'}
+                  {businessData?.businessType || businessData?.type || business?.businessType || business?.type || 'Restaurante'}
                 </Text>
               </View>
 
@@ -351,7 +364,7 @@ export default function BusinessProfileScreen() {
                   fontSize: 14,
                   color: colors.text.secondary
                 }}>
-                  Av. Principal 123, Ciudad
+                  {businessData?.address || business?.address || 'No especificada'}
                 </Text>
               </View>
             </View>
@@ -382,7 +395,7 @@ export default function BusinessProfileScreen() {
                   fontSize: 14,
                   color: colors.text.secondary
                 }}>
-                  Lun - Dom: 9:00 AM - 10:00 PM
+                  {businessData?.businessHours || business?.businessHours || 'Lun - Dom: 9:00 AM - 10:00 PM'}
                 </Text>
               </View>
             </View>
@@ -413,7 +426,7 @@ export default function BusinessProfileScreen() {
                   fontSize: 14,
                   color: colors.text.secondary
                 }}>
-                  +1 (555) 123-4567
+                  {businessData?.phone || business?.phone || 'No especificado'}
                 </Text>
               </View>
             </View>

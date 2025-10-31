@@ -12,6 +12,11 @@ export default function TabLayout() {
   const insets = useSafeAreaInsets();
   const { userTypeSwitcherVisible, closeUserTypeSwitcher } = useAppStore();
 
+  // Debug modal visibility
+  React.useEffect(() => {
+    console.log('🔍 TabLayout - userTypeSwitcherVisible:', userTypeSwitcherVisible);
+  }, [userTypeSwitcherVisible]);
+
   // Show loading state while determining user type
   if (isLoading) {
     return (

@@ -288,7 +288,7 @@ export class UsersResource extends BaseFirebaseService {
 
           contexts.push({
             businessId: business.id,
-            businessName: business.name,
+            businessName: business.businessName,
             businessType: business.businessType,
             status: business.status,
             branches: branches.map(branch => ({
@@ -304,7 +304,7 @@ export class UsersResource extends BaseFirebaseService {
           console.warn(`⚠️ Could not load branches for business ${business.id}:`, branchError.message);
           contexts.push({
             businessId: business.id,
-            businessName: business.name,
+            businessName: business.businessName,
             businessType: business.businessType,
             status: business.status,
             branches: []

@@ -3,7 +3,7 @@ import { View, TouchableOpacity, ActivityIndicator } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import BottomSheet, { BottomSheetView } from '@gorhom/bottom-sheet';
 import { Text } from '../../ui';
-import { useCurrentUserType, useSwitchUserType, useBusinessContexts } from '../../../hooks/use-user-type';
+import { useCurrentUserType, useSwitchUserType, useBusinessContexts, useUserType } from '../../../hooks/use-user-type';
 import { getUserTypeConfig } from '../../../config/user-types';
 import { colors } from '../../../utils/colors';
 
@@ -18,10 +18,19 @@ export const UserTypeSwitcherModal = ({ visible, onClose, onUserTypeSwitch }) =>
   // Debug logging for business contexts
   React.useEffect(() => {
     if (visible) {
-      console.log('📊 UserTypeSwitcher opened - businessContexts:', businessContexts);
+      console.log('📊 UserTypeSwitcher opened - businessContexts from hook:', businessContexts);
       console.log('📊 businessContexts.length:', businessContexts.length);
     }
   }, [visible, businessContexts]);
+
+  // Let's also check what useUserType returns directly
+  const { data: rawUserTypeData } = useUserType();
+  React.useEffect(() => {
+    if (visible) {
+      console.log('📊 RAW userTypeData:', rawUserTypeData);
+      console.log('📊 RAW businessContexts:', rawUserTypeData?.businessContexts);
+    }
+  }, [visible, rawUserTypeData]);
 
   // Bottom sheet ref
   const bottomSheetRef = useRef(null);
@@ -45,6 +54,8 @@ export const UserTypeSwitcherModal = ({ visible, onClose, onUserTypeSwitch }) =>
 
   const handleUserTypeSwitch = async (userType, businessId = null, branchId = null) => {
     console.log('🔄 handleUserTypeSwitch called:', { userType, currentUserType, businessId });
+    console.log('🔍 businessContexts:', businessContexts);
+    console.log('🔍 businessContexts.length:', businessContexts.length);
 
     if (userType === currentUserType) {
       console.log('⏭️ Already on this type, skipping switch');
@@ -59,6 +70,13 @@ export const UserTypeSwitcherModal = ({ visible, onClose, onUserTypeSwitch }) =>
       let finalBusinessId = businessId;
       let finalBranchId = branchId;
 
+      console.log('🧪 Testing condition:', {
+        isBusinessType: userType === 'business',
+        hasNoBusinessId: !businessId,
+        hasBusinessContexts: businessContexts.length > 0,
+        shouldAutoSelect: userType === 'business' && !businessId && businessContexts.length > 0
+      });
+
       if (userType === 'business' && !businessId && businessContexts.length > 0) {
         finalBusinessId = businessContexts[0].businessId;
         // Use first branch if available
@@ -66,7 +84,15 @@ export const UserTypeSwitcherModal = ({ visible, onClose, onUserTypeSwitch }) =>
           finalBranchId = businessContexts[0].branches[0].id;
         }
         console.log('🔄 Switching to business mode with auto-selected business:', finalBusinessId);
+        console.log('🔄 businessContexts[0]:', businessContexts[0]);
+        console.log('🔄 branches:', businessContexts[0].branches);
       }
+
+      console.log('📤 Sending to API:', {
+        userType,
+        businessId: finalBusinessId,
+        branchId: finalBranchId
+      });
 
       await switchUserTypeMutation.mutateAsync({
         userType,
@@ -210,6 +236,7 @@ export const UserTypeSwitcherModal = ({ visible, onClose, onUserTypeSwitch }) =>
   return (
     <BottomSheet
       ref={bottomSheetRef}
+      index={-1}
       onChange={handleSheetChanges}
       snapPoints={['85%']}
       enablePanDownToClose={true}

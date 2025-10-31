@@ -41,7 +41,8 @@ export const useUserType = () => {
         currentUserType: res.data.currentUserType || 'client',
         currentContext: res.data.currentContext || { businessId: null, branchId: null },
         availableUserTypes: res.data.availableUserTypes || ['client'],
-        userTypes: res.data.userTypes || { client: { status: 'active' } }
+        userTypes: res.data.userTypes || { client: { status: 'active' } },
+        businessContexts: res.data.businessContexts || []
       };
     },
     staleTime: 5 * 60 * 1000, // 5 minutes

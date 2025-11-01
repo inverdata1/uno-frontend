@@ -1,6 +1,9 @@
 import React from 'react';
-import { View } from 'react-native';
-import { Button, Card, Text } from '../../../shared/components/ui';
+import { View, ScrollView } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
+import { ProductsGrid } from '../../business/social/components/products-grid';
+import { Text } from '../../../shared/components/ui';
+import { colors } from '../../../shared/utils/colors';
 
 /**
  * Business Products Screen
@@ -8,40 +11,35 @@ import { Button, Card, Text } from '../../../shared/components/ui';
  */
 export default function BusinessProductsScreen() {
   return (
-    <View className="space-y-4">
-      {/* Header */}
-      <Card>
-        <Text variant="heading" className="mb-2">
-          Productos
-        </Text>
-        <Text variant="body">
-          Gestiona el catálogo de tu negocio
-        </Text>
-      </Card>
-
-      {/* Add Product */}
-      <Card>
-        <View className="flex-row justify-between items-center mb-4">
-          <Text variant="subheading">Mi Catálogo</Text>
-          <Button variant="primary" size="sm">
-            + Agregar
-          </Button>
+    <SafeAreaView style={{ flex: 1, backgroundColor: colors.bg.secondary }} edges={['top']}>
+      <ScrollView showsVerticalScrollIndicator={false}>
+        {/* Header */}
+        <View style={{
+          padding: 20,
+          paddingTop: 12,
+          backgroundColor: colors.bg.primary,
+          borderBottomWidth: 1,
+          borderBottomColor: colors.border.light
+        }}>
+          <Text style={{
+            fontSize: 28,
+            fontWeight: '700',
+            color: colors.text.primary,
+            marginBottom: 4
+          }}>
+            Productos
+          </Text>
+          <Text style={{
+            fontSize: 15,
+            color: colors.text.secondary
+          }}>
+            Gestiona el catálogo de tu negocio
+          </Text>
         </View>
 
-        <Text variant="caption" className="text-center py-8">
-          No hay productos en tu catálogo
-        </Text>
-      </Card>
-
-      {/* Categories */}
-      <Card>
-        <Text variant="subheading" className="mb-4">Categorías</Text>
-        <View className="space-y-2">
-          <Button variant="secondary">
-            Gestionar Categorías
-          </Button>
-        </View>
-      </Card>
-    </View>
+        {/* Products Grid */}
+        <ProductsGrid />
+      </ScrollView>
+    </SafeAreaView>
   );
 }

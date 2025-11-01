@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useRef } from 'react';
 import { View, TouchableOpacity, TextInput, Alert, ScrollView, ActivityIndicator, Image } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import Modal from 'react-native-modal';
@@ -7,7 +7,6 @@ import { Text } from '../../../../shared/components/ui';
 import { colors } from '../../../../shared/utils/colors';
 import { useCreateProduct } from '../../../commerce/hooks/use-products';
 import { useBusinessContexts } from '../../../../shared/hooks/use-user-type';
-import { useFocusManager } from '../../../../shared/hooks/use-focus-manager';
 
 export const CreateProductModal = ({ visible, onClose }) => {
   const [name, setName] = useState('');
@@ -24,7 +23,12 @@ export const CreateProductModal = ({ visible, onClose }) => {
 
   const createProductMutation = useCreateProduct();
 
-  const { refs, handleFocusNext } = useFocusManager(5);
+  // Create refs for focus management
+  const nameRef = useRef(null);
+  const descriptionRef = useRef(null);
+  const priceRef = useRef(null);
+  const compareAtPriceRef = useRef(null);
+  const stockRef = useRef(null);
 
   const pickImages = async () => {
     const permissionResult = await ImagePicker.requestMediaLibraryPermissionsAsync();
@@ -252,14 +256,14 @@ export const CreateProductModal = ({ visible, onClose }) => {
               Nombre del producto *
             </Text>
             <TextInput
-              ref={refs[0]}
+              ref={nameRef}
               value={name}
               onChangeText={setName}
               placeholder="Ej: Camiseta Básica"
               placeholderTextColor={colors.text.secondary}
               editable={!isUploading}
               returnKeyType="next"
-              onSubmitEditing={() => handleFocusNext(0)}
+              onSubmitEditing={() => descriptionRef.current?.focus()}
               style={{
                 backgroundColor: colors.bg.secondary,
                 borderRadius: 12,
@@ -281,7 +285,7 @@ export const CreateProductModal = ({ visible, onClose }) => {
               Descripción *
             </Text>
             <TextInput
-              ref={refs[1]}
+              ref={descriptionRef}
               value={description}
               onChangeText={setDescription}
               placeholder="Describe tu producto..."
@@ -291,7 +295,7 @@ export const CreateProductModal = ({ visible, onClose }) => {
               textAlignVertical="top"
               editable={!isUploading}
               returnKeyType="next"
-              onSubmitEditing={() => handleFocusNext(1)}
+              onSubmitEditing={() => priceRef.current?.focus()}
               style={{
                 backgroundColor: colors.bg.secondary,
                 borderRadius: 12,
@@ -329,7 +333,7 @@ export const CreateProductModal = ({ visible, onClose }) => {
                 $
               </Text>
               <TextInput
-                ref={refs[2]}
+                ref={priceRef}
                 value={price}
                 onChangeText={setPrice}
                 placeholder="0.00"
@@ -337,7 +341,7 @@ export const CreateProductModal = ({ visible, onClose }) => {
                 keyboardType="decimal-pad"
                 editable={!isUploading}
                 returnKeyType="next"
-                onSubmitEditing={() => handleFocusNext(2)}
+                onSubmitEditing={() => compareAtPriceRef.current?.focus()}
                 style={{
                   flex: 1,
                   padding: 16,
@@ -375,7 +379,7 @@ export const CreateProductModal = ({ visible, onClose }) => {
                 $
               </Text>
               <TextInput
-                ref={refs[3]}
+                ref={compareAtPriceRef}
                 value={compareAtPrice}
                 onChangeText={setCompareAtPrice}
                 placeholder="0.00"
@@ -383,7 +387,7 @@ export const CreateProductModal = ({ visible, onClose }) => {
                 keyboardType="decimal-pad"
                 editable={!isUploading}
                 returnKeyType="next"
-                onSubmitEditing={() => handleFocusNext(3)}
+                onSubmitEditing={() => stockRef.current?.focus()}
                 style={{
                   flex: 1,
                   padding: 16,
@@ -413,7 +417,7 @@ export const CreateProductModal = ({ visible, onClose }) => {
               Stock disponible
             </Text>
             <TextInput
-              ref={refs[4]}
+              ref={stockRef}
               value={stock}
               onChangeText={setStock}
               placeholder="0"

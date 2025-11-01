@@ -106,10 +106,17 @@ export class ProductsResource extends BaseFirebaseService {
 
     const newProduct = await this.create(productData);
 
-    // Increment category product count
-    if (data.categoryId) {
-      const categoriesResource = this.client.getResource('categories');
-      await categoriesResource.handle('PATCH', `${data.categoryId}/increment-products`, {}, {});
+    // Increment category product count (skip if default or category doesn't exist)
+    if (data.categoryId && data.categoryId !== 'default') {
+      try {
+        const categoriesResource = this.client.getResource('categories');
+        const category = await categoriesResource.findById(data.categoryId);
+        if (category) {
+          await categoriesResource.handle('PATCH', `${data.categoryId}/increment-products`, {}, {});
+        }
+      } catch (error) {
+        console.warn('Failed to increment category count:', error.message);
+      }
     }
 
     return newProduct;
@@ -136,11 +143,25 @@ export class ProductsResource extends BaseFirebaseService {
     if (data.categoryId && data.categoryId !== product.categoryId) {
       const categoriesResource = this.client.getResource('categories');
 
-      // Decrement old category
-      await categoriesResource.handle('PATCH', `${product.categoryId}/decrement-products`, {}, {});
+      try {
+        // Decrement old category (skip if default)
+        if (product.categoryId && product.categoryId !== 'default') {
+          const oldCategory = await categoriesResource.findById(product.categoryId);
+          if (oldCategory) {
+            await categoriesResource.handle('PATCH', `${product.categoryId}/decrement-products`, {}, {});
+          }
+        }
 
-      // Increment new category
-      await categoriesResource.handle('PATCH', `${data.categoryId}/increment-products`, {}, {});
+        // Increment new category (skip if default)
+        if (data.categoryId !== 'default') {
+          const newCategory = await categoriesResource.findById(data.categoryId);
+          if (newCategory) {
+            await categoriesResource.handle('PATCH', `${data.categoryId}/increment-products`, {}, {});
+          }
+        }
+      } catch (error) {
+        console.warn('Failed to update category counts:', error.message);
+      }
     }
 
     return await this.update(id, data);
@@ -163,10 +184,17 @@ export class ProductsResource extends BaseFirebaseService {
       throw new Error('Product not found or access denied');
     }
 
-    // Decrement category count
-    if (product.categoryId) {
-      const categoriesResource = this.client.getResource('categories');
-      await categoriesResource.handle('PATCH', `${product.categoryId}/decrement-products`, {}, {});
+    // Decrement category count (skip if default)
+    if (product.categoryId && product.categoryId !== 'default') {
+      try {
+        const categoriesResource = this.client.getResource('categories');
+        const category = await categoriesResource.findById(product.categoryId);
+        if (category) {
+          await categoriesResource.handle('PATCH', `${product.categoryId}/decrement-products`, {}, {});
+        }
+      } catch (error) {
+        console.warn('Failed to decrement category count:', error.message);
+      }
     }
 
     return await this.update(id, {

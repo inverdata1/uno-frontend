@@ -4,212 +4,147 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { Text } from '../../../shared/components/ui';
 import { colors } from '../../../shared/utils/colors';
+import { ProductsGrid } from '../../../modules/business/social/components/products-grid';
 
 export default function BusinessStoreScreen() {
-  const [activeTab, setActiveTab] = useState('orders');
+  const [activeTab, setActiveTab] = useState('products');
+  const [createModalVisible, setCreateModalVisible] = useState(false);
 
   return (
     <SafeAreaView style={{ flex: 1, backgroundColor: colors.bg.secondary }} edges={['top']}>
-      {/* Header */}
+      {/* Minimal Header */}
       <View style={{
-        padding: 20,
-        paddingTop: 12,
+        flexDirection: 'row',
+        alignItems: 'center',
+        justifyContent: 'space-between',
+        paddingHorizontal: 16,
+        paddingVertical: 12,
         backgroundColor: colors.bg.primary,
-        borderBottomWidth: 1,
+        borderBottomWidth: 0.5,
         borderBottomColor: colors.border.light
       }}>
         <Text style={{
-          fontSize: 28,
+          fontSize: 20,
           fontWeight: '700',
           color: colors.text.primary,
-          marginBottom: 4
+          letterSpacing: 0.3
         }}>
           Mi Tienda
         </Text>
-        <Text style={{
-          fontSize: 15,
-          color: colors.text.secondary
-        }}>
-          Pedidos y productos
-        </Text>
+        <View style={{ flexDirection: 'row', gap: 16 }}>
+          <TouchableOpacity>
+            <Ionicons name="search-outline" size={24} color={colors.text.primary} />
+          </TouchableOpacity>
+          <TouchableOpacity>
+            <Ionicons name="ellipsis-vertical" size={24} color={colors.text.primary} />
+          </TouchableOpacity>
+        </View>
       </View>
 
-      {/* Tabs */}
+      {/* Tab Bar - Instagram style */}
       <View style={{
         flexDirection: 'row',
         backgroundColor: colors.bg.primary,
-        paddingHorizontal: 20,
-        paddingVertical: 12,
-        gap: 8,
-        borderBottomWidth: 1,
+        borderBottomWidth: 0.5,
         borderBottomColor: colors.border.light
       }}>
-        <TouchableOpacity
-          onPress={() => setActiveTab('orders')}
-          style={{
-            flex: 1,
-            paddingVertical: 10,
-            paddingHorizontal: 16,
-            borderRadius: 12,
-            backgroundColor: activeTab === 'orders' ? colors.primary[500] : colors.bg.secondary,
-            alignItems: 'center',
-            flexDirection: 'row',
-            justifyContent: 'center',
-            gap: 6
-          }}
-        >
-          <Ionicons
-            name={activeTab === 'orders' ? 'receipt' : 'receipt-outline'}
-            size={18}
-            color={activeTab === 'orders' ? colors.text.inverse : colors.text.secondary}
-          />
-          <Text style={{
-            fontSize: 14,
-            fontWeight: '600',
-            color: activeTab === 'orders' ? colors.text.inverse : colors.text.secondary
-          }}>
-            Pedidos
-          </Text>
-        </TouchableOpacity>
-
         <TouchableOpacity
           onPress={() => setActiveTab('products')}
           style={{
             flex: 1,
-            paddingVertical: 10,
-            paddingHorizontal: 16,
-            borderRadius: 12,
-            backgroundColor: activeTab === 'products' ? colors.primary[500] : colors.bg.secondary,
+            paddingVertical: 12,
             alignItems: 'center',
-            flexDirection: 'row',
-            justifyContent: 'center',
-            gap: 6
+            borderBottomWidth: activeTab === 'products' ? 2 : 0,
+            borderBottomColor: colors.primary[500]
           }}
         >
           <Ionicons
-            name={activeTab === 'products' ? 'cube' : 'cube-outline'}
-            size={18}
-            color={activeTab === 'products' ? colors.text.inverse : colors.text.secondary}
+            name="grid"
+            size={22}
+            color={activeTab === 'products' ? colors.primary[500] : colors.text.secondary}
           />
-          <Text style={{
-            fontSize: 14,
-            fontWeight: '600',
-            color: activeTab === 'products' ? colors.text.inverse : colors.text.secondary
-          }}>
-            Productos
-          </Text>
+        </TouchableOpacity>
+
+        <TouchableOpacity
+          onPress={() => setActiveTab('orders')}
+          style={{
+            flex: 1,
+            paddingVertical: 12,
+            alignItems: 'center',
+            borderBottomWidth: activeTab === 'orders' ? 2 : 0,
+            borderBottomColor: colors.primary[500]
+          }}
+        >
+          <Ionicons
+            name="receipt"
+            size={22}
+            color={activeTab === 'orders' ? colors.primary[500] : colors.text.secondary}
+          />
         </TouchableOpacity>
       </View>
 
       {/* Content */}
-      <ScrollView style={{ flex: 1 }} showsVerticalScrollIndicator={false}>
-        {activeTab === 'orders' ? (
-          <View style={{ padding: 20 }}>
-            <View style={{
-              backgroundColor: colors.bg.primary,
-              borderRadius: 16,
-              padding: 40,
-              alignItems: 'center',
-              shadowColor: '#000',
-              shadowOffset: { width: 0, height: 2 },
-              shadowOpacity: 0.05,
-              shadowRadius: 8,
-              elevation: 2,
-            }}>
-              <View style={{
-                width: 80,
-                height: 80,
-                borderRadius: 40,
-                backgroundColor: colors.primary[50],
-                alignItems: 'center',
-                justifyContent: 'center',
-                marginBottom: 16
-              }}>
-                <Ionicons name="receipt-outline" size={40} color={colors.primary[500]} />
-              </View>
-              <Text style={{
-                fontSize: 18,
-                fontWeight: '700',
-                color: colors.text.primary,
-                marginBottom: 8,
-                textAlign: 'center'
-              }}>
-                No tienes pedidos
-              </Text>
-              <Text style={{
-                fontSize: 14,
-                color: colors.text.secondary,
-                textAlign: 'center'
-              }}>
-                Los pedidos de tus clientes aparecerán aquí
-              </Text>
-            </View>
+      {activeTab === 'orders' ? (
+        <View style={{ flex: 1, backgroundColor: colors.bg.secondary, alignItems: 'center', justifyContent: 'center', padding: 40 }}>
+          <View style={{
+            width: 64,
+            height: 64,
+            borderRadius: 32,
+            borderWidth: 2,
+            borderColor: colors.border.light,
+            alignItems: 'center',
+            justifyContent: 'center',
+            marginBottom: 16
+          }}>
+            <Ionicons name="receipt-outline" size={32} color={colors.text.secondary} />
           </View>
-        ) : (
-          <View style={{ padding: 20 }}>
-            <View style={{
-              backgroundColor: colors.bg.primary,
-              borderRadius: 16,
-              padding: 40,
+          <Text style={{
+            fontSize: 16,
+            fontWeight: '600',
+            color: colors.text.primary,
+            marginBottom: 8,
+            textAlign: 'center'
+          }}>
+            No hay pedidos aún
+          </Text>
+          <Text style={{
+            fontSize: 14,
+            color: colors.text.secondary,
+            textAlign: 'center'
+          }}>
+            Cuando recibas pedidos aparecerán aquí
+          </Text>
+        </View>
+      ) : (
+        <View style={{ flex: 1, position: 'relative', backgroundColor: colors.bg.secondary }}>
+          <ProductsGrid
+            createModalVisible={createModalVisible}
+            setCreateModalVisible={setCreateModalVisible}
+          />
+          {/* Floating Add Button - Fixed to bottom right */}
+          <TouchableOpacity
+            onPress={() => setCreateModalVisible(true)}
+            style={{
+              position: 'absolute',
+              bottom: 24,
+              right: 20,
+              width: 56,
+              height: 56,
+              borderRadius: 28,
+              backgroundColor: colors.primary[500],
               alignItems: 'center',
+              justifyContent: 'center',
               shadowColor: '#000',
-              shadowOffset: { width: 0, height: 2 },
-              shadowOpacity: 0.05,
-              shadowRadius: 8,
-              elevation: 2,
-            }}>
-              <View style={{
-                width: 80,
-                height: 80,
-                borderRadius: 40,
-                backgroundColor: '#8b5cf620',
-                alignItems: 'center',
-                justifyContent: 'center',
-                marginBottom: 16
-              }}>
-                <Ionicons name="cube-outline" size={40} color="#8b5cf6" />
-              </View>
-              <Text style={{
-                fontSize: 18,
-                fontWeight: '700',
-                color: colors.text.primary,
-                marginBottom: 8,
-                textAlign: 'center'
-              }}>
-                Aún no tienes productos
-              </Text>
-              <Text style={{
-                fontSize: 14,
-                color: colors.text.secondary,
-                textAlign: 'center',
-                marginBottom: 20
-              }}>
-                Comienza agregando productos a tu catálogo
-              </Text>
-              <TouchableOpacity
-                style={{
-                  backgroundColor: colors.primary[500],
-                  paddingHorizontal: 24,
-                  paddingVertical: 12,
-                  borderRadius: 12,
-                  flexDirection: 'row',
-                  alignItems: 'center',
-                  gap: 8
-                }}
-              >
-                <Ionicons name="add" size={20} color={colors.text.inverse} />
-                <Text style={{
-                  fontSize: 14,
-                  fontWeight: '600',
-                  color: colors.text.inverse
-                }}>
-                  Agregar producto
-                </Text>
-              </TouchableOpacity>
-            </View>
-          </View>
-        )}
-      </ScrollView>
+              shadowOffset: { width: 0, height: 4 },
+              shadowOpacity: 0.3,
+              shadowRadius: 12,
+              elevation: 8
+            }}
+          >
+            <Ionicons name="add" size={28} color={colors.text.inverse} />
+          </TouchableOpacity>
+        </View>
+      )}
     </SafeAreaView>
   );
 }

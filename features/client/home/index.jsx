@@ -1,19 +1,18 @@
 import { Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
+import { useRouter } from 'expo-router';
 import { useState } from 'react';
 import { Dimensions, Image, Modal, ScrollView, TouchableOpacity, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { useRouter } from 'expo-router';
-import { AdaptiveHeader } from '../../../shared/components/layout/adaptive-header';
-import { Text } from '../../../shared/components/ui';
 import { useProducts } from '../../../features/shared/products/hooks/use-products';
-import ProductDetail from '../products/product-detail';
+import { useBusinesses } from '../../../features/shared/social/hooks/use-businesses';
 import { useCategories } from '../../../features/shared/social/hooks/use-categories';
 import { useStories } from '../../../features/shared/social/hooks/use-stories';
 import { useVideos } from '../../../features/shared/social/hooks/use-videos';
-import { useBusinesses } from '../../../features/shared/social/hooks/use-businesses';
+import { AdaptiveHeader } from '../../../shared/components/layout/adaptive-header';
+import { Text } from '../../../shared/components/ui';
+import ProductDetail from '../products/product-detail';
 import StoryViewer from '../social/stories/story-viewer';
-import ProductsBottomSheet from '../social/videos/products-bottom-sheet';
 import VideoViewer from '../social/videos/video-viewer';
 import OffersBanner from './offers-banner';
 
@@ -62,11 +61,11 @@ export default function ClientHomeScreen() {
   const cardWidth = (width - 48) / 2; // 2 columns with padding
 
   return (
-    <ScrollView
-      style={{ flex: 1, backgroundColor: '#ffffff' }}
-      showsVerticalScrollIndicator={false}
-      contentContainerStyle={{ paddingBottom: 100 }}
-    >
+    <SafeAreaView edges={['top']} style={{ flex: 1, backgroundColor: '#ffffff' }}>
+      <ScrollView
+        showsVerticalScrollIndicator={false}
+        contentContainerStyle={{ paddingBottom: 100 }}
+      >
       {/* Adaptive Header */}
       <AdaptiveHeader />
 
@@ -519,5 +518,6 @@ export default function ClientHomeScreen() {
         )}
       </Modal>
     </ScrollView>
+  </SafeAreaView>
   );
 }

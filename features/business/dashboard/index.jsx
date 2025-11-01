@@ -1,6 +1,7 @@
-import React, { useState } from 'react';
-import { View, ScrollView, TouchableOpacity } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
+import { useState } from 'react';
+import { ScrollView, TouchableOpacity, View } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import { Text } from '../../../shared/components/ui';
 import { useBusinessContexts } from '../../../shared/hooks/use-user-type';
 import { colors } from '../../../shared/utils/colors';
@@ -88,10 +89,10 @@ export default function BusinessDashboardScreen() {
   };
 
   return (
-    <ScrollView
-      style={{ flex: 1, backgroundColor: colors.bg.secondary }}
-      showsVerticalScrollIndicator={false}
-    >
+    <SafeAreaView edges={['top']} style={{ flex: 1, backgroundColor: colors.bg.secondary }}>
+      <ScrollView
+        showsVerticalScrollIndicator={false}
+      >
       {/* Header */}
       <View style={{
         padding: 20,
@@ -498,5 +499,6 @@ export default function BusinessDashboardScreen() {
         </View>
       </View>
     </ScrollView>
+    </SafeAreaView>
   );
 }

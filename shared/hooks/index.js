@@ -3,6 +3,7 @@ export * from './use-address-types';
 export * from './use-venezuelan-states';
 export * from './use-addresses';
 export * from './use-user-type';
+export * from './use-user-type-navigation';
 export * from './use-media-upload';
 export * from './use-business-profile';
 export * from './use-business-posts';

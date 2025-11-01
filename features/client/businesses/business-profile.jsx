@@ -2,6 +2,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { useState } from 'react';
 import { Dimensions, Image, ScrollView, TouchableOpacity, View, TextInput } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import { useRouter } from 'expo-router';
 import { Text } from '../../../shared/components/ui';
 
 const { width } = Dimensions.get('window');
@@ -11,10 +12,20 @@ const { width } = Dimensions.get('window');
  * Shows business banner, info, followers, and shop/content tabs
  */
 export default function BusinessProfile({ business, onClose }) {
+  const router = useRouter();
   const [activeTab, setActiveTab] = useState('shop'); // 'shop' or 'content'
   const [isFollowing, setIsFollowing] = useState(business?.isFollowing || false);
   const [searchQuery, setSearchQuery] = useState('');
   const [contentFilter, setContentFilter] = useState('all'); // 'all', 'videos', 'photos'
+
+  // Use router.back() if onClose not provided (when used as route page)
+  const handleBack = () => {
+    if (onClose) {
+      onClose();
+    } else {
+      router.back();
+    }
+  };
 
   // Mock data - will be replaced with real data
   const products = business?.products || [];
@@ -69,7 +80,7 @@ export default function BusinessProfile({ business, onClose }) {
 
             {/* Back Button Overlay */}
             <TouchableOpacity
-              onPress={onClose}
+              onPress={handleBack}
               className="absolute w-10 h-10 rounded-full bg-black/40 items-center justify-center"
               style={{ top: 12, left: 16 }}
               activeOpacity={0.7}

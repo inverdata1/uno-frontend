@@ -1,10 +1,10 @@
 import React, { useState } from 'react';
-import { View, TouchableOpacity, ScrollView } from 'react-native';
+import { View, TouchableOpacity } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { Text } from '../../../shared/components/ui';
 import { colors } from '../../../shared/utils/colors';
-import { ProductsGrid } from '../../../features/business/products/components/products-grid';
+import { ProductsGrid } from '../products/components/products-grid';
 
 export default function BusinessStoreScreen() {
   const [activeTab, setActiveTab] = useState('products');

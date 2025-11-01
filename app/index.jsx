@@ -2,6 +2,7 @@ import { useEffect } from 'react';
 import { useRouter } from 'expo-router';
 import { View } from 'react-native';
 import { useAuthStore } from '../core/auth/stores/auth-store';
+import { useCurrentUserType } from '../shared/hooks/use-user-type';
 import { Text } from '../shared/components/ui';
 
 function LoadingScreen() {
@@ -19,17 +20,19 @@ function LoadingScreen() {
 
 export default function IndexScreen() {
   const router = useRouter();
-  const { isAuthenticated, isLoading } = useAuthStore();
+  const { isAuthenticated, isLoading: authLoading } = useAuthStore();
+  const { currentUserType, isLoading: userTypeLoading } = useCurrentUserType();
 
   useEffect(() => {
-    if (isLoading) return;
+    if (authLoading || userTypeLoading) return;
 
-    if (isAuthenticated) {
-      router.replace('/(main)');
-    } else {
+    if (isAuthenticated && currentUserType) {
+      // Redirect to user type specific section
+      router.replace(`/${currentUserType}/(tabs)`);
+    } else if (!isAuthenticated) {
       router.replace('/(auth)/welcome');
     }
-  }, [isAuthenticated, isLoading, router]);
+  }, [isAuthenticated, authLoading, currentUserType, userTypeLoading, router]);
 
   return <LoadingScreen />;
 }

@@ -1,6 +1,7 @@
 import React, { useState, useCallback, useRef, useEffect } from 'react';
 import { View, TouchableOpacity, ActivityIndicator } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
+import { useRouter } from 'expo-router';
 import BottomSheet, { BottomSheetView } from '@gorhom/bottom-sheet';
 import { Text } from '../../ui';
 import { useCurrentUserType, useSwitchUserType, useBusinessContexts, useUserType } from '../../../hooks/use-user-type';
@@ -8,6 +9,7 @@ import { getUserTypeConfig } from '../../../config/user-types';
 import { colors } from '../../../utils/colors';
 
 export const UserTypeSwitcherModal = ({ visible, onClose, onUserTypeSwitch }) => {
+  const router = useRouter();
   const { currentUserType, availableUserTypes = [], isLoading } = useCurrentUserType();
   const businessContexts = useBusinessContexts() || [];
   const switchUserTypeMutation = useSwitchUserType();
@@ -99,6 +101,9 @@ export const UserTypeSwitcherModal = ({ visible, onClose, onUserTypeSwitch }) =>
         businessId: finalBusinessId,
         branchId: finalBranchId
       });
+
+      // Navigate to the new user type section
+      router.replace(`/${userType}/(tabs)`);
 
       // Close immediately to prevent modal from reopening after component switch
       onClose();

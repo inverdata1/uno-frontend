@@ -9,8 +9,9 @@ import BusinessProfile from './business-profile';
 /**
  * Business Profile Viewer
  * Wrapper that fetches business data and renders the profile
+ * Can be used in modal (with onClose) or as standalone route
  */
-export default function BusinessProfileViewer({ businessId, onClose }) {
+export function BusinessProfileViewer({ businessId, onClose }) {
   // Fetch business data
   const { data: business, isLoading: businessLoading, error: businessError } = useBusiness(businessId);
 
@@ -74,3 +75,5 @@ export default function BusinessProfileViewer({ businessId, onClose }) {
 
   return <BusinessProfile business={businessWithData} onClose={onClose} />;
 }
+
+export default BusinessProfileViewer;

@@ -2,6 +2,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useState } from 'react';
 import { Dimensions, Image, Modal, ScrollView, TouchableOpacity, View } from 'react-native';
+import { useRouter } from 'expo-router';
 import { AdaptiveHeader } from '../../../shared/components/layout/adaptive-header';
 import { Text } from '../../../shared/components/ui';
 import { useProducts } from '../../../features/shared/products/hooks/use-products';
@@ -13,7 +14,6 @@ import { useBusinesses } from '../../../features/shared/social/hooks/use-busines
 import StoryViewer from '../social/stories/story-viewer';
 import ProductsBottomSheet from '../social/videos/products-bottom-sheet';
 import VideoViewer from '../social/videos/video-viewer';
-import BusinessProfileViewer from '../businesses/business-profile-viewer';
 import OffersBanner from './offers-banner';
 
 const { width } = Dimensions.get('window');
@@ -23,6 +23,7 @@ const { width } = Dimensions.get('window');
  * Instagram/TikTok inspired layout
  */
 export default function ClientHomeScreen() {
+  const router = useRouter();
   const [storyViewerVisible, setStoryViewerVisible] = useState(false);
   const [selectedStories, setSelectedStories] = useState([]);
   const [videoViewerVisible, setVideoViewerVisible] = useState(false);
@@ -31,8 +32,6 @@ export default function ClientHomeScreen() {
   const [selectedProduct, setSelectedProduct] = useState(null);
   const [productsBottomSheetVisible, setProductsBottomSheetVisible] = useState(false);
   const [taggedProducts, setTaggedProducts] = useState([]);
-  const [businessProfileVisible, setBusinessProfileVisible] = useState(false);
-  const [selectedBusinessId, setSelectedBusinessId] = useState(null);
 
   // Use domain hooks instead of inline queries
   const { data: categories = [] } = useCategories();
@@ -284,10 +283,7 @@ export default function ClientHomeScreen() {
             <TouchableOpacity
               key={business.id}
               activeOpacity={0.9}
-              onPress={() => {
-                setSelectedBusinessId(business.id);
-                setBusinessProfileVisible(true);
-              }}
+              onPress={() => router.push(`/client/business/${business.id}`)}
               style={{
                 width: 160,
                 backgroundColor: '#ffffff',
@@ -490,8 +486,7 @@ export default function ClientHomeScreen() {
         }}
         onBusinessPress={(businessId) => {
           setVideoViewerVisible(false);
-          setSelectedBusinessId(businessId);
-          setBusinessProfileVisible(true);
+          router.push(`/client/business/${businessId}`);
         }}
         // Pass bottom sheet props
         productsBottomSheetVisible={productsBottomSheetVisible}
@@ -517,24 +512,8 @@ export default function ClientHomeScreen() {
             onClose={() => setProductDetailVisible(false)}
             onBusinessPress={(businessId) => {
               setProductDetailVisible(false);
-              setSelectedBusinessId(businessId);
-              setBusinessProfileVisible(true);
+              router.push(`/client/business/${businessId}`);
             }}
-          />
-        )}
-      </Modal>
-
-      {/* Business Profile Viewer Modal */}
-      <Modal
-        visible={businessProfileVisible}
-        animationType="slide"
-        presentationStyle="fullScreen"
-        onRequestClose={() => setBusinessProfileVisible(false)}
-      >
-        {selectedBusinessId && (
-          <BusinessProfileViewer
-            businessId={selectedBusinessId}
-            onClose={() => setBusinessProfileVisible(false)}
           />
         )}
       </Modal>

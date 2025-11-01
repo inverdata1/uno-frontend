@@ -1,4 +1,4 @@
-import FavoritesScreen from '../../../modules/social/favorites';
+import FavoritesScreen from '../../../features/client/social/favorites';
 
 export default function FavoritesPage() {
   const handleVideoPress = (video) => {

@@ -1,9 +1,9 @@
 import React from 'react';
 import { View, StyleSheet } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import ClientHomeScreen from '../../modules/home/client-home';
-import BusinessDashboardScreen from '../../modules/analytics/dashboard';
-import DriverDeliveriesScreen from '../../modules/delivery/deliveries';
+import ClientHomeScreen from '../../features/client/home';
+import BusinessDashboardScreen from '../../features/business/dashboard';
+import DriverDeliveriesScreen from '../../features/driver/deliveries';
 import { useCurrentUserType } from '../../shared/hooks/use-user-type';
 import { HomeSkeletonLoader } from '../../shared/components/loading';
 

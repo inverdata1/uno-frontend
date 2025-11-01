@@ -1,1 +1,1 @@
-export { default } from '../../../modules/commerce/stores';
+export { default } from '../../../features/client/stores';

@@ -1,27 +1,15 @@
-import React from 'react';
 import { Tabs } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { UserTypeSwitcherModal } from '../../shared/components/layout/user-type-switcher/user-type-switcher-modal';
 import { theme } from '../../shared/config/theme';
 import { useCurrentUserType } from '../../shared/hooks/use-user-type';
-import { getTabIcon } from '../../shared/utils/tab-helpers';
-import { UserTypeSwitcherModal } from '../../shared/components/layout/user-type-switcher/user-type-switcher-modal';
 import { useAppStore } from '../../shared/stores/app-store';
+import { getTabIcon } from '../../shared/utils/tab-helpers';
 
 export default function TabLayout() {
   const { currentUserType, isLoading } = useCurrentUserType();
   const insets = useSafeAreaInsets();
   const { userTypeSwitcherVisible, closeUserTypeSwitcher } = useAppStore();
-
-  // Debug modal visibility
-  React.useEffect(() => {
-    console.log('🔍 TabLayout - userTypeSwitcherVisible:', userTypeSwitcherVisible);
-  }, [userTypeSwitcherVisible]);
-
-  // Debug current user type
-  React.useEffect(() => {
-    console.log('🔍 TabLayout - currentUserType:', currentUserType, 'isLoading:', isLoading);
-    console.log('🔍 TabLayout - Will show loading?', isLoading || !currentUserType);
-  }, [currentUserType, isLoading]);
 
   // Show loading state while determining user type
   if (isLoading || !currentUserType) {

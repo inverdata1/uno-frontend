@@ -5,7 +5,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
 import { Text } from '../../../shared/components/ui';
 import { SettingsItem } from '../../../shared/components/profile';
-import BusinessUpgradeModal from '../../../modules/commerce/businesses/business-upgrade-modal';
+import BusinessUpgradeModal from '../../../features/client/businesses/business-upgrade-modal';
 import { useAuthStore } from '../../../core/auth/stores/auth-store';
 import { useAppStore } from '../../../shared/stores/app-store';
 import { useCurrentUserType } from '../../../shared/hooks/use-user-type';

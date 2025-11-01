@@ -4,7 +4,11 @@
       "Bash(find:*)",
       "Bash(ls:*)",
       "Bash(mkdir:*)",
-      "Bash(npx react-native log-android:*)"
+      "Bash(npx react-native log-android:*)",
+      "Bash(cat:*)",
+      "Bash(grep:*)",
+      "Bash(bash:*)",
+      "Bash(echo:*)"
     ],
     "deny": [],
     "ask": []

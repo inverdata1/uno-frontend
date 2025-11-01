@@ -1,6 +1,6 @@
 import { useCurrentUserType } from '../../shared/hooks/use-user-type';
-import BusinessSocialScreen from '../../modules/business/social';
-import FeedScreen from '../../modules/social/feed';
+import BusinessSocialScreen from '../../features/business/social';
+import FeedScreen from '../../features/client/social/feed';
 
 export default function SocialContentScreen() {
   const { currentUserType } = useCurrentUserType();

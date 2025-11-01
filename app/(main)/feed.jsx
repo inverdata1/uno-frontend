@@ -1,1 +1,1 @@
-export { default } from '../../modules/social/feed';
+export { default } from '../../features/client/social/feed';

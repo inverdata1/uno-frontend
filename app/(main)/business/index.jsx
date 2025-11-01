@@ -4,7 +4,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { Text } from '../../../shared/components/ui';
 import { colors } from '../../../shared/utils/colors';
-import { ProductsGrid } from '../../../modules/business/social/components/products-grid';
+import { ProductsGrid } from '../../../features/business/products/components/products-grid';
 
 export default function BusinessStoreScreen() {
   const [activeTab, setActiveTab] = useState('products');

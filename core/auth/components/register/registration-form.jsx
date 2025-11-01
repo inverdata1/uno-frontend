@@ -1,11 +1,10 @@
-import { Link } from 'expo-router';
-import { Keyboard, KeyboardAvoidingView, Platform, ScrollView, StyleSheet, TouchableWithoutFeedback, View } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
+import { Keyboard, KeyboardAvoidingView, Platform, ScrollView, StyleSheet, TouchableWithoutFeedback, View } from 'react-native';
+import BusinessOnboardingStep from '../../../../features/client/businesses/business-onboarding-step';
 import { UserTypeSelector } from '../../../../shared/components/layout/user-type-selector';
 import { Button, Text } from '../../../../shared/components/ui';
 import { useRegistration } from '../../hooks/register/use-registration';
 import { BasicInfoStep } from './basic-info-step';
-import BusinessOnboardingStep from '../../../../modules/commerce/businesses/business-onboarding-step';
 
 export const RegistrationForm = ({ onComplete }) => {
   const {

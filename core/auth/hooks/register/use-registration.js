@@ -1,9 +1,9 @@
-import { useState, useRef } from 'react';
 import { useForm } from '@tanstack/react-form';
-import { useAuthStore } from '../../stores/auth-store';
+import { useRef, useState } from 'react';
+import { isBusinessDataValid } from '../../../../features/client/businesses/business-onboarding-step';
 import { useFocusManager } from '../../../../shared/hooks';
 import { registerSchema } from '../../schemas/register/register-schema';
-import { isBusinessDataValid } from '../../../../modules/commerce/businesses/business-onboarding-step';
+import { useAuthStore } from '../../stores/auth-store';
 
 export const useRegistration = ({ onComplete }) => {
   const { signUp, isLoading } = useAuthStore();

@@ -4,13 +4,23 @@ import { apiClient } from '../../../../shared/config/api-client';
 /**
  * Fetch posts for the feed
  * @param {Object} options - Query options
+ * @param {string} options.businessId - Filter by business
+ * @param {string} options.userId - Filter by user
+ * @param {string} options.type - Filter by post type (image, video, carousel)
  * @param {number} options.limit - Number of posts to fetch
  * @returns {Object} Query result with posts data
  */
-export const usePosts = ({ limit = 20 } = {}) => {
+export const usePosts = ({ businessId, userId, type, limit = 20 } = {}) => {
   return useQuery({
-    queryKey: ['posts', 'feed', { limit }],
-    queryFn: () => apiClient.get('/posts/feed', { params: { limit } }).then(res => res.data),
+    queryKey: ['posts', { businessId, userId, type, limit }],
+    queryFn: () => {
+      const params = { limit };
+      if (businessId) params.businessId = businessId;
+      if (userId) params.userId = userId;
+      if (type) params.type = type;
+      return apiClient.get('/posts', { params }).then(res => res.data);
+    },
+    enabled: !!businessId || !!userId,
     staleTime: 5 * 60 * 1000, // 5 minutes
   });
 };

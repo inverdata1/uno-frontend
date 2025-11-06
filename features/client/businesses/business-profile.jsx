@@ -1,24 +1,38 @@
 import { Ionicons } from '@expo/vector-icons';
-import { useState } from 'react';
-import { Dimensions, Image, ScrollView, TouchableOpacity, View, TextInput } from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
+import { useState } from 'react';
+import { Dimensions, Image, ScrollView, StatusBar, TouchableOpacity, View } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import { Text } from '../../../shared/components/ui';
+import { useProducts } from '../../shared/products/hooks/use-products';
+import { usePosts } from '../../shared/social/hooks/use-posts';
 
 const { width } = Dimensions.get('window');
 
 /**
  * Business Profile Screen
- * Shows business banner, info, followers, and shop/content tabs
+ * Instagram/TikTok-inspired business profile with immersive design
  */
 export default function BusinessProfile({ business, onClose }) {
   const router = useRouter();
-  const [activeTab, setActiveTab] = useState('shop'); // 'shop' or 'content'
+  const [activeTab, setActiveTab] = useState('shop');
   const [isFollowing, setIsFollowing] = useState(business?.isFollowing || false);
-  const [searchQuery, setSearchQuery] = useState('');
-  const [contentFilter, setContentFilter] = useState('all'); // 'all', 'videos', 'photos'
+  const [contentFilter, setContentFilter] = useState('all');
 
-  // Use router.back() if onClose not provided (when used as route page)
+  // Fetch products and posts using hooks
+  const { data: products = [], isLoading: isLoadingProducts } = useProducts({
+    businessId: business?.id,
+    limit: 50
+  });
+
+  const { data: contentPosts = [], isLoading: isLoadingPosts } = usePosts({
+    businessId: business?.id,
+    limit: 50
+  });
+
+  console.log('[BusinessProfile] Products:', products?.length || 0);
+  console.log('[BusinessProfile] Posts:', contentPosts?.length || 0);
+
   const handleBack = () => {
     if (onClose) {
       onClose();
@@ -27,10 +41,6 @@ export default function BusinessProfile({ business, onClose }) {
     }
   };
 
-  // Mock data - will be replaced with real data
-  const products = business?.products || [];
-  const contentPosts = business?.contentPosts || [];
-
   const handleFollowToggle = () => {
     setIsFollowing(!isFollowing);
     console.log('Toggle follow:', business?.id);
@@ -38,12 +48,10 @@ export default function BusinessProfile({ business, onClose }) {
 
   const handleProductPress = (product) => {
     console.log('Open product:', product.id);
-    // TODO: Navigate to product detail
   };
 
   const handleContentPress = (content) => {
     console.log('Open content:', content.id);
-    // TODO: Navigate to content viewer (video or image)
   };
 
   const filteredContent = contentPosts.filter((post) => {
@@ -52,259 +60,250 @@ export default function BusinessProfile({ business, onClose }) {
     return true;
   });
 
-  const cardWidth = (width - 48) / 2; // 2 columns with padding
+  const cardWidth = (width - 48) / 2;
 
   return (
-    <SafeAreaView className="flex-1 bg-white" edges={['top']}>
+    <SafeAreaView className="flex-1 bg-white" edges={['top', 'bottom']}>
+      <StatusBar barStyle="dark-content" backgroundColor="#ffffff" />
+
+      {/* Floating Header Buttons - Instagram Style */}
+      <View style={{ position: 'absolute', left: 0, right: 0, top: 0, zIndex: 50 }}>
+        <SafeAreaView edges={['top']}>
+          <View className="flex-row items-center justify-between px-3 py-2">
+            <TouchableOpacity
+              onPress={handleBack}
+              className="w-10 h-10 items-center justify-center"
+              activeOpacity={0.6}
+            >
+              <Ionicons name="arrow-back" size={26} color="#000000" />
+            </TouchableOpacity>
+
+            <View className="flex-row items-center" style={{ gap: 16 }}>
+              <TouchableOpacity
+                className="w-10 h-10 items-center justify-center"
+                activeOpacity={0.6}
+              >
+                <Ionicons name="ellipsis-vertical" size={22} color="#000000" />
+              </TouchableOpacity>
+            </View>
+          </View>
+        </SafeAreaView>
+      </View>
+
       <ScrollView
-        className="flex-1"
+        className="flex-1 bg-white"
         showsVerticalScrollIndicator={false}
-        contentContainerStyle={{ paddingBottom: 100 }}
-        stickyHeaderIndices={[1]} // Make the tab switcher sticky (after banner section)
+        overScrollMode="never"
       >
-        {/* Banner and Business Info Container */}
-        <View>
-          {/* Banner Image with Header Overlay */}
-          <View className="w-full bg-gray-100" style={{ height: 200 }}>
-            {business?.bannerUrl ? (
+        {/* Full-Bleed Cover Image */}
+        <View className="relative" style={{ width, height: 240, backgroundColor: '#f3f4f6' }}>
+          {business?.coverImageUrl ? (
+            <Image
+              source={{ uri: business.coverImageUrl }}
+              style={{ width: '100%', height: '100%' }}
+              resizeMode="cover"
+            />
+          ) : (
+            <View className="flex-1 justify-center items-center" style={{ backgroundColor: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)' }}>
+              <Ionicons name="business" size={64} color="rgba(255, 255, 255, 0.3)" />
+            </View>
+          )}
+        </View>
+
+        {/* Profile Header Section */}
+        <View className="px-4 pt-4">
+
+          {/* Logo - Overlapping the cover image */}
+          <View
+            className="rounded-full bg-white overflow-hidden"
+            style={{
+              width: 96,
+              height: 96,
+              marginTop: -48,
+              borderWidth: 4,
+              borderColor: '#ffffff',
+              shadowColor: '#000',
+              shadowOffset: { width: 0, height: 4 },
+              shadowOpacity: 0.15,
+              shadowRadius: 8,
+              elevation: 5
+            }}
+          >
+            {business?.logoUrl ? (
               <Image
-                source={{ uri: business.bannerUrl }}
+                source={{ uri: business.logoUrl }}
                 style={{ width: '100%', height: '100%' }}
                 resizeMode="cover"
               />
             ) : (
-              <View className="flex-1 justify-center items-center" style={{ backgroundColor: '#f3f4f6' }}>
-                <Ionicons name="image-outline" size={64} color="#d1d5db" />
+              <View className="flex-1 justify-center items-center bg-gray-100">
+                <Ionicons name="storefront" size={40} color="#9ca3af" />
               </View>
             )}
-
-            {/* Back Button Overlay */}
-            <TouchableOpacity
-              onPress={handleBack}
-              className="absolute w-10 h-10 rounded-full bg-black/40 items-center justify-center"
-              style={{ top: 12, left: 16 }}
-              activeOpacity={0.7}
-            >
-              <Ionicons name="arrow-back" size={24} color="#ffffff" />
-            </TouchableOpacity>
           </View>
 
-          {/* Business Info Section */}
-          <View className="px-4 bg-white" style={{ paddingTop: 0 }}>
-            {/* Logo overlapping banner */}
-            <View style={{ marginTop: -40, marginBottom: 12 }}>
-              <View
-                className="rounded-full bg-white overflow-hidden"
-                style={{
-                  width: 88,
-                  height: 88,
-                  borderWidth: 4,
-                  borderColor: '#ffffff',
-                  shadowColor: '#000',
-                  shadowOffset: { width: 0, height: 4 },
-                  shadowOpacity: 0.12,
-                  shadowRadius: 8,
-                  elevation: 5
-                }}
-              >
-                {business?.logoUrl ? (
-                  <Image
-                    source={{ uri: business.logoUrl }}
-                    style={{ width: '100%', height: '100%' }}
-                    resizeMode="cover"
-                  />
-                ) : (
-                  <View className="flex-1 justify-center items-center bg-gray-100">
-                    <Ionicons name="storefront" size={40} color="#9ca3af" />
-                  </View>
-                )}
-              </View>
+          {/* Business Name & Category */}
+          <Text className="text-2xl font-bold text-gray-900 mt-3 mb-1">
+            {business?.name || 'Nombre del Negocio'}
+          </Text>
+          <Text className="text-sm text-gray-500 mb-2">
+            {business?.category || 'Categoria'}
+          </Text>
+
+          {/* Stats Row */}
+          <View className="flex-row items-center mb-4 gap-4">
+            <View className="flex-row items-center">
+              <Ionicons name="star" size={16} color="#fbbf24" />
+              <Text className="text-sm font-semibold text-gray-900 ml-1">
+                {String(business?.rating || '4.8')}
+              </Text>
+              <Text className="text-sm text-gray-500 ml-1">
+                ({String(business?.reviewsCount || '127')})
+              </Text>
             </View>
-
-            {/* Business Name */}
-            <Text className="text-xl font-bold text-gray-900 mb-1">
-              {business?.name || 'Nombre'}
+            <View className="w-1 h-1 rounded-full bg-gray-300" />
+            <Text className="text-sm text-gray-600">
+              {String(products.length || 0)} Productos
             </Text>
-
-            {/* Category */}
-            <Text className="text-sm text-gray-500 mb-1">
-              {business?.category || 'Categoria'}
+            <View className="w-1 h-1 rounded-full bg-gray-300" />
+            <Text className="text-sm text-gray-600">
+              {String(business?.followersCount || 150)} Seguidores
             </Text>
+          </View>
 
-            {/* Address / Hours */}
-            <Text className="text-sm text-gray-500 mb-4">
-              {business?.address || business?.hours || 'Dirección / Horario'}
-            </Text>
+          {/* Description */}
+          <Text className="text-base text-gray-700 leading-6 mb-4">
+            {business?.description || 'Descripcion del negocio'}
+          </Text>
 
-            {/* Followers */}
-            <Text className="text-sm text-gray-900 mb-3">
-              <Text className="font-bold">{business?.followersCount || 150}</Text>
-              <Text className="text-gray-500"> seguidores</Text>
-            </Text>
+          {/* Contact Info */}
+          {(business?.address || business?.hours) && (
+            <View className="mb-4 gap-2">
+              {business?.address && (
+                <View className="flex-row items-center">
+                  <Ionicons name="location-outline" size={16} color="#6b7280" />
+                  <Text className="text-sm text-gray-600 ml-2">
+                    {business.address}
+                  </Text>
+                </View>
+              )}
+              {business?.hours && (
+                <View className="flex-row items-center">
+                  <Ionicons name="time-outline" size={16} color="#6b7280" />
+                  <Text className="text-sm text-gray-600 ml-2">
+                    {business.hours}
+                  </Text>
+                </View>
+              )}
+            </View>
+          )}
 
-            {/* Description */}
-            <Text className="text-sm text-gray-700 leading-5 mb-4">
-              {business?.description || 'Descripcion'}
-            </Text>
-
-            {/* Follow Button - Full Width */}
+          {/* Action Buttons */}
+          <View className="flex-row mb-6" style={{ gap: 12 }}>
             <TouchableOpacity
               onPress={handleFollowToggle}
-              className="rounded-xl mb-5"
+              className="flex-1 rounded-xl"
               style={{
                 backgroundColor: isFollowing ? '#f3f4f6' : '#ef4444',
-                paddingVertical: 12,
-                alignItems: 'center'
+                paddingVertical: 14,
+                alignItems: 'center',
+                shadowColor: isFollowing ? 'transparent' : '#ef4444',
+                shadowOffset: { width: 0, height: 2 },
+                shadowOpacity: 0.2,
+                shadowRadius: 4,
+                elevation: isFollowing ? 0 : 2
               }}
               activeOpacity={0.8}
             >
               <Text
-                className="text-sm font-bold"
+                className="text-base font-bold"
                 style={{ color: isFollowing ? '#1f2937' : '#ffffff' }}
               >
                 {isFollowing ? 'Siguiendo' : 'Seguir'}
               </Text>
             </TouchableOpacity>
 
-            {/* Story Highlights - Instagram style */}
-            <View className="mb-6" style={{ marginTop: 8 }}>
-              <ScrollView
-                horizontal
-                showsHorizontalScrollIndicator={false}
-                contentContainerStyle={{ gap: 16 }}
-              >
-                {['Nuevos', 'Ofertas', 'Destacados', 'Colecciones', 'Más'].map((label, index) => (
-                  <TouchableOpacity key={index} className="items-center" activeOpacity={0.7}>
-                    <View
-                      className="rounded-full bg-gray-100 overflow-hidden mb-2"
-                      style={{
-                        width: 64,
-                        height: 64,
-                        borderWidth: 2,
-                        borderColor: '#e5e7eb'
-                      }}
-                    >
-                      <View className="flex-1 justify-center items-center">
-                        <Ionicons
-                          name={
-                            index === 0 ? 'sparkles-outline' :
-                            index === 1 ? 'pricetag-outline' :
-                            index === 2 ? 'star-outline' :
-                            index === 3 ? 'grid-outline' :
-                            'ellipsis-horizontal'
-                          }
-                          size={28}
-                          color="#9ca3af"
-                        />
-                      </View>
-                    </View>
-                    <Text className="text-xs text-gray-600 font-medium">{label}</Text>
-                  </TouchableOpacity>
-                ))}
-              </ScrollView>
-            </View>
-
-            {/* Promotional Banner */}
-            {business?.promotionalBanner ? (
-              <View className="w-full rounded-2xl overflow-hidden mb-4" style={{ height: 120 }}>
-                <Image
-                  source={{ uri: business.promotionalBanner }}
-                  style={{ width: '100%', height: '100%' }}
-                  resizeMode="cover"
-                />
-              </View>
-            ) : (
-              <View
-                className="w-full rounded-2xl overflow-hidden mb-4"
-                style={{
-                  height: 120,
-                  backgroundColor: '#e7a5a5',
-                  shadowColor: '#000',
-                  shadowOffset: { width: 0, height: 2 },
-                  shadowOpacity: 0.08,
-                  shadowRadius: 4,
-                  elevation: 2
-                }}
-              >
-                <View className="flex-1 justify-center items-center px-6">
-                  <Text className="text-white text-base font-bold text-center">
-                    Victoria's Secret Body Care
-                  </Text>
-                </View>
-              </View>
-            )}
-
-            {/* Search Bar (only in shop tab) */}
-            {activeTab === 'shop' && (
-              <View
-                className="bg-gray-50 rounded-xl flex-row items-center mb-4"
-                style={{ paddingHorizontal: 14, paddingVertical: 12 }}
-              >
-                <Ionicons name="search" size={20} color="#9ca3af" />
-                <TextInput
-                  value={searchQuery}
-                  onChangeText={setSearchQuery}
-                  placeholder="Buscar productos..."
-                  placeholderTextColor="#9ca3af"
-                  className="text-gray-900 text-base flex-1 ml-3"
-                />
-              </View>
-            )}
+            <TouchableOpacity
+              className="flex-1 bg-gray-100 rounded-xl items-center justify-center"
+              style={{ paddingVertical: 14 }}
+              activeOpacity={0.8}
+            >
+              <Text className="text-base font-bold text-gray-900">
+                Mensaje
+              </Text>
+            </TouchableOpacity>
           </View>
         </View>
 
         {/* Tab Switcher */}
-        <View className="flex-row bg-white border-b border-gray-200">
+        <View className="flex-row bg-white border-y border-gray-100 px-4 mb-2">
           <TouchableOpacity
             onPress={() => setActiveTab('shop')}
-            className="flex-1 py-3 items-center"
+            className="flex-1 py-4 items-center"
             style={{
-              borderBottomWidth: activeTab === 'shop' ? 2 : 0,
-              borderBottomColor: '#000000'
+              borderBottomWidth: activeTab === 'shop' ? 3 : 0,
+              borderBottomColor: '#1f2937'
             }}
           >
-            <Text
-              className={`text-sm font-semibold ${
-                activeTab === 'shop' ? 'text-gray-900' : 'text-gray-400'
-              }`}
-            >
-              Tienda
-            </Text>
+            <View className="flex-row items-center" style={{ gap: 8 }}>
+              <Ionicons
+                name={activeTab === 'shop' ? 'grid' : 'grid-outline'}
+                size={22}
+                color={activeTab === 'shop' ? '#1f2937' : '#9ca3af'}
+              />
+              <Text
+                className={`text-sm font-semibold ${activeTab === 'shop' ? 'text-gray-900' : 'text-gray-400'}`}
+              >
+                Productos
+              </Text>
+            </View>
           </TouchableOpacity>
           <TouchableOpacity
             onPress={() => setActiveTab('content')}
-            className="flex-1 py-3 items-center"
+            className="flex-1 py-4 items-center"
             style={{
-              borderBottomWidth: activeTab === 'content' ? 2 : 0,
-              borderBottomColor: '#000000'
+              borderBottomWidth: activeTab === 'content' ? 3 : 0,
+              borderBottomColor: '#1f2937'
             }}
           >
-            <Text
-              className={`text-sm font-semibold ${
-                activeTab === 'content' ? 'text-gray-900' : 'text-gray-400'
-              }`}
-            >
-              Contenido
-            </Text>
+            <View className="flex-row items-center" style={{ gap: 8 }}>
+              <Ionicons
+                name={activeTab === 'content' ? 'play-circle' : 'play-circle-outline'}
+                size={22}
+                color={activeTab === 'content' ? '#1f2937' : '#9ca3af'}
+              />
+              <Text
+                className={`text-sm font-semibold ${activeTab === 'content' ? 'text-gray-900' : 'text-gray-400'}`}
+              >
+                Contenido
+              </Text>
+            </View>
           </TouchableOpacity>
         </View>
 
         {/* Tab Content */}
         {activeTab === 'shop' ? (
           // Shop Tab - Product Catalog
-          <View className="px-4 pt-5">
-            <View className="flex-row flex-wrap gap-3">
-              {products.length > 0 ? (
-                products.map((product) => (
+          <View className="px-4 pt-4 pb-6">
+            {products.length > 0 ? (
+              <View className="flex-row flex-wrap" style={{ gap: 12 }}>
+                {products.map((product) => (
                   <TouchableOpacity
                     key={product.id}
                     activeOpacity={0.9}
                     onPress={() => handleProductPress(product)}
-                    className="bg-white rounded-xl overflow-hidden border border-gray-100"
-                    style={{ width: cardWidth }}
+                    className="bg-white rounded-2xl overflow-hidden"
+                    style={{
+                      width: cardWidth,
+                      shadowColor: '#000',
+                      shadowOffset: { width: 0, height: 2 },
+                      shadowOpacity: 0.06,
+                      shadowRadius: 4,
+                      elevation: 2
+                    }}
                   >
                     {/* Product Image */}
-                    <View className="w-full bg-gray-50" style={{ height: cardWidth }}>
+                    <View className="w-full bg-gray-50 relative" style={{ height: cardWidth }}>
                       {product.thumbnailUrl ? (
                         <Image
                           source={{ uri: product.thumbnailUrl }}
@@ -313,143 +312,190 @@ export default function BusinessProfile({ business, onClose }) {
                         />
                       ) : (
                         <View className="flex-1 justify-center items-center">
-                          <Ionicons name="image-outline" size={48} color="#cbd5e1" />
+                          <Ionicons name="image-outline" size={48} color="#d1d5db" />
                         </View>
                       )}
                       {/* Favorite button */}
-                      <TouchableOpacity className="absolute top-2 right-2 w-8 h-8 rounded-full bg-white/95 justify-center items-center shadow-sm">
-                        <Ionicons name="heart-outline" size={18} color="#1f2937" />
+                      <TouchableOpacity className="absolute top-2 right-2 w-9 h-9 rounded-full bg-white/95 justify-center items-center shadow-sm">
+                        <Ionicons name="heart-outline" size={20} color="#1f2937" />
                       </TouchableOpacity>
+                      {/* Discount badge */}
+                      {product.compareAtPrice && product.price && (
+                        <View className="absolute top-2 left-2 px-2 py-1 bg-red-500 rounded-md">
+                          <Text className="text-xs font-bold text-white">
+                            {String(Math.round(((product.compareAtPrice - product.price) / product.compareAtPrice) * 100))}%
+                          </Text>
+                        </View>
+                      )}
                     </View>
 
                     {/* Product Info */}
                     <View className="p-3">
-                      <Text className="text-sm font-semibold text-gray-900 mb-1" numberOfLines={2}>
+                      <Text className="text-sm font-semibold text-gray-900 mb-2" numberOfLines={2} style={{ lineHeight: 18 }}>
                         {product.name}
                       </Text>
-                      <View className="flex-row items-center mt-1">
-                        <Text className="text-base font-bold text-gray-900">
-                          ${product.price}
-                        </Text>
-                        {product.compareAtPrice && (
-                          <Text className="text-sm text-gray-400 line-through ml-1.5">
-                            ${product.compareAtPrice}
+                      <View className="flex-row items-center justify-between">
+                        <View>
+                          <Text className="text-lg font-bold text-gray-900">
+                            ${String(product.price)}
                           </Text>
+                          {product.compareAtPrice && (
+                            <Text className="text-xs text-gray-400 line-through">
+                              ${String(product.compareAtPrice)}
+                            </Text>
+                          )}
+                        </View>
+                        {product.rating != null && (
+                          <View className="flex-row items-center">
+                            <Ionicons name="star" size={12} color="#fbbf24" />
+                            <Text className="text-xs font-semibold text-gray-700 ml-1">
+                              {String(product.rating)}
+                            </Text>
+                          </View>
                         )}
                       </View>
                     </View>
                   </TouchableOpacity>
-                ))
-              ) : (
-                <View className="w-full py-10 items-center">
-                  <Text className="text-sm text-gray-400">
-                    No hay productos disponibles
-                  </Text>
-                </View>
-              )}
-            </View>
+                ))}
+              </View>
+            ) : (
+              <View className="w-full py-20 items-center">
+                <Ionicons name="bag-outline" size={64} color="#d1d5db" />
+                <Text className="text-base text-gray-400 mt-4">
+                  No hay productos disponibles
+                </Text>
+              </View>
+            )}
           </View>
         ) : (
-          // Content Tab - Feed with Filter
-          <View className="pt-3">
-            {/* Filter */}
-            <View className="px-4 mb-4">
-              <ScrollView
-                horizontal
-                showsHorizontalScrollIndicator={false}
-                contentContainerStyle={{ gap: 8 }}
-              >
+          // Content Tab - Instagram style with inline filters
+          <View>
+            {/* Compact Filter Bar - Instagram style - Always visible */}
+            <View className="px-4 py-3 border-b border-gray-100">
+              <View className="flex-row items-center" style={{ gap: 24 }}>
                 <TouchableOpacity
                   onPress={() => setContentFilter('all')}
-                  className={`px-4 py-2 rounded-full ${
-                    contentFilter === 'all' ? 'bg-gray-900' : 'bg-gray-50'
-                  }`}
+                  className="flex-row items-center"
+                  activeOpacity={0.6}
                 >
+                  <Ionicons
+                    name="apps"
+                    size={18}
+                    color={contentFilter === 'all' ? '#1f2937' : '#9ca3af'}
+                  />
                   <Text
-                    className={`text-sm font-semibold ${
-                      contentFilter === 'all' ? 'text-white' : 'text-gray-600'
+                    className={`text-xs font-semibold ml-1 ${
+                      contentFilter === 'all' ? 'text-gray-900' : 'text-gray-400'
                     }`}
                   >
                     Todos
                   </Text>
                 </TouchableOpacity>
+
                 <TouchableOpacity
                   onPress={() => setContentFilter('videos')}
-                  className={`px-4 py-2 rounded-full ${
-                    contentFilter === 'videos' ? 'bg-gray-900' : 'bg-gray-50'
-                  }`}
+                  className="flex-row items-center"
+                  activeOpacity={0.6}
                 >
+                  <Ionicons
+                    name="play-circle"
+                    size={18}
+                    color={contentFilter === 'videos' ? '#1f2937' : '#9ca3af'}
+                  />
                   <Text
-                    className={`text-sm font-semibold ${
-                      contentFilter === 'videos' ? 'text-white' : 'text-gray-600'
+                    className={`text-xs font-semibold ml-1 ${
+                      contentFilter === 'videos' ? 'text-gray-900' : 'text-gray-400'
                     }`}
                   >
-                    Más video
+                    Videos
                   </Text>
                 </TouchableOpacity>
+
                 <TouchableOpacity
                   onPress={() => setContentFilter('photos')}
-                  className={`px-4 py-2 rounded-full ${
-                    contentFilter === 'photos' ? 'bg-gray-900' : 'bg-gray-50'
-                  }`}
+                  className="flex-row items-center"
+                  activeOpacity={0.6}
                 >
+                  <Ionicons
+                    name="image"
+                    size={18}
+                    color={contentFilter === 'photos' ? '#1f2937' : '#9ca3af'}
+                  />
                   <Text
-                    className={`text-sm font-semibold ${
-                      contentFilter === 'photos' ? 'text-white' : 'text-gray-600'
+                    className={`text-xs font-semibold ml-1 ${
+                      contentFilter === 'photos' ? 'text-gray-900' : 'text-gray-400'
                     }`}
                   >
-                    Más visto
+                    Fotos
                   </Text>
                 </TouchableOpacity>
-              </ScrollView>
-            </View>
-
-            {/* Content Grid */}
-            <View>
-              <View className="flex-row flex-wrap" style={{ gap: 1 }}>
-                {filteredContent.length > 0 ? (
-                  filteredContent.map((content, index) => (
-                    <TouchableOpacity
-                      key={content.id || index}
-                      activeOpacity={0.9}
-                      onPress={() => handleContentPress(content)}
-                      className="bg-gray-50"
-                      style={{
-                        width: (width - 1) / 2,
-                        height: (width - 1) / 2,
-                      }}
-                    >
-                      {content.thumbnailUrl ? (
-                        <Image
-                          source={{ uri: content.thumbnailUrl }}
-                          style={{ width: '100%', height: '100%' }}
-                          resizeMode="cover"
-                        />
-                      ) : (
-                        <View className="flex-1 justify-center items-center">
-                          <Ionicons
-                            name={content.type === 'video' ? 'play-circle' : 'image'}
-                            size={40}
-                            color="#cbd5e1"
-                          />
-                        </View>
-                      )}
-                      {content.type === 'video' && (
-                        <View className="absolute top-2 right-2">
-                          <Ionicons name="play-circle" size={24} color="#ffffff" />
-                        </View>
-                      )}
-                    </TouchableOpacity>
-                  ))
-                ) : (
-                  <View className="w-full py-10 items-center">
-                    <Text className="text-sm text-gray-400">
-                      No hay contenido disponible
-                    </Text>
-                  </View>
-                )}
               </View>
             </View>
+
+            {/* Content Area */}
+            {filteredContent.length > 0 ? (
+              <View className="flex-row flex-wrap px-0.5 pb-6" style={{ gap: 2 }}>
+                {filteredContent.map((content, index) => (
+                  <TouchableOpacity
+                    key={content.id || index}
+                    activeOpacity={0.95}
+                    onPress={() => handleContentPress(content)}
+                    className="bg-gray-50 relative"
+                    style={{
+                      width: (width - 4) / 2,
+                      height: ((width - 4) / 2) * 1.5,
+                    }}
+                  >
+                    {content.thumbnailUrl ? (
+                      <Image
+                        source={{ uri: content.thumbnailUrl }}
+                        style={{ width: '100%', height: '100%' }}
+                        resizeMode="cover"
+                      />
+                    ) : (
+                      <View className="flex-1 justify-center items-center">
+                        <Ionicons
+                          name={content.type === 'video' ? 'play-circle' : 'image'}
+                          size={48}
+                          color="#d1d5db"
+                        />
+                      </View>
+                    )}
+
+                    {/* Video indicator */}
+                    {content.type === 'video' && (
+                      <View className="absolute top-2 right-2">
+                        <Ionicons name="play-circle" size={22} color="rgba(255,255,255,0.95)" />
+                      </View>
+                    )}
+
+                    {/* Multiple images indicator */}
+                    {content.media?.length > 1 && (
+                      <View className="absolute top-2 right-2">
+                        <Ionicons name="copy" size={20} color="rgba(255,255,255,0.95)" />
+                      </View>
+                    )}
+
+                    {/* View count overlay for videos */}
+                    {content.type === 'video' && content.viewCount > 0 && (
+                      <View className="absolute bottom-2 left-2 flex-row items-center bg-black/50 rounded-md px-2 py-1">
+                        <Ionicons name="play" size={12} color="#ffffff" />
+                        <Text className="text-xs font-bold text-white ml-1">
+                          {content.viewCount > 1000 ? `${(content.viewCount / 1000).toFixed(1)}K` : String(content.viewCount)}
+                        </Text>
+                      </View>
+                    )}
+                  </TouchableOpacity>
+                ))}
+              </View>
+            ) : (
+              <View className="w-full py-20 items-center">
+                <Ionicons name="images-outline" size={64} color="#d1d5db" />
+                <Text className="text-base text-gray-400 mt-4">
+                  No hay contenido disponible
+                </Text>
+              </View>
+            )}
           </View>
         )}
       </ScrollView>

@@ -71,20 +71,28 @@ export default function ProductDetail({ product, onClose, onBusinessPress }) {
   return (
       <SafeAreaView className="flex-1 bg-white" edges={['top', 'bottom']}>
         <StatusBar barStyle="dark-content" backgroundColor="#ffffff" />
-        {/* Floating Back Button */}
-        <View style={{ position: 'absolute', left: 4, top: 50, zIndex: 50 }}>
+
+        {/* Floating Header Buttons - Instagram Style */}
+        <View style={{ position: 'absolute', left: 0, right: 0, top: 0, zIndex: 50 }}>
           <SafeAreaView edges={['top']}>
-            <TouchableOpacity
-              onPress={onClose}
-              className="p-3"
-              style={{ backgroundColor: 'rgba(255,255,255,0.6)', borderRadius: 20 }}
-            >
-              <Ionicons
-                name="arrow-back"
-                size={32}
-                color="#000000"
-              />
-            </TouchableOpacity>
+            <View className="flex-row items-center justify-between px-3 py-2">
+              <TouchableOpacity
+                onPress={onClose}
+                className="w-10 h-10 items-center justify-center"
+                activeOpacity={0.6}
+              >
+                <Ionicons name="arrow-back" size={26} color="#000000" />
+              </TouchableOpacity>
+
+              <View className="flex-row items-center" style={{ gap: 16 }}>
+                <TouchableOpacity
+                  className="w-10 h-10 items-center justify-center"
+                  activeOpacity={0.6}
+                >
+                  <Ionicons name="ellipsis-vertical" size={22} color="#000000" />
+                </TouchableOpacity>
+              </View>
+            </View>
           </SafeAreaView>
         </View>
 

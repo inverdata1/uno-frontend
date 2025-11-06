@@ -83,6 +83,7 @@ export const CreateProductModal = ({ visible, onClose }) => {
     setIsUploading(true);
 
     try {
+      // Send local image URIs to API - it will handle upload to Firebase Storage
       await createProductMutation.mutateAsync({
         productData: {
           name: name.trim(),
@@ -90,8 +91,7 @@ export const CreateProductModal = ({ visible, onClose }) => {
           price: parseFloat(price),
           compareAtPrice: compareAtPrice ? parseFloat(compareAtPrice) : null,
           stock: stock ? parseInt(stock) : 0,
-          images: selectedImages,
-          thumbnailUrl: selectedImages[0],
+          imageFiles: selectedImages, // Local URIs
           categoryId: 'default', // TODO: Add category selection
           trackInventory: true,
           isActive: true,

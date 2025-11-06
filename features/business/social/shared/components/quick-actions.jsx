@@ -1,8 +1,7 @@
-import React from 'react';
-import { View, TouchableOpacity } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
-import { Text } from '../../../../shared/components/ui';
-import { colors } from '../../../../shared/utils/colors';
+import { TouchableOpacity, View } from 'react-native';
+import { Text } from '../../../../../shared/components/ui';
+import { colors } from '../../../../../shared/utils/colors';
 
 export const QuickActions = ({ onCreatePost, onCreatePromotion }) => {
   return (

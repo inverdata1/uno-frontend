@@ -3,11 +3,11 @@ import { View, ScrollView } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Text } from '../../../shared/components/ui';
 import { colors } from '../../../shared/utils/colors';
-import { StoriesRow } from './components/stories-row';
-import { QuickActions } from './components/quick-actions';
-import { PostsGrid } from './components/posts-grid';
-import { CreatePostModal } from './components/create-post-modal';
-import { CreateStoryModal } from './components/create-story-modal';
+import { StoriesRow } from './stories/components/stories-row';
+import { QuickActions } from './shared/components/quick-actions';
+import { PostsGrid } from './posts/components/posts-grid';
+import { PostCreationFlow } from './posts/creation';
+import { CreateStoryModal } from './stories/creation/create-story-modal';
 
 export default function BusinessSocialScreen() {
   const [createPostModalVisible, setCreatePostModalVisible] = useState(false);
@@ -66,8 +66,8 @@ export default function BusinessSocialScreen() {
         <PostsGrid onCreatePost={handleCreatePost} />
       </ScrollView>
 
-      {/* Create Post Modal */}
-      <CreatePostModal
+      {/* Create Post Flow - New Multi-Step Experience */}
+      <PostCreationFlow
         visible={createPostModalVisible}
         onClose={() => setCreatePostModalVisible(false)}
       />

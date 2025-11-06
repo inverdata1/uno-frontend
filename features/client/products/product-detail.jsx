@@ -1,6 +1,6 @@
 import { Ionicons } from '@expo/vector-icons';
 import { useState } from 'react';
-import { ActivityIndicator, Dimensions, Image, Modal, ScrollView, TouchableOpacity, View } from 'react-native';
+import { ActivityIndicator, Dimensions, Image, Modal, ScrollView, StatusBar, TouchableOpacity, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Text } from '../../../shared/components/ui';
 import BusinessProfile from '../businesses/business-profile';
@@ -19,6 +19,12 @@ export default function ProductDetail({ product, onClose, onBusinessPress }) {
   const [businessProfileVisible, setBusinessProfileVisible] = useState(false);
   const [imageLoadingStates, setImageLoadingStates] = useState({});
   const [imageErrors, setImageErrors] = useState({});
+
+  console.log('[ProductDetail] Product data:', {
+    name: product?.name,
+    business: product?.business,
+    businessId: product?.businessId
+  });
 
   // Mock data - will be replaced with real data
   const images = product?.images || [product?.thumbnailUrl || 'https://via.placeholder.com/400'];
@@ -64,24 +70,27 @@ export default function ProductDetail({ product, onClose, onBusinessPress }) {
 
   return (
       <SafeAreaView className="flex-1 bg-white" edges={['top', 'bottom']}>
-        {/* Floating Back Button - Instagram Style */}
-        <TouchableOpacity
-          onPress={onClose}
-          className="absolute left-6 z-50 p-3"
-          style={{ top: 12, backgroundColor: 'transparent' }}
-          activeOpacity={0.7}
-        >
-          <Ionicons
-            name="arrow-back"
-            size={32}
-            color="#ffffff"
-          />
-        </TouchableOpacity>
+        <StatusBar barStyle="dark-content" backgroundColor="#ffffff" />
+        {/* Floating Back Button */}
+        <View style={{ position: 'absolute', left: 10, top: 50, zIndex: 50 }}>
+          <SafeAreaView edges={['top']}>
+            <TouchableOpacity
+              onPress={onClose}
+              className="p-3"
+              style={{ backgroundColor: 'rgba(255,255,255,0.8)', borderRadius: 20 }}
+            >
+              <Ionicons
+                name="arrow-back"
+                size={32}
+                color="#000000"
+              />
+            </TouchableOpacity>
+          </SafeAreaView>
+        </View>
 
         <ScrollView
           className="flex-1 bg-white"
           showsVerticalScrollIndicator={false}
-          contentContainerStyle={{ paddingBottom: 100 }}
           overScrollMode="never"
         >
         {/* Full-Bleed Image Carousel */}
@@ -422,7 +431,7 @@ export default function ProductDetail({ product, onClose, onBusinessPress }) {
       </ScrollView>
 
       {/* Bottom Fixed Add to Cart - Sticky like TikTok Shop */}
-      <View className="absolute bottom-0 left-0 right-0 bg-white border-t border-gray-100 px-4 py-4 shadow-2xl" style={{ elevation: 10 }}>
+      <View className="bg-white border-t border-gray-100 px-4 py-4 shadow-2xl" style={{ elevation: 10 }}>
         <TouchableOpacity
           onPress={handleAddToCart}
           className="bg-red-500 py-4 rounded-xl items-center active:bg-red-600"

@@ -9,7 +9,10 @@
       "Bash(grep:*)",
       "Bash(bash:*)",
       "Bash(echo:*)",
-      "Bash(npx expo start --clear)"
+      "Bash(npx expo start --clear)",
+      "Bash(mv:*)",
+      "Bash(rmdir:*)",
+      "Bash(npx expo prebuild:*)"
     ],
     "deny": [],
     "ask": []

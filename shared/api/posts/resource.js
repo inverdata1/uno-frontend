@@ -69,38 +69,73 @@ export class PostsResource extends BaseFirebaseService {
 
   /**
    * Populate tagged products with full product data
-   * Converts array of product IDs to array of product objects
+   * Format: [{ productId, position, mediaIndex, product }]
    */
   async populateTaggedProducts(posts) {
     if (!posts || posts.length === 0) return posts;
 
-    // Get all unique product IDs from all posts
+    console.log('[Posts API] populateTaggedProducts - Processing', posts.length, 'posts');
+
+    // Extract unique product IDs from all posts
     const allProductIds = [...new Set(
-      posts.flatMap(post => post.taggedProducts || [])
+      posts.flatMap(post => {
+        if (!post.taggedProducts || post.taggedProducts.length === 0) return [];
+        console.log('[Posts API] Post', post.id, 'has taggedProducts:', post.taggedProducts);
+        return post.taggedProducts.map(tag => tag.productId);
+      })
     )];
 
-    if (allProductIds.length === 0) return posts;
+    console.log('[Posts API] Unique product IDs to fetch:', allProductIds);
 
-    // Fetch all products at once using the client's registered resource
+    if (allProductIds.length === 0) {
+      console.log('[Posts API] No products to populate');
+      return posts;
+    }
+
+    // Fetch products by ID (Firebase efficient way)
     const productsResource = this.client.getResource('products');
-    const allProducts = await productsResource.findWhere([]);
-
-    // Create a map for quick lookup with FULL product data
     const productMap = new Map();
-    allProducts.forEach(product => {
-      productMap.set(product.id, product); // Store complete product object
-    });
 
-    // Replace product IDs with full product objects
+    // Fetch each product by ID in parallel using the handler (to get business info populated)
+    await Promise.all(
+      allProductIds.map(async (productId) => {
+        try {
+          const product = await productsResource.handle('get', 'id', null, { id: productId });
+          if (product) {
+            productMap.set(productId, product);
+            console.log('[Posts API] Fetched product:', product.name, 'with business:', product.business?.name);
+          } else {
+            console.log('[Posts API] Product not found for ID:', productId);
+          }
+        } catch (error) {
+          console.error('[Posts API] Error fetching product:', productId, error);
+        }
+      })
+    );
+
+    console.log('[Posts API] Successfully fetched', productMap.size, 'products');
+
+    // Populate tagged products while preserving position data
     return posts.map(post => {
       if (post.taggedProducts && post.taggedProducts.length > 0) {
-        const populatedProducts = post.taggedProducts
-          .map(productId => productMap.get(productId))
-          .filter(product => product !== undefined); // Remove products that don't exist
+        const populatedTags = post.taggedProducts
+          .map(tag => {
+            const product = productMap.get(tag.productId);
+            if (!product) {
+              console.log('[Posts API] Product not found in map for ID:', tag.productId);
+              return null;
+            }
+
+            return {
+              ...tag,
+              product // Add full product object
+            };
+          })
+          .filter(tag => tag !== null);
 
         return {
           ...post,
-          taggedProducts: populatedProducts
+          taggedProducts: populatedTags
         };
       }
       return post;

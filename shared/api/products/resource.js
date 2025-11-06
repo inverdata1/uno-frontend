@@ -1,6 +1,7 @@
 import { BaseFirebaseService } from '../base-firebase-service';
 import { COLLECTION_NAME } from './collection';
 import { serverTimestamp } from 'firebase/firestore';
+import { MediaProcessingService } from '../media/service';
 
 /**
  * Products Resource
@@ -22,6 +23,56 @@ export class ProductsResource extends BaseFirebaseService {
     }
 
     return await this[handler](data, params);
+  }
+
+  // === HELPER METHODS ===
+
+  /**
+   * Populate business information for products
+   */
+  async populateBusinessInfo(products) {
+    if (!products || products.length === 0) return products;
+
+    // Get unique business IDs
+    const businessIds = [...new Set(
+      products.map(p => p.businessId).filter(Boolean)
+    )];
+
+    if (businessIds.length === 0) return products;
+
+    // Fetch businesses by ID
+    const businessesResource = this.client.getResource('businesses');
+    const businessMap = new Map();
+
+    await Promise.all(
+      businessIds.map(async (businessId) => {
+        try {
+          const business = await businessesResource.findById(businessId);
+          if (business) {
+            businessMap.set(businessId, business);
+          }
+        } catch (error) {
+          console.error('[Products API] Error fetching business:', businessId, error);
+        }
+      })
+    );
+
+    // Add business info to products
+    return products.map(product => {
+      const business = businessMap.get(product.businessId);
+      if (business) {
+        return {
+          ...product,
+          business: {
+            id: business.id,
+            name: business.businessName,
+            logoUrl: business.logoUrl,
+            coverImageUrl: business.coverImageUrl,
+          }
+        };
+      }
+      return product;
+    });
   }
 
   // === PRODUCT CRUD ENDPOINTS ===
@@ -50,9 +101,12 @@ export class ProductsResource extends BaseFirebaseService {
     const products = await this.findWhere(filters);
 
     // Sort by creation date (newest first) and limit
-    return products
+    const sortedProducts = products
       .sort((a, b) => b.createdAt?.toMillis() - a.createdAt?.toMillis())
       .slice(0, parseInt(limit));
+
+    // Populate business info
+    return await this.populateBusinessInfo(sortedProducts);
   }
 
   /**
@@ -73,12 +127,14 @@ export class ProductsResource extends BaseFirebaseService {
       updatedAt: serverTimestamp()
     }).catch(err => console.error('Failed to increment view count:', err));
 
-    return product;
+    // Populate business info
+    const productsWithBusiness = await this.populateBusinessInfo([product]);
+    return productsWithBusiness[0];
   }
 
   /**
    * POST /products
-   * Create new product
+   * Create new product with image processing
    */
   async post_index(data, params) {
     const { businessId } = params;
@@ -87,11 +143,30 @@ export class ProductsResource extends BaseFirebaseService {
       throw new Error('businessId is required');
     }
 
+    console.log('📦 [Products API] Creating product with image processing');
+    console.log('   Image files:', data.imageFiles?.length || 0);
+
+    let images = [];
+    let thumbnailUrl = '';
+
+    // Process product images if provided
+    if (data.imageFiles && data.imageFiles.length > 0) {
+      console.log(`🖼️ [Products API] Processing ${data.imageFiles.length} product image(s)`);
+      images = await MediaProcessingService.processImages(data.imageFiles, 'products');
+      thumbnailUrl = images[0];
+    }
+
     const productData = {
-      ...data,
+      name: data.name,
+      description: data.description,
+      price: data.price,
+      compareAtPrice: data.compareAtPrice || null,
+      stock: data.stock || 0,
+      categoryId: data.categoryId || 'default',
+      images,
+      thumbnailUrl,
       businessId,
       currency: data.currency || 'USD',
-      stock: data.stock || 0,
       trackInventory: data.trackInventory !== undefined ? data.trackInventory : true,
       hasVariants: data.hasVariants || false,
       isActive: data.isActive !== undefined ? data.isActive : true,
@@ -101,10 +176,13 @@ export class ProductsResource extends BaseFirebaseService {
       favoriteCount: 0,
       orderCount: 0,
       rating: 0,
-      reviewCount: 0
+      reviewCount: 0,
+      createdAt: serverTimestamp(),
+      updatedAt: serverTimestamp()
     };
 
     const newProduct = await this.create(productData);
+    console.log('✅ [Products API] Product created:', newProduct.id);
 
     // Increment category product count (skip if default or category doesn't exist)
     if (data.categoryId && data.categoryId !== 'default') {

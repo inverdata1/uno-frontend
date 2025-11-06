@@ -24,13 +24,21 @@ export default function IndexScreen() {
   const { currentUserType, isLoading: userTypeLoading } = useCurrentUserType();
 
   useEffect(() => {
-    if (authLoading || userTypeLoading) return;
+    // Wait for auth to load first
+    if (authLoading) return;
 
-    if (isAuthenticated && currentUserType) {
-      // Redirect to user type specific section
-      router.replace(`/${currentUserType}/(tabs)`);
-    } else if (!isAuthenticated) {
+    // If not authenticated, redirect to welcome immediately
+    if (!isAuthenticated) {
       router.replace('/(auth)/welcome');
+      return;
+    }
+
+    // If authenticated, wait for user type to load
+    if (userTypeLoading) return;
+
+    // Redirect to user type specific section
+    if (currentUserType) {
+      router.replace(`/${currentUserType}/(tabs)`);
     }
   }, [isAuthenticated, authLoading, currentUserType, userTypeLoading, router]);
 

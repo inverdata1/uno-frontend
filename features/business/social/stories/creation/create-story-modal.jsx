@@ -1,11 +1,11 @@
-import React, { useState } from 'react';
-import { View, TouchableOpacity, Alert, ActivityIndicator, Image } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
-import Modal from 'react-native-modal';
 import * as ImagePicker from 'expo-image-picker';
-import { Text } from '../../../../shared/components/ui';
-import { colors } from '../../../../shared/utils/colors';
-import { useCreateStoryWithMedia } from '../../../../shared/hooks/use-create-story-with-media';
+import { useState } from 'react';
+import { ActivityIndicator, Alert, Image, TouchableOpacity, View } from 'react-native';
+import Modal from 'react-native-modal';
+import { Text } from '../../../../../shared/components/ui';
+import { useCreateStoryWithMedia } from '../../../../../shared/hooks/use-create-story-with-media';
+import { colors } from '../../../../../shared/utils/colors';
 
 export const CreateStoryModal = ({ visible, onClose }) => {
   const [selectedMedia, setSelectedMedia] = useState(null);

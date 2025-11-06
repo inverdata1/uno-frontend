@@ -342,9 +342,9 @@ export default function VideoViewer({
   const renderVideo = ({ item: video, index }) => {
     const isActive = index === currentIndex;
 
-    // Get first tagged product (already populated with full data from API)
+    // Get first tagged product (extract product object from tag)
     const taggedProduct = video.taggedProducts && video.taggedProducts.length > 0
-      ? video.taggedProducts[0]
+      ? video.taggedProducts[0].product
       : null;
 
     const totalProducts = video.taggedProducts ? video.taggedProducts.length : 0;

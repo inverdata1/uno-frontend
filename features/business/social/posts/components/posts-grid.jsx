@@ -1,9 +1,9 @@
-import React, { useState } from 'react';
-import { View, TouchableOpacity, Image, ActivityIndicator, Alert } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
-import { Text } from '../../../../shared/components/ui';
-import { colors } from '../../../../shared/utils/colors';
-import { useBusinessPosts, useDeletePost } from '../../../../shared/hooks/use-business-posts';
+import { useState } from 'react';
+import { ActivityIndicator, Alert, Image, TouchableOpacity, View } from 'react-native';
+import { Text } from '../../../../../shared/components/ui';
+import { useBusinessPosts, useDeletePost } from '../../../../../shared/hooks/use-business-posts';
+import { colors } from '../../../../../shared/utils/colors';
 
 export const PostsGrid = ({ onCreatePost }) => {
   const [activeTab, setActiveTab] = useState('grid'); // grid, videos, promotions

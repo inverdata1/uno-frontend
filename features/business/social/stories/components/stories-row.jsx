@@ -1,9 +1,8 @@
-import React from 'react';
-import { View, ScrollView, TouchableOpacity, Image, ActivityIndicator, Alert } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
-import { Text } from '../../../../shared/components/ui';
-import { colors } from '../../../../shared/utils/colors';
-import { useBusinessStories, useDeleteStory } from '../../../../shared/hooks/use-business-stories';
+import { ActivityIndicator, Alert, Image, ScrollView, TouchableOpacity, View } from 'react-native';
+import { Text } from '../../../../../shared/components/ui';
+import { useBusinessStories, useDeleteStory } from '../../../../../shared/hooks/use-business-stories';
+import { colors } from '../../../../../shared/utils/colors';
 
 export const StoriesRow = ({ onCreateStory }) => {
   const { data: stories = [], isLoading } = useBusinessStories();

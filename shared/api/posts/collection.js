@@ -18,8 +18,9 @@
  *   thumbnailUrl: string,          // Main thumbnail
  *
  *   // Tagged Products
- *   taggedProducts: array,         // Array of product IDs tagged in post
- *   // Example: ['product_id_1', 'product_id_2']
+ *   taggedProducts: array,         // Array of tagged product objects with position data
+ *   // Example: [{ productId: 'abc123', position: { x: 0.5, y: 0.5 }, mediaIndex: 0 }]
+ *   // API populates with full product: [{ productId, position, mediaIndex, product: {...} }]
  *
  *   // Metadata
  *   hashtags: array,               // Array of hashtags

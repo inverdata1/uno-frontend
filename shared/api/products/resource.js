@@ -28,7 +28,36 @@ export class ProductsResource extends BaseFirebaseService {
   // === HELPER METHODS ===
 
   /**
+   * Batch fetch products by IDs
+   * Uses Firebase 'in' queries (max 10 IDs per query)
+   * This is more efficient than fetching one-by-one
+   */
+  async findByIds(productIds) {
+    if (!productIds || productIds.length === 0) return [];
+
+    const uniqueIds = [...new Set(productIds)];
+    const products = [];
+
+    // Firebase 'in' queries support max 10 items, so we batch
+    for (let i = 0; i < uniqueIds.length; i += 10) {
+      const batch = uniqueIds.slice(i, i + 10);
+
+      try {
+        const batchProducts = await this.findWhere([
+          ['__name__', 'in', batch]
+        ]);
+        products.push(...batchProducts);
+      } catch (error) {
+        console.error('[Products API] Error fetching product batch:', error);
+      }
+    }
+
+    return products;
+  }
+
+  /**
    * Populate business information for products
+   * Uses batch fetching for efficiency
    */
   async populateBusinessInfo(products) {
     if (!products || products.length === 0) return products;
@@ -40,22 +69,28 @@ export class ProductsResource extends BaseFirebaseService {
 
     if (businessIds.length === 0) return products;
 
-    // Fetch businesses by ID
+    // Batch fetch businesses using 'in' queries (max 10 per query)
     const businessesResource = this.client.getResource('businesses');
-    const businessMap = new Map();
+    const allBusinesses = [];
 
-    await Promise.all(
-      businessIds.map(async (businessId) => {
-        try {
-          const business = await businessesResource.findById(businessId);
-          if (business) {
-            businessMap.set(businessId, business);
-          }
-        } catch (error) {
-          console.error('[Products API] Error fetching business:', businessId, error);
-        }
-      })
-    );
+    for (let i = 0; i < businessIds.length; i += 10) {
+      const batch = businessIds.slice(i, i + 10);
+
+      try {
+        const batchBusinesses = await businessesResource.findWhere([
+          ['__name__', 'in', batch]
+        ]);
+        allBusinesses.push(...batchBusinesses);
+      } catch (error) {
+        console.error('[Products API] Error fetching business batch:', error);
+      }
+    }
+
+    // Create map for quick lookup
+    const businessMap = new Map();
+    allBusinesses.forEach(business => {
+      businessMap.set(business.id, business);
+    });
 
     // Add business info to products
     return products.map(product => {

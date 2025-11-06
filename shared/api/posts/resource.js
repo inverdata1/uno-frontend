@@ -70,6 +70,7 @@ export class PostsResource extends BaseFirebaseService {
   /**
    * Populate tagged products with full product data
    * Format: [{ productId, position, mediaIndex, product }]
+   * Uses batch fetching for efficiency
    */
   async populateTaggedProducts(posts) {
     if (!posts || posts.length === 0) return posts;
@@ -92,28 +93,23 @@ export class PostsResource extends BaseFirebaseService {
       return posts;
     }
 
-    // Fetch products by ID (Firebase efficient way)
+    // Batch fetch all products at once
     const productsResource = this.client.getResource('products');
+    const allProducts = await productsResource.findByIds(allProductIds);
+
+    console.log('[Posts API] Batch fetched', allProducts.length, 'products');
+
+    // Populate business info for all products in batch
+    const productsWithBusiness = await productsResource.populateBusinessInfo(allProducts);
+
+    // Create map for quick lookup
     const productMap = new Map();
+    productsWithBusiness.forEach(product => {
+      productMap.set(product.id, product);
+      console.log('[Posts API] Mapped product:', product.name, 'with business:', product.business?.name);
+    });
 
-    // Fetch each product by ID in parallel using the handler (to get business info populated)
-    await Promise.all(
-      allProductIds.map(async (productId) => {
-        try {
-          const product = await productsResource.handle('get', 'id', null, { id: productId });
-          if (product) {
-            productMap.set(productId, product);
-            console.log('[Posts API] Fetched product:', product.name, 'with business:', product.business?.name);
-          } else {
-            console.log('[Posts API] Product not found for ID:', productId);
-          }
-        } catch (error) {
-          console.error('[Posts API] Error fetching product:', productId, error);
-        }
-      })
-    );
-
-    console.log('[Posts API] Successfully fetched', productMap.size, 'products');
+    console.log('[Posts API] Successfully populated', productMap.size, 'products with business info');
 
     // Populate tagged products while preserving position data
     return posts.map(post => {

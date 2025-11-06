@@ -72,12 +72,12 @@ export default function ProductDetail({ product, onClose, onBusinessPress }) {
       <SafeAreaView className="flex-1 bg-white" edges={['top', 'bottom']}>
         <StatusBar barStyle="dark-content" backgroundColor="#ffffff" />
         {/* Floating Back Button */}
-        <View style={{ position: 'absolute', left: 10, top: 50, zIndex: 50 }}>
+        <View style={{ position: 'absolute', left: 4, top: 50, zIndex: 50 }}>
           <SafeAreaView edges={['top']}>
             <TouchableOpacity
               onPress={onClose}
               className="p-3"
-              style={{ backgroundColor: 'rgba(255,255,255,0.8)', borderRadius: 20 }}
+              style={{ backgroundColor: 'rgba(255,255,255,0.6)', borderRadius: 20 }}
             >
               <Ionicons
                 name="arrow-back"

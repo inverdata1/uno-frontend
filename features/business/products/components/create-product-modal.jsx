@@ -1,7 +1,7 @@
 import React, { useState, useRef } from 'react';
-import { View, TouchableOpacity, TextInput, Alert, ScrollView, ActivityIndicator, Image } from 'react-native';
+import { View, TouchableOpacity, TextInput, Alert, ScrollView, ActivityIndicator, Image, Modal, StatusBar } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
-import Modal from 'react-native-modal';
 import * as ImagePicker from 'expo-image-picker';
 import { Text } from '../../../../shared/components/ui';
 import { colors } from '../../../../shared/utils/colors';
@@ -119,29 +119,25 @@ export const CreateProductModal = ({ visible, onClose }) => {
 
   return (
     <Modal
-      isVisible={visible}
-      onBackdropPress={onClose}
-      onBackButtonPress={onClose}
-      style={{ margin: 0, justifyContent: 'flex-end' }}
-      avoidKeyboard
+      visible={visible}
+      animationType="slide"
+      presentationStyle="fullScreen"
+      onRequestClose={onClose}
     >
-      <View style={{
-        backgroundColor: colors.bg.primary,
-        borderTopLeftRadius: 24,
-        borderTopRightRadius: 24,
-        maxHeight: '90%'
-      }}>
+      <SafeAreaView style={{ flex: 1, backgroundColor: colors.bg.primary }} edges={['top', 'bottom']}>
+        <StatusBar barStyle="dark-content" backgroundColor={colors.bg.primary} />
+
         {/* Header */}
         <View style={{
           flexDirection: 'row',
           alignItems: 'center',
           justifyContent: 'space-between',
-          padding: 20,
+          padding: 16,
           borderBottomWidth: 1,
           borderBottomColor: colors.border.light
         }}>
           <TouchableOpacity onPress={onClose} disabled={isUploading}>
-            <Ionicons name="close" size={28} color={colors.text.primary} />
+            <Ionicons name="close" size={24} color={colors.text.primary} />
           </TouchableOpacity>
           <Text style={{
             fontSize: 18,
@@ -164,18 +160,19 @@ export const CreateProductModal = ({ visible, onClose }) => {
                   ? colors.text.secondary
                   : colors.primary[500]
               }}>
-                Crear
+                Publicar
               </Text>
             )}
           </TouchableOpacity>
         </View>
 
         <ScrollView
+          style={{ flex: 1 }}
           showsVerticalScrollIndicator={false}
           keyboardShouldPersistTaps="handled"
         >
           {/* Images */}
-          <View style={{ padding: 20 }}>
+          <View style={{ padding: 16, paddingBottom: 8 }}>
             <Text style={{
               fontSize: 14,
               fontWeight: '600',
@@ -189,6 +186,7 @@ export const CreateProductModal = ({ visible, onClose }) => {
               <TouchableOpacity
                 onPress={pickImages}
                 disabled={isUploading}
+                activeOpacity={0.7}
                 style={{
                   width: 120,
                   height: 120,
@@ -226,11 +224,12 @@ export const CreateProductModal = ({ visible, onClose }) => {
                   />
                   <TouchableOpacity
                     onPress={() => removeImage(index)}
+                    activeOpacity={0.7}
                     style={{
                       position: 'absolute',
-                      top: 4,
-                      right: 4,
-                      backgroundColor: 'rgba(0, 0, 0, 0.6)',
+                      top: 6,
+                      right: 6,
+                      backgroundColor: 'rgba(0, 0, 0, 0.7)',
                       borderRadius: 12,
                       width: 24,
                       height: 24,
@@ -246,14 +245,14 @@ export const CreateProductModal = ({ visible, onClose }) => {
           </View>
 
           {/* Product Name */}
-          <View style={{ paddingHorizontal: 20, marginBottom: 20 }}>
+          <View style={{ paddingHorizontal: 16, marginBottom: 16 }}>
             <Text style={{
               fontSize: 14,
               fontWeight: '600',
               color: colors.text.primary,
               marginBottom: 8
             }}>
-              Nombre del producto *
+              Nombre del producto
             </Text>
             <TextInput
               ref={nameRef}
@@ -275,14 +274,14 @@ export const CreateProductModal = ({ visible, onClose }) => {
           </View>
 
           {/* Description */}
-          <View style={{ paddingHorizontal: 20, marginBottom: 20 }}>
+          <View style={{ paddingHorizontal: 16, marginBottom: 16 }}>
             <Text style={{
               fontSize: 14,
               fontWeight: '600',
               color: colors.text.primary,
               marginBottom: 8
             }}>
-              Descripción *
+              Descripción
             </Text>
             <TextInput
               ref={descriptionRef}
@@ -308,14 +307,14 @@ export const CreateProductModal = ({ visible, onClose }) => {
           </View>
 
           {/* Price */}
-          <View style={{ paddingHorizontal: 20, marginBottom: 20 }}>
+          <View style={{ paddingHorizontal: 16, marginBottom: 16 }}>
             <Text style={{
               fontSize: 14,
               fontWeight: '600',
               color: colors.text.primary,
               marginBottom: 8
             }}>
-              Precio *
+              Precio
             </Text>
             <View style={{
               flexDirection: 'row',
@@ -354,7 +353,7 @@ export const CreateProductModal = ({ visible, onClose }) => {
           </View>
 
           {/* Compare At Price (Optional) */}
-          <View style={{ paddingHorizontal: 20, marginBottom: 20 }}>
+          <View style={{ paddingHorizontal: 16, marginBottom: 16 }}>
             <Text style={{
               fontSize: 14,
               fontWeight: '600',
@@ -407,7 +406,7 @@ export const CreateProductModal = ({ visible, onClose }) => {
           </View>
 
           {/* Stock */}
-          <View style={{ paddingHorizontal: 20, marginBottom: 32 }}>
+          <View style={{ paddingHorizontal: 16, marginBottom: 32 }}>
             <Text style={{
               fontSize: 14,
               fontWeight: '600',
@@ -436,7 +435,7 @@ export const CreateProductModal = ({ visible, onClose }) => {
             />
           </View>
         </ScrollView>
-      </View>
+      </SafeAreaView>
     </Modal>
   );
 };

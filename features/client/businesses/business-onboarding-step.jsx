@@ -1,7 +1,8 @@
 import { Ionicons } from '@expo/vector-icons';
 import { useState } from 'react';
-import { Image, ScrollView, TextInput, TouchableOpacity, View } from 'react-native';
-import { Text } from '../../../shared/components/ui';
+import { Image, TouchableOpacity, View, ScrollView } from 'react-native';
+import { Text, Input } from '../../../shared/components/ui';
+import { PhoneInput } from '../../../shared/components/ui/phone-input';
 
 /**
  * Business Onboarding Step
@@ -36,162 +37,126 @@ export default function BusinessOnboardingStep({
     { id: 'pharmacy', label: 'Farmacia', icon: 'medical' },
     { id: 'market', label: 'Mercado', icon: 'cart' },
     { id: 'bakery', label: 'Panadería', icon: 'cafe' },
+    { id: 'technology', label: 'Tecnología', icon: 'phone-portrait' },
     { id: 'other', label: 'Otro', icon: 'ellipsis-horizontal' },
   ];
 
   return (
     <View>
-      <Text className="text-lg font-bold text-gray-900 mb-2">
+      <Text variant="subheading" className="mb-4 text-center">
         Información del Negocio
-      </Text>
-      <Text className="text-sm text-gray-600 mb-6">
-        Completa los datos de tu negocio
       </Text>
 
       {/* Business Name */}
-      <View className="mb-4">
-        <Text className="text-sm font-semibold text-gray-700 mb-2">
-          Nombre del Negocio *
-        </Text>
-        <View className="flex-row items-center bg-gray-50 rounded-xl px-4 py-3 border border-gray-200">
-          <Ionicons name="storefront-outline" size={20} color="#9ca3af" />
-          <TextInput
-            value={formData.businessName}
-            onChangeText={(value) => updateField('businessName', value)}
-            placeholder="Ej: Panadería La Esquina"
-            placeholderTextColor="#9ca3af"
-            className="flex-1 ml-3 text-base text-gray-900"
-          />
-        </View>
-      </View>
+      <Input
+        value={formData.businessName}
+        onChangeText={(value) => updateField('businessName', value)}
+        placeholder="Nombre del negocio"
+        autoCapitalize="words"
+      />
 
       {/* Category Selection */}
-      <View className="mb-4">
-        <Text className="text-sm font-semibold text-gray-700 mb-3">
-          Categoría *
-        </Text>
-        <View className="flex-row flex-wrap gap-2">
+      <View className="mb-3">
+        <View className="flex-row items-center justify-between mb-2">
+          <Text variant="body" className="text-gray-500 font-medium">
+            Categoría
+          </Text>
+          <View className="flex-row items-center">
+            <Text variant="caption" className="text-gray-400 mr-1">
+              Desliza
+            </Text>
+            <Ionicons name="chevron-forward" size={14} color="#9ca3af" />
+          </View>
+        </View>
+        <ScrollView
+          horizontal
+          showsHorizontalScrollIndicator={false}
+          contentContainerStyle={{ paddingRight: 16 }}
+        >
           {categories.map((cat) => (
             <TouchableOpacity
               key={cat.id}
               onPress={() => updateField('category', cat.id)}
-              className="flex-row items-center rounded-xl px-4 py-3"
+              className="flex-row items-center rounded-full px-4 py-2.5 mr-2"
               style={{
                 backgroundColor: formData.category === cat.id ? '#ef4444' : '#f9fafb',
                 borderWidth: 1,
-                borderColor: formData.category === cat.id ? '#ef4444' : '#e5e7eb',
+                borderColor: formData.category === cat.id ? '#ef4444' : '#9ca3af',
               }}
               activeOpacity={0.7}
             >
               <Ionicons
                 name={cat.icon}
-                size={18}
+                size={16}
                 color={formData.category === cat.id ? '#ffffff' : '#6b7280'}
               />
               <Text
-                className="ml-2 text-sm font-semibold"
+                className="ml-1.5 text-sm font-medium"
                 style={{ color: formData.category === cat.id ? '#ffffff' : '#6b7280' }}
               >
                 {cat.label}
               </Text>
             </TouchableOpacity>
           ))}
-        </View>
+        </ScrollView>
       </View>
 
       {/* Description */}
-      <View className="mb-4">
-        <Text className="text-sm font-semibold text-gray-700 mb-2">
-          Descripción
-        </Text>
-        <View className="bg-gray-50 rounded-xl px-4 py-3 border border-gray-200">
-          <TextInput
-            value={formData.description}
-            onChangeText={(value) => updateField('description', value)}
-            placeholder="Describe tu negocio..."
-            placeholderTextColor="#9ca3af"
-            multiline
-            numberOfLines={3}
-            textAlignVertical="top"
-            className="text-base text-gray-900"
-            style={{ minHeight: 80 }}
-          />
-        </View>
-        <Text className="text-xs text-gray-500 mt-1">
-          Opcional - Ayuda a los clientes a conocer tu negocio
-        </Text>
-      </View>
+      <Input
+        value={formData.description}
+        onChangeText={(value) => updateField('description', value)}
+        placeholder="Descripción (opcional)"
+        multiline
+        numberOfLines={3}
+        textAlignVertical="top"
+        style={{ minHeight: 80 }}
+      />
 
       {/* Address */}
-      <View className="mb-4">
-        <Text className="text-sm font-semibold text-gray-700 mb-2">
-          Dirección del Negocio *
-        </Text>
-        <View className="flex-row items-center bg-gray-50 rounded-xl px-4 py-3 border border-gray-200">
-          <Ionicons name="location-outline" size={20} color="#9ca3af" />
-          <TextInput
-            value={formData.address}
-            onChangeText={(value) => updateField('address', value)}
-            placeholder="Dirección completa"
-            placeholderTextColor="#9ca3af"
-            className="flex-1 ml-3 text-base text-gray-900"
-          />
-        </View>
-      </View>
+      <Input
+        value={formData.address}
+        onChangeText={(value) => updateField('address', value)}
+        placeholder="Dirección del negocio"
+        autoCapitalize="words"
+      />
 
       {/* Phone */}
-      <View className="mb-4">
-        <Text className="text-sm font-semibold text-gray-700 mb-2">
-          Teléfono del Negocio *
-        </Text>
-        <View className="flex-row items-center bg-gray-50 rounded-xl px-4 py-3 border border-gray-200">
-          <Ionicons name="call-outline" size={20} color="#9ca3af" />
-          <TextInput
-            value={formData.phone}
-            onChangeText={(value) => updateField('phone', value)}
-            placeholder="04XX-XXXXXXX"
-            placeholderTextColor="#9ca3af"
-            keyboardType="phone-pad"
-            className="flex-1 ml-3 text-base text-gray-900"
-          />
-        </View>
-      </View>
+      <PhoneInput
+        value={formData.phone}
+        onChangeText={(value) => updateField('phone', value)}
+      />
 
       {/* Image Uploads - Optional */}
-      <View className="mb-4">
-        <Text className="text-sm font-semibold text-gray-700 mb-3">
-          Imágenes (Opcional)
-        </Text>
-
+      <View className="mb-3">
         {/* Logo */}
         <TouchableOpacity
           onPress={() => {
             // TODO: Implement image picker
             console.log('Pick logo image');
           }}
-          className="flex-row items-center bg-gray-50 rounded-xl p-4 mb-3 border border-dashed border-gray-300"
+          className="flex-row items-center bg-gray-50 rounded-xl p-4 mb-3 border border-gray-400"
           activeOpacity={0.7}
         >
-          <View className="w-16 h-16 rounded-full bg-gray-200 items-center justify-center mr-3">
+          <View className="w-14 h-14 rounded-full bg-gray-200 items-center justify-center mr-3">
             {formData.logoUrl ? (
               <Image
                 source={{ uri: formData.logoUrl }}
-                style={{ width: 64, height: 64, borderRadius: 32 }}
+                style={{ width: 56, height: 56, borderRadius: 28 }}
                 resizeMode="cover"
               />
             ) : (
-              <Ionicons name="image-outline" size={28} color="#9ca3af" />
+              <Ionicons name="image-outline" size={24} color="#9ca3af" />
             )}
           </View>
           <View className="flex-1">
-            <Text className="text-sm font-semibold text-gray-900 mb-1">
-              Logo del Negocio
+            <Text variant="body" className="font-medium mb-1">
+              Logo del negocio
             </Text>
-            <Text className="text-xs text-gray-500">
-              Toca para {formData.logoUrl ? 'cambiar' : 'agregar'}
+            <Text variant="caption" className="text-gray-500">
+              {formData.logoUrl ? 'Toca para cambiar' : 'Opcional'}
             </Text>
           </View>
-          <Ionicons name="camera-outline" size={24} color="#6b7280" />
+          <Ionicons name="camera-outline" size={20} color="#6b7280" />
         </TouchableOpacity>
 
         {/* Banner */}
@@ -200,9 +165,9 @@ export default function BusinessOnboardingStep({
             // TODO: Implement image picker
             console.log('Pick banner image');
           }}
-          className="bg-gray-50 rounded-xl border border-dashed border-gray-300 overflow-hidden"
+          className="bg-gray-50 rounded-xl border border-gray-400 overflow-hidden mb-3"
           activeOpacity={0.7}
-          style={{ height: 120 }}
+          style={{ height: 100 }}
         >
           {formData.bannerUrl ? (
             <Image
@@ -212,26 +177,13 @@ export default function BusinessOnboardingStep({
             />
           ) : (
             <View className="flex-1 items-center justify-center">
-              <Ionicons name="image-outline" size={40} color="#9ca3af" />
-              <Text className="text-sm text-gray-500 mt-2">
-                Banner del Negocio
+              <Ionicons name="image-outline" size={32} color="#9ca3af" />
+              <Text variant="caption" className="text-gray-500 mt-2">
+                Banner del negocio (opcional)
               </Text>
             </View>
           )}
         </TouchableOpacity>
-      </View>
-
-      {/* Info Note */}
-      <View className="bg-blue-50 rounded-xl p-4 flex-row">
-        <Ionicons name="information-circle" size={20} color="#3b82f6" style={{ marginTop: 2 }} />
-        <View className="flex-1 ml-3">
-          <Text className="text-sm text-blue-900 font-semibold mb-1">
-            Podrás editar esta información más tarde
-          </Text>
-          <Text className="text-xs text-blue-700">
-            Después de crear tu cuenta, podrás actualizar todos estos datos desde tu panel de negocio.
-          </Text>
-        </View>
       </View>
     </View>
   );

@@ -6,6 +6,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { Text } from '../../../shared/components/ui';
 import { useProducts } from '../../shared/products/hooks/use-products';
 import { usePosts } from '../../shared/social/hooks/use-posts';
+import ProductDetailModal from '../products/product-detail-modal';
 
 const { width } = Dimensions.get('window');
 
@@ -18,6 +19,8 @@ export default function BusinessProfile({ business, onClose }) {
   const [activeTab, setActiveTab] = useState('shop');
   const [isFollowing, setIsFollowing] = useState(business?.isFollowing || false);
   const [contentFilter, setContentFilter] = useState('all');
+  const [selectedProductId, setSelectedProductId] = useState(null);
+  const [productDetailVisible, setProductDetailVisible] = useState(false);
 
   // Fetch products and posts using hooks
   const { data: products = [], isLoading: isLoadingProducts } = useProducts({
@@ -47,7 +50,8 @@ export default function BusinessProfile({ business, onClose }) {
   };
 
   const handleProductPress = (product) => {
-    console.log('Open product:', product.id);
+    setSelectedProductId(product.id);
+    setProductDetailVisible(true);
   };
 
   const handleContentPress = (content) => {
@@ -499,6 +503,17 @@ export default function BusinessProfile({ business, onClose }) {
           </View>
         )}
       </ScrollView>
+
+      {/* Product Detail Modal */}
+      <ProductDetailModal
+        visible={productDetailVisible}
+        productId={selectedProductId}
+        currentBusinessId={business?.id}
+        onClose={() => {
+          setProductDetailVisible(false);
+          setSelectedProductId(null);
+        }}
+      />
     </SafeAreaView>
   );
 }

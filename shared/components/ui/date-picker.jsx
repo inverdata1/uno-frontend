@@ -27,12 +27,18 @@ export const DatePicker = ({
   };
 
   const handleChange = (event, selectedDate) => {
+    // On Android, the picker closes automatically
     if (Platform.OS === 'android') {
       setShowPicker(false);
-    }
-
-    if (selectedDate && onChange) {
-      onChange(selectedDate);
+      // Only update if user confirmed (not dismissed/cancelled)
+      if (event.type === 'set' && selectedDate && onChange) {
+        onChange(selectedDate);
+      }
+    } else {
+      // On iOS, update the temp date as user scrolls
+      if (selectedDate && onChange) {
+        onChange(selectedDate);
+      }
     }
   };
 

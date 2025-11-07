@@ -1,7 +1,7 @@
-import React from 'react';
 import { View } from 'react-native';
 import { z } from 'zod';
-import { Input, Text, Checkbox, DatePicker } from '../../../../shared/components/ui';
+import { Checkbox, DatePicker, Input, Text } from '../../../../shared/components/ui';
+import { PhoneInput } from '../../../../shared/components/ui/phone-input';
 
 export const BasicInfoStep = ({ form, createFieldProps, triggerUpdate, scrollViewRef }) => {
   return (
@@ -81,21 +81,17 @@ export const BasicInfoStep = ({ form, createFieldProps, triggerUpdate, scrollVie
       <form.Field
         name="phone"
         validators={{
-          onBlur: z.string().min(11, 'Ingresa 11 dígitos').max(11, 'Solo 11 dígitos').regex(/^04(12|14|16|24|26)\d{7}$/, 'Formato: 04XX XXX XXXX'),
+          onBlur: z.string().min(11, 'Ingresa 11 dígitos').max(11, 'Solo 11 dígitos').regex(/^04(12|14|16|24|26)\d{7}$/, 'Formato: 0414 123 4567'),
         }}
         children={(field) => (
-          <Input
-            placeholder="Numero de telefono"
+          <PhoneInput
             value={field.state.value}
             onChangeText={(text) => {
-              // Only allow numbers and limit to 11 digits
-              const cleanText = text.replace(/[^0-9]/g, '').substring(0, 11);
-              field.handleChange(cleanText);
+              field.handleChange(text);
               // Force component re-render to update validation
               triggerUpdate();
             }}
             {...createFieldProps('phone', { onBlur: field.handleBlur })}
-            keyboardType="numeric"
             error={field.state.meta.errors?.[0]}
           />
         )}

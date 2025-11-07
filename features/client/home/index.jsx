@@ -11,8 +11,8 @@ import { useStories } from '../../../features/shared/social/hooks/use-stories';
 import { useVideos } from '../../../features/shared/social/hooks/use-videos';
 import { AdaptiveHeader } from '../../../shared/components/layout/adaptive-header';
 import { Text } from '../../../shared/components/ui';
-import ProductDetail from '../products/product-detail';
 import StoryViewer from '../../shared/social/stories/story-viewer';
+import ProductDetail from '../products/product-detail';
 import VideoViewer from '../social/videos/video-viewer';
 import OffersBanner from './offers-banner';
 
@@ -512,7 +512,8 @@ export default function ClientHomeScreen() {
             onClose={() => setProductDetailVisible(false)}
             onBusinessPress={(businessId) => {
               setProductDetailVisible(false);
-              router.push(`/client/business/${businessId}`);
+              // Wait for modal animation to complete before navigating
+                router.replace(`/client/business/${businessId}`);
             }}
           />
         )}

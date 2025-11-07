@@ -29,7 +29,7 @@ export const useProducts = ({ businessId, categoryId, limit = 20 } = {}) => {
 export const useProduct = (productId) => {
   return useQuery({
     queryKey: ['products', productId],
-    queryFn: () => apiClient.get(`/products/${productId}`).then(res => res.data),
+    queryFn: () => apiClient.get('/products/id', { params: { id: productId } }).then(res => res.data),
     enabled: !!productId,
     staleTime: 5 * 60 * 1000,
   });

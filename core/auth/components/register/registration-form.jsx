@@ -487,7 +487,7 @@ export const RegistrationForm = ({ onComplete }) => {
                 <Button
                   variant="outline"
                   size="lg"
-                  className="w-full mt-6"
+                  className="w-full mt-3"
                   onPress={prevStep}
                   disabled={isLoading}
                 >

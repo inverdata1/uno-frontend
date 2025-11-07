@@ -1,8 +1,9 @@
-import React, { useState, useEffect } from 'react';
-import { View, TouchableOpacity, Image, Dimensions, FlatList, Alert } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import * as ImagePicker from 'expo-image-picker';
 import * as MediaLibrary from 'expo-media-library';
+import { useEffect, useState } from 'react';
+import { Alert, Dimensions, FlatList, Image, Modal, ScrollView, TouchableOpacity, View } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import { Text } from '../../../../../../shared/components/ui';
 import { colors } from '../../../../../../shared/utils/colors';
 
@@ -17,12 +18,24 @@ const GRID_ITEM_SIZE = width / 4;
 export function MediaSelectionStep({ selectedMedia, onMediaChange, onNext }) {
   const [galleryPhotos, setGalleryPhotos] = useState([]);
   const [hasPermission, setHasPermission] = useState(false);
+  const [albums, setAlbums] = useState([]);
+  const [selectedAlbum, setSelectedAlbum] = useState(null);
+  const [showAlbumPicker, setShowAlbumPicker] = useState(false);
+  const [hasMore, setHasMore] = useState(true);
+  const [endCursor, setEndCursor] = useState(null);
+  const [albumThumbnails, setAlbumThumbnails] = useState({});
 
   useEffect(() => {
-    loadGalleryPhotos();
+    loadAlbums();
   }, []);
 
-  const loadGalleryPhotos = async () => {
+  useEffect(() => {
+    if (selectedAlbum) {
+      loadGalleryPhotos(true);
+    }
+  }, [selectedAlbum]);
+
+  const loadAlbums = async () => {
     const { status } = await MediaLibrary.requestPermissionsAsync();
 
     if (status !== 'granted') {
@@ -32,14 +45,60 @@ export function MediaSelectionStep({ selectedMedia, onMediaChange, onNext }) {
 
     setHasPermission(true);
 
-    // Load recent photos
-    const media = await MediaLibrary.getAssetsAsync({
-      first: 100,
-      mediaType: [MediaLibrary.MediaType.photo, MediaLibrary.MediaType.video],
-      sortBy: [MediaLibrary.SortBy.creationTime],
+    // Load all albums
+    const albumsList = await MediaLibrary.getAlbumsAsync({
+      includeSmartAlbums: true,
     });
 
-    setGalleryPhotos(media.assets);
+    // Sort albums by assetCount in descending order
+    const sortedAlbums = albumsList.sort((a, b) => b.assetCount - a.assetCount);
+
+    setAlbums(sortedAlbums);
+
+    // Load thumbnails for each album
+    const thumbnails = {};
+    for (const album of sortedAlbums) {
+      const assets = await MediaLibrary.getAssetsAsync({
+        album: album.id,
+        first: 1,
+        mediaType: [MediaLibrary.MediaType.photo, MediaLibrary.MediaType.video],
+        sortBy: [MediaLibrary.SortBy.creationTime],
+      });
+      if (assets.assets.length > 0) {
+        thumbnails[album.id] = assets.assets[0].uri;
+      }
+    }
+    setAlbumThumbnails(thumbnails);
+
+    // Set default album to "Recent" or first album
+    const recentAlbum = albumsList.find(album => album.title === 'Recent' || album.title === 'Recents');
+    setSelectedAlbum(recentAlbum || albumsList[0]);
+  };
+
+  const loadGalleryPhotos = async (reset = false) => {
+    if (!selectedAlbum) return;
+
+    try {
+      // Load photos from selected album
+      const media = await MediaLibrary.getAssetsAsync({
+        album: selectedAlbum.id,
+        first: 100,
+        after: reset ? undefined : endCursor,
+        mediaType: [MediaLibrary.MediaType.photo, MediaLibrary.MediaType.video],
+        sortBy: [MediaLibrary.SortBy.creationTime],
+      });
+
+      if (reset) {
+        setGalleryPhotos(media.assets);
+      } else {
+        setGalleryPhotos([...galleryPhotos, ...media.assets]);
+      }
+
+      setEndCursor(media.endCursor);
+      setHasMore(media.hasNextPage);
+    } catch (error) {
+      console.error('Error loading gallery photos:', error);
+    }
   };
 
   const takePhoto = async () => {
@@ -171,6 +230,46 @@ export function MediaSelectionStep({ selectedMedia, onMediaChange, onNext }) {
 
       {/* Gallery Grid - Bottom Half */}
       <View style={{ flex: 1, backgroundColor: colors.bg.primary }}>
+        {/* Album Picker Header */}
+        <TouchableOpacity
+          onPress={() => setShowAlbumPicker(true)}
+          activeOpacity={0.6}
+          style={{
+            flexDirection: 'row',
+            alignItems: 'center',
+            justifyContent: 'space-between',
+            padding: 12,
+            paddingHorizontal: 16,
+            borderBottomWidth: 1,
+            borderBottomColor: colors.border.light
+          }}
+        >
+          <View style={{
+            flexDirection: 'row',
+            alignItems: 'center',
+            gap: 8
+          }}>
+            <Text style={{
+              fontSize: 16,
+              fontWeight: '600',
+              color: colors.text.primary
+            }}>
+              {selectedAlbum?.title || 'Recientes'}
+            </Text>
+            <Ionicons
+              name="chevron-down"
+              size={18}
+              color={colors.text.primary}
+            />
+          </View>
+          <Text style={{
+            fontSize: 14,
+            color: colors.text.secondary
+          }}>
+            {selectedAlbum?.assetCount || 0}
+          </Text>
+        </TouchableOpacity>
+
         {!hasPermission ? (
           <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center', padding: 24 }}>
             <Ionicons name="images-outline" size={48} color={colors.text.secondary} />
@@ -208,6 +307,12 @@ export function MediaSelectionStep({ selectedMedia, onMediaChange, onNext }) {
             numColumns={4}
             keyExtractor={(item, index) => item.id || `camera-${index}`}
             showsVerticalScrollIndicator={false}
+            onEndReached={() => {
+              if (hasMore) {
+                loadGalleryPhotos(false);
+              }
+            }}
+            onEndReachedThreshold={0.5}
             renderItem={({ item, index }) => {
               // Camera button as first item
               if (item.type === 'camera') {
@@ -295,6 +400,140 @@ export function MediaSelectionStep({ selectedMedia, onMediaChange, onNext }) {
           />
         )}
       </View>
+
+      {/* Album Picker Modal */}
+      <Modal
+        visible={showAlbumPicker}
+        animationType="slide"
+        presentationStyle="pageSheet"
+        onRequestClose={() => setShowAlbumPicker(false)}
+      >
+        <SafeAreaView style={{ flex: 1, backgroundColor: colors.bg.primary }} edges={['top', 'bottom']}>
+          {/* Modal Header */}
+          <View style={{
+            flexDirection: 'row',
+            alignItems: 'center',
+            justifyContent: 'space-between',
+            paddingHorizontal: 16,
+            paddingVertical: 16,
+            borderBottomWidth: 1,
+            borderBottomColor: colors.border.light
+          }}>
+            <TouchableOpacity
+              onPress={() => setShowAlbumPicker(false)}
+              activeOpacity={0.6}
+            >
+              <Text style={{
+                fontSize: 16,
+                color: colors.text.primary
+              }}>
+                Cancel
+              </Text>
+            </TouchableOpacity>
+            <Text style={{
+              fontSize: 16,
+              fontWeight: '700',
+              color: colors.text.primary
+            }}>
+              Selecciona un álbum
+            </Text>
+            <View style={{ width: 60 }} />
+          </View>
+
+          <ScrollView style={{ flex: 1 }}>
+            {/* Albums Section Header */}
+            <View style={{
+              flexDirection: 'row',
+              justifyContent: 'space-between',
+              alignItems: 'center',
+              paddingHorizontal: 16,
+              paddingVertical: 12,
+              paddingTop: 20
+            }}>
+              <Text style={{
+                fontSize: 15,
+                fontWeight: '600',
+                color: colors.text.secondary
+              }}>
+                Albums
+              </Text>
+            </View>
+
+            {/* Albums Grid */}
+            <View style={{
+              flexDirection: 'row',
+              flexWrap: 'wrap',
+              paddingHorizontal: 16,
+              gap: 12
+            }}>
+              {albums.map((album) => {
+                const albumWidth = (width - 32 - 24) / 3; // 3 columns with gaps
+                return (
+                  <TouchableOpacity
+                    key={album.id}
+                    onPress={() => {
+                      setSelectedAlbum(album);
+                      setShowAlbumPicker(false);
+                    }}
+                    activeOpacity={0.7}
+                    style={{
+                      width: albumWidth,
+                      marginBottom: 16
+                    }}
+                  >
+                    <View style={{
+                      width: albumWidth,
+                      height: albumWidth,
+                      borderRadius: 8,
+                      backgroundColor: colors.bg.secondary,
+                      overflow: 'hidden',
+                      marginBottom: 8
+                    }}>
+                      {albumThumbnails[album.id] ? (
+                        <Image
+                          source={{ uri: albumThumbnails[album.id] }}
+                          style={{ width: '100%', height: '100%' }}
+                          resizeMode="cover"
+                        />
+                      ) : (
+                        <View style={{
+                          width: '100%',
+                          height: '100%',
+                          justifyContent: 'center',
+                          alignItems: 'center'
+                        }}>
+                          <Ionicons
+                            name="images"
+                            size={32}
+                            color={colors.text.secondary}
+                          />
+                        </View>
+                      )}
+                    </View>
+                    <Text
+                      style={{
+                        fontSize: 13,
+                        fontWeight: '600',
+                        color: colors.text.primary,
+                        marginBottom: 2
+                      }}
+                      numberOfLines={1}
+                    >
+                      {album.title}
+                    </Text>
+                    <Text style={{
+                      fontSize: 12,
+                      color: colors.text.secondary
+                    }}>
+                      {album.assetCount}
+                    </Text>
+                  </TouchableOpacity>
+                );
+              })}
+            </View>
+          </ScrollView>
+        </SafeAreaView>
+      </Modal>
     </View>
   );
 }

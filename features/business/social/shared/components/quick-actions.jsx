@@ -15,40 +15,37 @@ export const QuickActions = ({ onCreatePost, onCreatePromotion }) => {
     }}>
       <TouchableOpacity
         onPress={onCreatePost}
+        activeOpacity={0.85}
         style={{
           flex: 1,
           backgroundColor: colors.primary[500],
           paddingVertical: 14,
-          borderRadius: 12,
+          borderRadius: 8,
           flexDirection: 'row',
           alignItems: 'center',
           justifyContent: 'center',
-          gap: 8,
-          shadowColor: colors.primary[500],
-          shadowOffset: { width: 0, height: 3 },
-          shadowOpacity: 0.3,
-          shadowRadius: 6,
-          elevation: 3
+          gap: 8
         }}
       >
-        <Ionicons name="camera" size={20} color={colors.text.inverse} />
+        <Ionicons name="add" size={22} color={colors.text.inverse} />
         <Text style={{
           fontSize: 15,
           fontWeight: '700',
           color: colors.text.inverse
         }}>
-          Publicar
+          Nueva Publicación
         </Text>
       </TouchableOpacity>
 
       <TouchableOpacity
         onPress={onCreatePromotion}
+        activeOpacity={0.7}
         style={{
-          paddingHorizontal: 20,
+          paddingHorizontal: 18,
           paddingVertical: 14,
-          borderRadius: 12,
+          borderRadius: 8,
           backgroundColor: colors.bg.secondary,
-          borderWidth: 1.5,
+          borderWidth: 1,
           borderColor: colors.border.light,
           alignItems: 'center',
           justifyContent: 'center'

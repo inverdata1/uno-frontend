@@ -1,12 +1,13 @@
-import React, { useState } from 'react';
-import { View, ScrollView } from 'react-native';
+import { Ionicons } from '@expo/vector-icons';
+import { useState } from 'react';
+import { ScrollView, TouchableOpacity, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Text } from '../../../shared/components/ui';
 import { colors } from '../../../shared/utils/colors';
-import { StoriesRow } from './stories/components/stories-row';
-import { QuickActions } from './shared/components/quick-actions';
 import { PostsGrid } from './posts/components/posts-grid';
 import { PostCreationFlow } from './posts/creation';
+import { QuickActions } from './shared/components/quick-actions';
+import { StoriesRow } from './stories/components/stories-row';
 import { CreateStoryModal } from './stories/creation/create-story-modal';
 
 export default function BusinessSocialScreen() {
@@ -31,26 +32,31 @@ export default function BusinessSocialScreen() {
       <ScrollView showsVerticalScrollIndicator={false}>
         {/* Header */}
         <View style={{
-          padding: 20,
-          paddingTop: 12,
+          flexDirection: 'row',
+          alignItems: 'center',
+          justifyContent: 'space-between',
+          paddingHorizontal: 16,
+          paddingVertical: 12,
           backgroundColor: colors.bg.primary,
           borderBottomWidth: 1,
           borderBottomColor: colors.border.light
         }}>
           <Text style={{
-            fontSize: 28,
+            fontSize: 20,
             fontWeight: '700',
             color: colors.text.primary,
-            marginBottom: 4
+            letterSpacing: 0.3
           }}>
             Publicaciones
           </Text>
-          <Text style={{
-            fontSize: 15,
-            color: colors.text.secondary
-          }}>
-            Posts, historias y promociones
-          </Text>
+          <View style={{ flexDirection: 'row', gap: 16 }}>
+            <TouchableOpacity activeOpacity={0.6}>
+              <Ionicons name="search-outline" size={24} color={colors.text.primary} />
+            </TouchableOpacity>
+            <TouchableOpacity activeOpacity={0.6}>
+              <Ionicons name="ellipsis-vertical" size={24} color={colors.text.primary} />
+            </TouchableOpacity>
+          </View>
         </View>
 
         {/* Stories Row */}

@@ -36,6 +36,7 @@ export const PostsGrid = ({ onCreatePost }) => {
           <TouchableOpacity
             key={tab.key}
             onPress={() => setActiveTab(tab.key)}
+            activeOpacity={0.6}
             style={{
               flex: 1,
               paddingVertical: 12,
@@ -93,6 +94,7 @@ const PhotoGrid = ({ posts }) => {
         <TouchableOpacity
           key={post.id}
           onLongPress={() => handleDeletePost(post)}
+          activeOpacity={0.9}
           style={{
             width: '33.33%',
             aspectRatio: 1,
@@ -102,7 +104,8 @@ const PhotoGrid = ({ posts }) => {
           <Image
             source={{ uri: post.thumbnailUrl || post.media?.[0]?.url || post.mediaUrl || post.images?.[0] }}
             style={{
-              flex: 1,
+              width: '100%',
+              height: '100%',
               backgroundColor: colors.bg.secondary
             }}
             resizeMode="cover"
@@ -112,7 +115,7 @@ const PhotoGrid = ({ posts }) => {
               position: 'absolute',
               top: 8,
               right: 8,
-              backgroundColor: 'rgba(0, 0, 0, 0.6)',
+              backgroundColor: 'rgba(0, 0, 0, 0.7)',
               borderRadius: 4,
               padding: 4
             }}>
@@ -153,21 +156,33 @@ const EmptyState = ({ onCreatePost, activeTab }) => {
 
   return (
     <View style={{
-      padding: 32,
+      padding: 40,
       alignItems: 'center',
-      backgroundColor: colors.bg.secondary
+      backgroundColor: colors.bg.secondary,
+      minHeight: 300
     }}>
-      <Ionicons
-        name={message.icon}
-        size={48}
-        color={colors.text.secondary}
-        style={{ marginBottom: 12 }}
-      />
+      <View style={{
+        width: 80,
+        height: 80,
+        borderRadius: 40,
+        backgroundColor: colors.bg.primary,
+        alignItems: 'center',
+        justifyContent: 'center',
+        marginBottom: 20,
+        borderWidth: 1,
+        borderColor: colors.border.light
+      }}>
+        <Ionicons
+          name={message.icon}
+          size={40}
+          color={colors.text.secondary}
+        />
+      </View>
       <Text style={{
-        fontSize: 16,
+        fontSize: 18,
         fontWeight: '700',
         color: colors.text.primary,
-        marginBottom: 6,
+        marginBottom: 8,
         textAlign: 'center'
       }}>
         {message.title}
@@ -176,26 +191,28 @@ const EmptyState = ({ onCreatePost, activeTab }) => {
         fontSize: 14,
         color: colors.text.secondary,
         textAlign: 'center',
-        marginBottom: 20
+        marginBottom: 24,
+        lineHeight: 20
       }}>
         {message.subtitle}
       </Text>
       <TouchableOpacity
         onPress={onCreatePost}
+        activeOpacity={0.85}
         style={{
           backgroundColor: colors.primary[500],
-          paddingHorizontal: 32,
+          paddingHorizontal: 28,
           paddingVertical: 12,
-          borderRadius: 12,
+          borderRadius: 8,
           flexDirection: 'row',
           alignItems: 'center',
           gap: 8
         }}
       >
-        <Ionicons name="camera" size={18} color={colors.text.inverse} />
+        <Ionicons name="add" size={20} color={colors.text.inverse} />
         <Text style={{
-          fontSize: 14,
-          fontWeight: '600',
+          fontSize: 15,
+          fontWeight: '700',
           color: colors.text.inverse
         }}>
           Crear publicación

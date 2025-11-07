@@ -9,10 +9,14 @@ import { PostCreationFlow } from './posts/creation';
 import { QuickActions } from './shared/components/quick-actions';
 import { StoriesRow } from './stories/components/stories-row';
 import { CreateStoryModal } from './stories/creation/create-story-modal';
+import StoryViewer from '../../shared/social/stories/story-viewer';
 
 export default function BusinessSocialScreen() {
   const [createPostModalVisible, setCreatePostModalVisible] = useState(false);
   const [createStoryModalVisible, setCreateStoryModalVisible] = useState(false);
+  const [storyViewerVisible, setStoryViewerVisible] = useState(false);
+  const [selectedStories, setSelectedStories] = useState([]);
+  const [selectedStoryIndex, setSelectedStoryIndex] = useState(0);
 
   const handleCreatePost = () => {
     setCreatePostModalVisible(true);
@@ -25,6 +29,12 @@ export default function BusinessSocialScreen() {
   const handleCreatePromotion = () => {
     // TODO: Implement promotion creation
     console.log('Create promotion');
+  };
+
+  const handleStoryPress = (stories, index) => {
+    setSelectedStories(stories);
+    setSelectedStoryIndex(index);
+    setStoryViewerVisible(true);
   };
 
   return (
@@ -60,7 +70,7 @@ export default function BusinessSocialScreen() {
         </View>
 
         {/* Stories Row */}
-        <StoriesRow onCreateStory={handleCreateStory} />
+        <StoriesRow onCreateStory={handleCreateStory} onStoryPress={handleStoryPress} />
 
         {/* Quick Actions */}
         <QuickActions
@@ -82,6 +92,14 @@ export default function BusinessSocialScreen() {
       <CreateStoryModal
         visible={createStoryModalVisible}
         onClose={() => setCreateStoryModalVisible(false)}
+      />
+
+      {/* Story Viewer */}
+      <StoryViewer
+        visible={storyViewerVisible}
+        stories={selectedStories}
+        initialIndex={selectedStoryIndex}
+        onClose={() => setStoryViewerVisible(false)}
       />
     </SafeAreaView>
   );

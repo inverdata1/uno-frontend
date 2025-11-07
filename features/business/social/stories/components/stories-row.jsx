@@ -4,7 +4,7 @@ import { Text } from '../../../../../shared/components/ui';
 import { useBusinessStories, useDeleteStory } from '../../../../../shared/hooks/use-business-stories';
 import { colors } from '../../../../../shared/utils/colors';
 
-export const StoriesRow = ({ onCreateStory }) => {
+export const StoriesRow = ({ onCreateStory, onStoryPress }) => {
   const { data: stories = [], isLoading } = useBusinessStories();
   const deleteStory = useDeleteStory();
 
@@ -21,6 +21,12 @@ export const StoriesRow = ({ onCreateStory }) => {
         }
       ]
     );
+  };
+
+  const handleStoryPress = (index) => {
+    if (onStoryPress) {
+      onStoryPress(stories, index);
+    }
   };
 
   const renderItems = () => {
@@ -65,7 +71,14 @@ export const StoriesRow = ({ onCreateStory }) => {
     }
 
     stories.forEach((story, index) => {
-      items.push(<StoryItem key={story.id || `story-${index}`} story={story} onDelete={() => handleDeleteStory(story)} />);
+      items.push(
+        <StoryItem
+          key={story.id || `story-${index}`}
+          story={story}
+          onPress={() => handleStoryPress(index)}
+          onDelete={() => handleDeleteStory(story)}
+        />
+      );
     });
 
     return items;
@@ -90,12 +103,13 @@ export const StoriesRow = ({ onCreateStory }) => {
   );
 };
 
-const StoryItem = ({ story, onDelete }) => {
+const StoryItem = ({ story, onPress, onDelete }) => {
   const timeRemaining = getTimeRemaining(story.expiresAt);
 
   return (
     <TouchableOpacity
       style={{ alignItems: 'center' }}
+      onPress={onPress}
       onLongPress={onDelete}
     >
       <View style={{

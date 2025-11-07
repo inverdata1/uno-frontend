@@ -14,6 +14,7 @@
  *   type: string,                  // 'image' | 'video'
  *   mediaUrl: string,              // Media URL (image or video)
  *   thumbnailUrl: string,          // Thumbnail for video
+ *   caption: string,               // Optional caption text
  *   duration: number,              // Display duration in seconds (default 5 for images, video length for videos)
  *
  *   // Interactive Elements
@@ -55,6 +56,7 @@ export const COLLECTION_SCHEMA = {
   type: 'string (required, image|video)',
   mediaUrl: 'string (required)',
   thumbnailUrl: 'string (required for videos)',
+  caption: 'string (optional)',
   duration: 'number (default 5)',
   taggedProducts: 'array (optional)',
   stickers: 'array (optional)',

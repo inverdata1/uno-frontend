@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { View, Image, TouchableOpacity, Dimensions, StyleSheet, Animated, Modal } from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
 import { Text } from '../../../../shared/components/ui';
@@ -11,6 +12,7 @@ const { width, height } = Dimensions.get('window');
  * Based on PDF mockup page 3
  */
 export default function StoryViewer({ visible, stories = [], initialIndex = 0, onClose }) {
+  const insets = useSafeAreaInsets();
   const [currentStoryIndex, setCurrentStoryIndex] = useState(initialIndex);
   const [isPaused, setIsPaused] = useState(false);
   const [progressAnims, setProgressAnims] = useState([]);
@@ -230,6 +232,13 @@ export default function StoryViewer({ visible, stories = [], initialIndex = 0, o
           </TouchableOpacity>
         </View>
 
+        {/* Caption - Centered in middle if present */}
+        {currentStory.caption && (
+          <View style={styles.captionContainer}>
+            <Text style={styles.captionText}>{currentStory.caption}</Text>
+          </View>
+        )}
+
         {/* Tap Zones */}
         <View style={styles.tapZones}>
           <TouchableOpacity
@@ -249,7 +258,7 @@ export default function StoryViewer({ visible, stories = [], initialIndex = 0, o
         </View>
 
         {/* Bottom Message Input - Instagram style */}
-        <View style={styles.bottomContainer}>
+        <View style={[styles.bottomContainer, { paddingBottom: insets.bottom + 16 }]}>
           {/* "Ir a Catalogo" button above input if products tagged */}
           {currentStory.taggedProducts?.length > 0 && (
             <TouchableOpacity style={styles.ctaButton}>
@@ -372,7 +381,7 @@ const styles = StyleSheet.create({
     left: 0,
     right: 0,
     paddingHorizontal: 16,
-    paddingBottom: 30,
+    paddingBottom: 16,
     paddingTop: 16,
     backgroundColor: 'rgba(0, 0, 0, 0.3)',
     zIndex: 3
@@ -423,5 +432,23 @@ const styles = StyleSheet.create({
     fontSize: 15,
     fontWeight: '600',
     color: '#0f172a'
+  },
+  captionContainer: {
+    position: 'absolute',
+    bottom: 150,
+    left: 16,
+    right: 16,
+    zIndex: 2,
+    alignItems: 'center'
+  },
+  captionText: {
+    color: '#ffffff',
+    fontSize: 16,
+    fontWeight: '500',
+    textAlign: 'center',
+    textShadowColor: 'rgba(0, 0, 0, 0.75)',
+    textShadowOffset: { width: 0, height: 1 },
+    textShadowRadius: 3,
+    paddingHorizontal: 24
   }
 });

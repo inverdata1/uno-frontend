@@ -12,7 +12,7 @@ import { useVideos } from '../../../features/shared/social/hooks/use-videos';
 import { AdaptiveHeader } from '../../../shared/components/layout/adaptive-header';
 import { Text } from '../../../shared/components/ui';
 import ProductDetail from '../products/product-detail';
-import StoryViewer from '../social/stories/story-viewer';
+import StoryViewer from '../../shared/social/stories/story-viewer';
 import VideoViewer from '../social/videos/video-viewer';
 import OffersBanner from './offers-banner';
 

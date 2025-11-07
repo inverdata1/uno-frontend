@@ -29,26 +29,41 @@ export class StoriesResource extends BaseFirebaseService {
 
   /**
    * GET /stories
-   * Get active stories grouped by business
+   * Get active stories grouped by business OR filtered by businessId
+   * If businessId param is provided, returns stories for that business only (ungrouped)
+   * Otherwise returns all stories grouped by business
    */
   async get_index(data, params) {
-    const { userId } = params;
+    const { userId, businessId } = params;
 
     const now = Timestamp.now();
 
-    // Get all active, non-expired stories
-    const stories = await this.findWhere([
+    // Build filters
+    const filters = [
       ['isActive', '==', true],
       ['isExpired', '==', false]
-    ]);
+    ];
+
+    // If businessId provided, filter by business
+    if (businessId) {
+      filters.push(['businessId', '==', businessId]);
+    }
+
+    // Get all active, non-expired stories
+    const stories = await this.findWhere(filters);
 
     // Filter out expired stories (client-side since we can't do > in query with multiple where)
-    const activeStories = stories.filter(story =>
-      story.expiresAt && story.expiresAt.toMillis() > now.toMillis()
-    );
+    const activeStories = stories
+      .filter(story => story.expiresAt && story.expiresAt.toMillis() > now.toMillis())
+      .sort((a, b) => a.createdAt?.toMillis() - b.createdAt?.toMillis());
 
-    // Group by business
-    const groupedStories = this.groupStoriesByBusiness(activeStories);
+    // If businessId is provided, return stories directly (for business stories row)
+    if (businessId) {
+      return await this.populateBusinessInfo(activeStories);
+    }
+
+    // Otherwise, group by business (for feed)
+    const groupedStories = await this.groupStoriesByBusiness(activeStories);
 
     // TODO: Filter based on follows when follows resource is implemented
     // For now, return all active stories
@@ -86,7 +101,7 @@ export class StoriesResource extends BaseFirebaseService {
   /**
    * POST /stories
    * Create new story with media processing
-   * Expects: { type, mediaFile, duration }
+   * Expects: { type, mediaFile, caption, duration }
    */
   async post_index(data, params) {
     const { businessId, userId } = params;
@@ -97,6 +112,7 @@ export class StoriesResource extends BaseFirebaseService {
 
     console.log('📤 [Stories API] Creating story with media processing');
     console.log('   Type:', data.type);
+    console.log('   Caption:', data.caption || '(none)');
 
     let mediaUrl;
     let thumbnailUrl;
@@ -138,6 +154,7 @@ export class StoriesResource extends BaseFirebaseService {
       type: data.type,
       mediaUrl,
       thumbnailUrl,
+      caption: data.caption?.trim() || '',
       duration,
       businessId,
       userId,

@@ -8,7 +8,7 @@ import { PostCard } from './components/post-card';
 import { StoryRing, AddStoryButton } from './components/story-ring';
 import { Text } from '../../../../shared/components/ui/text';
 import { useCurrentUserType } from '../../../../shared/hooks/use-user-type';
-import StoryViewer from '../stories/story-viewer';
+import StoryViewer from '../../../shared/social/stories/story-viewer';
 import { usePosts, useLikePost, useSavePost } from '../../../../features/shared/social/hooks/use-posts';
 import { useStories } from '../../../../features/shared/social/hooks/use-stories';
 import { useBusinesses } from '../../../../features/shared/social/hooks/use-businesses';

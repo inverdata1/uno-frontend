@@ -18,14 +18,15 @@ export const MapPicker = ({
   const [isLoading, setIsLoading] = useState(true);
   const [hasLocationPermission, setHasLocationPermission] = useState(false);
   const [mapReady, setMapReady] = useState(false);
+  const [mapInteractionEnabled, setMapInteractionEnabled] = useState(false);
   const mapRef = useRef(null);
 
   // Default location (Caracas, Venezuela)
   const defaultLocation = {
     latitude: 10.4806,
     longitude: -66.9036,
-    latitudeDelta: 0.01,
-    longitudeDelta: 0.01,
+    latitudeDelta: 0.005,
+    longitudeDelta: 0.005,
   };
 
   useEffect(() => {
@@ -70,8 +71,8 @@ export const MapPicker = ({
       const currentCoords = {
         latitude: location.coords.latitude,
         longitude: location.coords.longitude,
-        latitudeDelta: 0.01,
-        longitudeDelta: 0.01,
+        latitudeDelta: 0.005,
+        longitudeDelta: 0.005,
       };
 
       setCurrentLocation(currentCoords);
@@ -103,8 +104,8 @@ export const MapPicker = ({
     const newLocation = {
       latitude: coordinate.latitude,
       longitude: coordinate.longitude,
-      latitudeDelta: 0.01,
-      longitudeDelta: 0.01,
+      latitudeDelta: 0.005,
+      longitudeDelta: 0.005,
     };
 
     setSelectedLocation(newLocation);
@@ -141,6 +142,10 @@ export const MapPicker = ({
               toolbarEnabled={false}
               loadingEnabled={true}
               mapType="standard"
+              scrollEnabled={mapInteractionEnabled}
+              zoomEnabled={mapInteractionEnabled}
+              rotateEnabled={mapInteractionEnabled}
+              pitchEnabled={mapInteractionEnabled}
             >
               {/* Selected Location Marker */}
               {selectedLocation && (
@@ -152,6 +157,24 @@ export const MapPicker = ({
                 />
               )}
             </MapView>
+
+            {/* Enable Map Interaction Overlay */}
+            {!mapInteractionEnabled && (
+              <Pressable
+                onPress={() => setMapInteractionEnabled(true)}
+                className="absolute inset-0 items-center justify-center"
+                style={{ backgroundColor: 'rgba(0, 0, 0, 0.05)' }}
+              >
+                <View className="bg-white px-6 py-3 rounded-full shadow-lg border border-gray-200">
+                  <View className="flex-row items-center">
+                    <Ionicons name="hand-left" size={18} color="#DC2626" />
+                    <Text className="text-sm font-semibold text-gray-700 ml-2">
+                      Toca para mover el mapa
+                    </Text>
+                  </View>
+                </View>
+              </Pressable>
+            )}
 
             {/* Current Location Button */}
             {hasLocationPermission && !isLoading && (

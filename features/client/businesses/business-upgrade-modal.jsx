@@ -1,13 +1,14 @@
 import { Ionicons } from '@expo/vector-icons';
-import { useState } from 'react';
-import { Alert, Modal, ScrollView, TouchableOpacity, View } from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
-import { Text, Button } from '../../../shared/components/ui';
-import BusinessOnboardingStep, { isBusinessDataValid } from './business-onboarding-step';
+import { useState } from 'react';
+import { Alert, Modal, ScrollView, StatusBar, TouchableOpacity, View } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import { useAuthStore } from '../../../core/auth/stores/auth-store';
+import { Button, Text } from '../../../shared/components/ui';
 import { apiClient } from '../../../shared/config/api-client';
 import { uploadMedia } from '../../../shared/services/media-upload';
+import { colors } from '../../../shared/utils/colors';
+import BusinessOnboardingStep, { isBusinessDataValid } from './business-onboarding-step';
 
 /**
  * Business Upgrade Modal
@@ -87,14 +88,6 @@ export default function BusinessUpgradeModal({ visible, onClose, onSuccess }) {
       // Close modal and call success callback
       handleClose();
       onSuccess?.();
-
-      // Show success message after navigation
-      setTimeout(() => {
-        Alert.alert(
-          'Cuenta creada',
-          'Tu cuenta de negocio ha sido creada exitosamente'
-        );
-      }, 500);
     } catch (error) {
       console.error('Error creating business:', error);
       Alert.alert(
@@ -125,44 +118,55 @@ export default function BusinessUpgradeModal({ visible, onClose, onSuccess }) {
       animationType="slide"
       presentationStyle="fullScreen"
       onRequestClose={handleClose}
+      statusBarTranslucent={false}
+      transparent={false}
     >
-      <SafeAreaView className="flex-1 bg-white" edges={['top', 'bottom']}>
-        {/* Header */}
-        <View className="bg-primary-500 pb-6 px-6">
-          <View className="flex-row items-center justify-between mb-4">
-            <TouchableOpacity
-              onPress={handleClose}
-              disabled={isLoading}
-              className="w-10 h-10 items-center justify-center"
-            >
-              <Ionicons name="close" size={28} color="#ffffff" />
-            </TouchableOpacity>
-            <Text className="text-lg font-bold text-white">
-              Vende con UNO
-            </Text>
-            <View className="w-10" />
-          </View>
+      <View style={{ flex: 1, backgroundColor: colors.bg.primary }}>
+        <StatusBar barStyle="dark-content" backgroundColor={colors.bg.primary} translucent={false} />
+        <SafeAreaView style={{ flex: 1 }} edges={['top', 'bottom']}>
+          {/* Header */}
+        <View style={{
+          flexDirection: 'row',
+          alignItems: 'center',
+          justifyContent: 'space-between',
+          padding: 16,
+          borderBottomWidth: 1,
+          borderBottomColor: colors.border.light
+        }}>
+          <TouchableOpacity onPress={handleClose} disabled={isLoading}>
+            <Ionicons name="close" size={24} color={colors.text.primary} />
+          </TouchableOpacity>
+          <Text style={{
+            fontSize: 18,
+            fontWeight: '700',
+            color: colors.text.primary
+          }}>
+            Vende con UNO
+          </Text>
+          <View style={{ width: 24 }} />
+        </View>
 
-          {/* Progress Bar */}
-          <View className="flex-row mb-2">
-            {[1, 2].map((i) => (
-              <View key={i} className="flex-1 mx-1">
-                <View
-                  className={`h-2 rounded-full ${
-                    i <= step ? 'bg-white' : 'bg-white/30'
-                  }`}
-                />
-              </View>
-            ))}
-          </View>
-          <Text className="text-white/80 text-sm text-center">
+        {/* Progress Indicator */}
+        <View style={{
+          flexDirection: 'row',
+          alignItems: 'center',
+          justifyContent: 'center',
+          paddingVertical: 12,
+          paddingHorizontal: 16,
+          backgroundColor: colors.bg.secondary
+        }}>
+          <Text style={{
+            fontSize: 13,
+            color: colors.text.secondary,
+            fontWeight: '600'
+          }}>
             Paso {step} de 2
           </Text>
         </View>
 
         {/* Content */}
         <ScrollView
-          className="flex-1"
+          style={{ flex: 1 }}
           contentContainerStyle={{ padding: 24 }}
           keyboardShouldPersistTaps="handled"
         >
@@ -239,7 +243,8 @@ export default function BusinessUpgradeModal({ visible, onClose, onSuccess }) {
             </Button>
           )}
         </View>
-      </SafeAreaView>
+        </SafeAreaView>
+      </View>
     </Modal>
   );
 }

@@ -90,12 +90,12 @@ export const LoginForm = () => {
 
           {/* Error Message - Clean & Minimal */}
           {error && (
-            <View className="mb-4 p-3 bg-red-50 rounded-lg border border-red-200">
+            <View className="mb-4 p-4 bg-red-100 rounded-lg border-2 border-red-400">
               <View className="flex-row items-center">
-                <View className="w-5 h-5 rounded-full bg-red-400 items-center justify-center mr-3">
-                  <Text className="text-white text-xs font-bold">!</Text>
+                <View className="w-6 h-6 rounded-full bg-red-500 items-center justify-center mr-3">
+                  <Text className="text-white text-sm font-bold">!</Text>
                 </View>
-                <Text className="text-red-700 text-sm font-medium flex-1">
+                <Text className="text-red-800 text-sm font-semibold flex-1">
                   {error}
                 </Text>
               </View>

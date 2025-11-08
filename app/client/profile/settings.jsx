@@ -1,15 +1,15 @@
-import React, { useState, useCallback } from 'react';
-import { View, ScrollView, Alert, TouchableOpacity } from 'react-native';
-import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
-import { Text } from '../../../shared/components/ui';
-import { SettingsItem } from '../../../shared/components/profile';
-import BusinessUpgradeModal from '../../../features/client/businesses/business-upgrade-modal';
+import { useCallback, useState } from 'react';
+import { Alert, ScrollView, TouchableOpacity, View } from 'react-native';
+import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useAuthStore } from '../../../core/auth/stores/auth-store';
-import { useAppStore } from '../../../shared/stores/app-store';
-import { useCurrentUserType } from '../../../shared/hooks/use-user-type';
+import BusinessUpgradeModal from '../../../features/client/businesses/business-upgrade-modal';
+import { SettingsItem } from '../../../shared/components/profile';
+import { Text } from '../../../shared/components/ui';
 import { getUserTypeConfig } from '../../../shared/config/user-types';
+import { useCurrentUserType } from '../../../shared/hooks/use-user-type';
+import { useAppStore } from '../../../shared/stores/app-store';
 import { colors } from '../../../shared/utils/colors';
 
 export default function ClientSettingsScreen() {

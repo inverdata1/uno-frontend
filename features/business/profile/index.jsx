@@ -173,7 +173,7 @@ export default function BusinessProfileScreen() {
 
           {/* Settings Button - Top Right */}
           <TouchableOpacity
-            onPress={() => router.push('/profile/settings')}
+            onPress={() => router.push('/business/profile/settings')}
             style={{
               position: 'absolute',
               top: 16,

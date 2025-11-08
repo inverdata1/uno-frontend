@@ -1,6 +1,6 @@
 import { DefaultTheme, ThemeProvider } from '@react-navigation/native';
 import { QueryClientProvider } from '@tanstack/react-query';
-import { Stack } from 'expo-router';
+import { Stack, useRouter, useSegments } from 'expo-router';
 import * as SplashScreen from 'expo-splash-screen';
 import { StatusBar } from 'expo-status-bar';
 import React from 'react';
@@ -32,6 +32,23 @@ export const unstable_settings = {
 };
 
 function AppNavigator() {
+  const router = useRouter();
+  const segments = useSegments();
+  const { isAuthenticated, isLoading } = useAuthStore();
+
+  // Handle auth state changes and redirect appropriately
+  React.useEffect(() => {
+    if (isLoading) return;
+
+    const inAuthGroup = segments[0] === '(auth)';
+
+    if (!isAuthenticated && !inAuthGroup) {
+      // User is not authenticated and not in auth screens, redirect to welcome
+      console.log('🚪 User logged out, redirecting to welcome');
+      router.replace('/(auth)/welcome');
+    }
+  }, [isAuthenticated, segments, isLoading]);
+
   return (
     <Stack screenOptions={{ headerShown: false }}>
       <Stack.Screen name="index" />

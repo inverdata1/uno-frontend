@@ -1,16 +1,20 @@
 import { Ionicons } from '@expo/vector-icons';
 import { useState } from 'react';
-import { Alert, Modal, ScrollView, TouchableOpacity, View, ActivityIndicator } from 'react-native';
-import { Text } from '../../../shared/components/ui';
+import { Alert, Modal, ScrollView, TouchableOpacity, View } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
+import { useRouter } from 'expo-router';
+import { Text, Button } from '../../../shared/components/ui';
 import BusinessOnboardingStep, { isBusinessDataValid } from './business-onboarding-step';
 import { useAuthStore } from '../../../core/auth/stores/auth-store';
 import { apiClient } from '../../../shared/config/api-client';
+import { uploadMedia } from '../../../shared/services/media-upload';
 
 /**
  * Business Upgrade Modal
  * Allows existing client users to upgrade to business mode
  */
 export default function BusinessUpgradeModal({ visible, onClose, onSuccess }) {
+  const router = useRouter();
   const { user, refreshUser } = useAuthStore();
   const [businessData, setBusinessData] = useState({});
   const [isLoading, setIsLoading] = useState(false);
@@ -25,31 +29,50 @@ export default function BusinessUpgradeModal({ visible, onClose, onSuccess }) {
     setIsLoading(true);
 
     try {
-      // 1. Create business profile
+      // 1. Upload images if provided
+      let logoUrl = null;
+      let bannerUrl = null;
+
+      if (businessData.logoUri) {
+        console.log('Uploading business logo...');
+        const logoResult = await uploadMedia(businessData.logoUri, 'BUSINESS_LOGO');
+        logoUrl = logoResult.url;
+        console.log('Logo uploaded:', logoUrl);
+      }
+
+      if (businessData.bannerUri) {
+        console.log('Uploading business banner...');
+        const bannerResult = await uploadMedia(businessData.bannerUri, 'BUSINESS_BANNER');
+        bannerUrl = bannerResult.url;
+        console.log('Banner uploaded:', bannerUrl);
+      }
+
+      // 2. Create business profile
       const business = await apiClient.post('/businesses', {
         businessName: businessData.businessName,
         category: businessData.category,
         description: businessData.description || '',
         address: businessData.address,
+        coordinates: businessData.coordinates || null,
         phone: businessData.phone,
-        logoUrl: businessData.logoUrl || null,
-        bannerUrl: businessData.bannerUrl || null,
+        logoUrl: logoUrl,
+        bannerUrl: bannerUrl,
       }, { params: { userId: user.uid } });
 
       console.log('Business profile created:', business.data.id);
 
-      // 2. Enable business user type
+      // 3. Enable business user type
       await apiClient.post('/users/enable-user-type', {
         userType: 'business',
         status: 'active'
       }, { params: { userId: user.uid } });
 
-      // 3. Update user with business ID and switch to business mode
+      // 4. Update user with business ID and switch to business mode
       await apiClient.put('/users/profile', {
         currentBusinessId: business.data.id
       }, { params: { userId: user.uid } });
 
-      // 4. Switch to business user type
+      // 5. Switch to business user type
       await apiClient.post('/users/switch-user-type', {
         userType: 'business',
         businessId: business.data.id
@@ -58,19 +81,20 @@ export default function BusinessUpgradeModal({ visible, onClose, onSuccess }) {
       // Refresh user data to reflect changes
       await refreshUser();
 
-      Alert.alert(
-        'Cuenta creada',
-        'Tu cuenta de negocio ha sido creada exitosamente',
-        [
-          {
-            text: 'OK',
-            onPress: () => {
-              onSuccess?.();
-              handleClose();
-            }
-          }
-        ]
-      );
+      // Navigate to business interface
+      router.replace('/business/(tabs)');
+
+      // Close modal and call success callback
+      handleClose();
+      onSuccess?.();
+
+      // Show success message after navigation
+      setTimeout(() => {
+        Alert.alert(
+          'Cuenta creada',
+          'Tu cuenta de negocio ha sido creada exitosamente'
+        );
+      }, 500);
     } catch (error) {
       console.error('Error creating business:', error);
       Alert.alert(
@@ -99,12 +123,12 @@ export default function BusinessUpgradeModal({ visible, onClose, onSuccess }) {
     <Modal
       visible={visible}
       animationType="slide"
-      presentationStyle="pageSheet"
+      presentationStyle="fullScreen"
       onRequestClose={handleClose}
     >
-      <View className="flex-1 bg-white">
+      <SafeAreaView className="flex-1 bg-white" edges={['top', 'bottom']}>
         {/* Header */}
-        <View className="bg-primary-500 pt-12 pb-6 px-6">
+        <View className="bg-primary-500 pb-6 px-6">
           <View className="flex-row items-center justify-between mb-4">
             <TouchableOpacity
               onPress={handleClose}
@@ -186,45 +210,36 @@ export default function BusinessUpgradeModal({ visible, onClose, onSuccess }) {
         </ScrollView>
 
         {/* Footer Buttons */}
-        <View className="border-t border-gray-200 p-4">
-          <View className="flex-row gap-3">
-            {step > 1 && (
-              <TouchableOpacity
-                onPress={() => setStep(step - 1)}
-                disabled={isLoading}
-                className="flex-1 bg-gray-100 py-4 rounded-xl"
-              >
-                <Text className="text-center text-gray-900 font-semibold">
-                  Atrás
-                </Text>
-              </TouchableOpacity>
-            )}
+        <View className="border-t border-gray-200 px-6 py-4">
+          <Button
+            variant="primary"
+            size="md"
+            className="w-full"
+            onPress={() => {
+              if (step === 1) {
+                setStep(2);
+              } else {
+                handleSubmit();
+              }
+            }}
+            disabled={!canProceed() || isLoading}
+          >
+            {isLoading ? 'Creando cuenta...' : step === 1 ? 'Continuar' : 'Crear Cuenta'}
+          </Button>
 
-            <TouchableOpacity
-              onPress={() => {
-                if (step === 1) {
-                  setStep(2);
-                } else {
-                  handleSubmit();
-                }
-              }}
-              disabled={!canProceed() || isLoading}
-              className="flex-1 py-4 rounded-xl"
-              style={{
-                backgroundColor: canProceed() && !isLoading ? '#ef4444' : '#d1d5db'
-              }}
+          {step > 1 && (
+            <Button
+              variant="outline"
+              size="md"
+              className="w-full mt-3"
+              onPress={() => setStep(step - 1)}
+              disabled={isLoading}
             >
-              {isLoading ? (
-                <ActivityIndicator color="#ffffff" />
-              ) : (
-                <Text className="text-center text-white font-semibold">
-                  {step === 1 ? 'Continuar' : 'Crear Cuenta de Negocio'}
-                </Text>
-              )}
-            </TouchableOpacity>
-          </View>
+              Atrás
+            </Button>
+          )}
         </View>
-      </View>
+      </SafeAreaView>
     </Modal>
   );
 }
@@ -256,6 +271,7 @@ function getCategoryLabel(categoryId) {
     pharmacy: 'Farmacia',
     market: 'Mercado',
     bakery: 'Panadería',
+    technology: 'Tecnología',
     other: 'Otro',
   };
   return categories[categoryId] || categoryId;

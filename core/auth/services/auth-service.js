@@ -6,6 +6,7 @@ import {
 } from 'firebase/auth';
 import { auth } from '../../../shared/config/firebase';
 import { apiClient } from '../../../shared/config/api-client';
+import { uploadMedia } from '../../../shared/services/media-upload';
 
 export const authService = {
   /**
@@ -39,14 +40,33 @@ export const authService = {
       if (selectedUserType === 'business' && businessData) {
         console.log('📊 Creating business profile during registration...');
 
+        // Upload images if provided
+        let logoUrl = null;
+        let bannerUrl = null;
+
+        if (businessData.logoUri) {
+          console.log('📤 Uploading business logo...');
+          const logoResult = await uploadMedia(businessData.logoUri, 'BUSINESS_LOGO', {}, null, user);
+          logoUrl = logoResult.url;
+          console.log('✅ Logo uploaded:', logoUrl);
+        }
+
+        if (businessData.bannerUri) {
+          console.log('📤 Uploading business banner...');
+          const bannerResult = await uploadMedia(businessData.bannerUri, 'BUSINESS_BANNER', {}, null, user);
+          bannerUrl = bannerResult.url;
+          console.log('✅ Banner uploaded:', bannerUrl);
+        }
+
         const business = await apiClient.post('/businesses', {
           businessName: businessData.businessName,
           category: businessData.category,
           description: businessData.description || '',
           address: businessData.address,
+          coordinates: businessData.coordinates || null,
           phone: businessData.phone,
-          logoUrl: businessData.logoUrl || null,
-          bannerUrl: businessData.bannerUrl || null,
+          logoUrl: logoUrl,
+          bannerUrl: bannerUrl,
         }, { params: { userId: user.uid } });
 
         businessId = business.data.id;
@@ -163,6 +183,8 @@ export const authService = {
     return onAuthStateChanged(auth, async (user) => {
       if (user) {
         // Get user data through our API system
+        // Note: During registration, the store manually sets user data to avoid race conditions
+        // This listener is mainly for app restarts and auth state persistence
         try {
           const userProfile = await apiClient.get('/users/profile', { params: { userId: user.uid } });
           const userTypesData = await apiClient.get('/users/user-types', { params: { userId: user.uid } });
@@ -175,18 +197,20 @@ export const authService = {
             ...userTypesData.data
           });
         } catch (error) {
-          console.warn('Failed to fetch user profile data, keeping basic auth state:', error);
-          // Don't log out the user if API fails - just provide basic auth info
+          // If user document doesn't exist yet (e.g., during registration),
+          // the store will handle setting the user state manually
+          console.warn('Auth state changed but user profile not ready:', error.message);
+
+          // For existing users (e.g., app restart), provide basic auth info
           callback({
             uid: user.uid,
             email: user.email,
             emailVerified: user.emailVerified,
-            // Provide safe defaults if API fails
             firstName: '',
             lastName: '',
             phone: '',
-            userTypes: { client: { status: 'active' } }, // API field
-            currentUserType: 'client' // API field
+            userTypes: { client: { status: 'active' } },
+            currentUserType: 'client'
           });
         }
       } else {

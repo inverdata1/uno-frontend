@@ -44,7 +44,8 @@ export const useAuthStore = create((set, get) => ({
       });
       return { error: result.error };
     } else {
-      // Success
+      // Success - manually set user state with complete data
+      // This prevents race condition with auth listener
       set({
         user: result.user,
         isAuthenticated: true,
@@ -56,7 +57,7 @@ export const useAuthStore = create((set, get) => ({
       queryClient.invalidateQueries({ queryKey: ['user-types'] });
       queryClient.invalidateQueries({ queryKey: ['users', 'profile'] });
 
-      console.log('✅ Registration successful, refreshed user type data');
+      console.log('✅ Registration successful with complete user data');
 
       return result;
     }

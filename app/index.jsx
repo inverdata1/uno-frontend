@@ -24,20 +24,30 @@ export default function IndexScreen() {
   const { currentUserType, isLoading: userTypeLoading } = useCurrentUserType();
 
   useEffect(() => {
+    console.log('📍 Index screen - Auth state:', { isAuthenticated, authLoading, currentUserType, userTypeLoading });
+
     // Wait for auth to load first
-    if (authLoading) return;
+    if (authLoading) {
+      console.log('⏳ Waiting for auth to load...');
+      return;
+    }
 
     // If not authenticated, redirect to welcome immediately
     if (!isAuthenticated) {
+      console.log('🚪 Not authenticated, redirecting to welcome');
       router.replace('/(auth)/welcome');
       return;
     }
 
     // If authenticated, wait for user type to load
-    if (userTypeLoading) return;
+    if (userTypeLoading) {
+      console.log('⏳ Waiting for user type to load...');
+      return;
+    }
 
     // Redirect to user type specific section
     if (currentUserType) {
+      console.log(`🚀 Redirecting to ${currentUserType}/(tabs)`);
       router.replace(`/${currentUserType}/(tabs)`);
     }
   }, [isAuthenticated, authLoading, currentUserType, userTypeLoading, router]);

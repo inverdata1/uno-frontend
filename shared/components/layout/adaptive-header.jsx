@@ -16,7 +16,7 @@ export const AdaptiveHeader = () => {
   const { user } = useAuthStore();
   const [showAddressManager, setShowAddressManager] = useState(false);
 
-  // TanStack Query hooks for data
+  // TanStack Query hooks for data (only fetch if user exists)
   const { data: addresses = [], isLoading } = useAddresses(user?.uid);
   const createAddressMutation = useCreateAddress();
   const updateAddressMutation = useUpdateAddress();
@@ -33,6 +33,7 @@ export const AdaptiveHeader = () => {
   };
 
   const handleAddressSelect = async (address) => {
+    if (!user?.uid) return;
     // Set as default address
     await setDefaultAddressMutation.mutateAsync({
       addressId: address.id,
@@ -42,6 +43,7 @@ export const AdaptiveHeader = () => {
   };
 
   const handleAddAddress = async (addressData) => {
+    if (!user?.uid) return;
     const behavior = addressBehavior;
 
     const firebaseAddressData = {
@@ -56,6 +58,7 @@ export const AdaptiveHeader = () => {
   };
 
   const handleEditAddress = async (addressData) => {
+    if (!user?.uid) return;
     return await updateAddressMutation.mutateAsync({
       addressId: addressData.id,
       addressData,
@@ -64,6 +67,7 @@ export const AdaptiveHeader = () => {
   };
 
   const handleDeleteAddress = async (address) => {
+    if (!user?.uid) return;
     return await deleteAddressMutation.mutateAsync({
       addressId: address.id,
       userId: user.uid
@@ -71,6 +75,7 @@ export const AdaptiveHeader = () => {
   };
 
   const handleSetDefaultAddress = async (address) => {
+    if (!user?.uid) return;
     return await setDefaultAddressMutation.mutateAsync({
       addressId: address.id,
       userId: user.uid

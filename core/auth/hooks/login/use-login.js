@@ -28,9 +28,9 @@ export const useLogin = () => {
 
       // Check if sign in was successful
       if (result && !result.error) {
-        // Success - navigate to main app
-        console.log('📝 Login successful, navigating to main');
-        router.replace('/(main)');
+        // Success - navigate to index which will redirect to correct user type
+        console.log('📝 Login successful, navigating to index');
+        router.replace('/');
       } else {
         console.log('📝 Login failed, staying on login screen');
       }

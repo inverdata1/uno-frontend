@@ -1,7 +1,8 @@
 import { Ionicons } from '@expo/vector-icons';
 import { useState } from 'react';
-import { Image, TouchableOpacity, View, ScrollView } from 'react-native';
-import { Text, Input } from '../../../shared/components/ui';
+import { Alert, Image, ScrollView, TouchableOpacity, View } from 'react-native';
+import * as ImagePicker from 'expo-image-picker';
+import { Input, MapPicker, Text } from '../../../shared/components/ui';
 import { PhoneInput } from '../../../shared/components/ui/phone-input';
 
 /**
@@ -19,15 +20,54 @@ export default function BusinessOnboardingStep({
     category: businessData.category || '',
     description: businessData.description || '',
     address: businessData.address || '',
+    coordinates: businessData.coordinates || null,
     phone: businessData.phone || '',
-    logoUrl: businessData.logoUrl || null,
-    bannerUrl: businessData.bannerUrl || null,
+    logoUri: businessData.logoUri || null,
+    bannerUri: businessData.bannerUri || null,
   });
 
   const updateField = (field, value) => {
     const newData = { ...formData, [field]: value };
     setFormData(newData);
     onBusinessDataChange?.(newData);
+  };
+
+  const handlePickLogo = async () => {
+    try {
+      const result = await ImagePicker.launchImageLibraryAsync({
+        mediaTypes: ['images'],
+        allowsEditing: true,
+        aspect: [1, 1],
+        quality: 0.8,
+        presentationStyle: 'fullScreen',
+      });
+
+      if (!result.canceled && result.assets[0]) {
+        updateField('logoUri', result.assets[0].uri);
+      }
+    } catch (error) {
+      Alert.alert('Error', 'No se pudo seleccionar la imagen. Intenta nuevamente.');
+      console.error('Logo picker error:', error);
+    }
+  };
+
+  const handlePickBanner = async () => {
+    try {
+      const result = await ImagePicker.launchImageLibraryAsync({
+        mediaTypes: ['images'],
+        allowsEditing: true,
+        aspect: [3, 1],
+        quality: 0.8,
+        presentationStyle: 'fullScreen',
+      });
+
+      if (!result.canceled && result.assets[0]) {
+        updateField('bannerUri', result.assets[0].uri);
+      }
+    } catch (error) {
+      Alert.alert('Error', 'No se pudo seleccionar la imagen. Intenta nuevamente.');
+      console.error('Banner picker error:', error);
+    }
   };
 
   // Business categories
@@ -126,21 +166,31 @@ export default function BusinessOnboardingStep({
         onChangeText={(value) => updateField('phone', value)}
       />
 
+      {/* Map Location Picker - Optional */}
+      <View className="mb-3">
+        <Text variant="body" className="text-gray-500 font-medium mb-2">
+          Ubicación (opcional)
+        </Text>
+        <MapPicker
+          height={250}
+          initialLocation={businessData.coordinates}
+          onLocationSelect={(location) => updateField('coordinates', location)}
+          className="border border-gray-400 rounded-xl"
+        />
+      </View>
+
       {/* Image Uploads - Optional */}
       <View className="mb-3">
         {/* Logo */}
         <TouchableOpacity
-          onPress={() => {
-            // TODO: Implement image picker
-            console.log('Pick logo image');
-          }}
+          onPress={handlePickLogo}
           className="flex-row items-center bg-gray-50 rounded-xl p-4 mb-3 border border-gray-400"
           activeOpacity={0.7}
         >
           <View className="w-14 h-14 rounded-full bg-gray-200 items-center justify-center mr-3">
-            {formData.logoUrl ? (
+            {formData.logoUri ? (
               <Image
-                source={{ uri: formData.logoUrl }}
+                source={{ uri: formData.logoUri }}
                 style={{ width: 56, height: 56, borderRadius: 28 }}
                 resizeMode="cover"
               />
@@ -153,7 +203,7 @@ export default function BusinessOnboardingStep({
               Logo del negocio
             </Text>
             <Text variant="caption" className="text-gray-500">
-              {formData.logoUrl ? 'Toca para cambiar' : 'Opcional'}
+              {formData.logoUri ? 'Toca para cambiar' : 'Opcional'}
             </Text>
           </View>
           <Ionicons name="camera-outline" size={20} color="#6b7280" />
@@ -161,17 +211,14 @@ export default function BusinessOnboardingStep({
 
         {/* Banner */}
         <TouchableOpacity
-          onPress={() => {
-            // TODO: Implement image picker
-            console.log('Pick banner image');
-          }}
+          onPress={handlePickBanner}
           className="bg-gray-50 rounded-xl border border-gray-400 overflow-hidden mb-3"
           activeOpacity={0.7}
           style={{ height: 100 }}
         >
-          {formData.bannerUrl ? (
+          {formData.bannerUri ? (
             <Image
-              source={{ uri: formData.bannerUrl }}
+              source={{ uri: formData.bannerUri }}
               style={{ width: '100%', height: '100%' }}
               resizeMode="cover"
             />

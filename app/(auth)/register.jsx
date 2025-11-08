@@ -9,8 +9,9 @@ export default function RegisterScreen() {
   const router = useRouter();
 
   const handleRegistrationComplete = () => {
-    // Navigate to main app after successful registration
-    router.replace('/(main)');
+    // Navigate to index after successful registration
+    // Index will redirect to the appropriate user type screen
+    router.replace('/');
   };
 
   return (

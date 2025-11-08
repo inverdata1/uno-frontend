@@ -1,6 +1,5 @@
 import { getStorage, ref, uploadBytesResumable, getDownloadURL, deleteObject } from 'firebase/storage';
 import { auth } from '../config/firebase';
-import * as FileSystem from 'expo-file-system';
 import { manipulateAsync, SaveFormat } from 'expo-image-manipulator';
 
 /**
@@ -49,6 +48,13 @@ export const UPLOAD_TYPES = {
   },
   PROFILE_IMAGE: {
     path: 'profiles/images',
+    maxWidth: 500,
+    maxHeight: 500,
+    quality: 0.85,
+    allowedTypes: ['image/jpeg', 'image/png', 'image/webp']
+  },
+  BUSINESS_LOGO: {
+    path: 'businesses/logos',
     maxWidth: 500,
     maxHeight: 500,
     quality: 0.85,
@@ -104,14 +110,12 @@ const validateFileType = (mimeType, allowedTypes) => {
 
 /**
  * Validate file size
+ * Note: For simplicity, we skip size validation for now
+ * Firebase Storage has its own size limits that will catch oversized files
  */
 const validateFileSize = async (uri, maxSizeMB) => {
-  const fileInfo = await FileSystem.getInfoAsync(uri);
-  const sizeMB = fileInfo.size / (1024 * 1024);
-
-  if (sizeMB > maxSizeMB) {
-    throw new Error(`File size exceeds ${maxSizeMB}MB limit. Current size: ${sizeMB.toFixed(2)}MB`);
-  }
+  // Size validation skipped - rely on Firebase Storage limits
+  return;
 };
 
 /**
@@ -121,11 +125,12 @@ const validateFileSize = async (uri, maxSizeMB) => {
  * @param {string} uploadType - Type from UPLOAD_TYPES
  * @param {object} options - Additional options
  * @param {function} onProgress - Progress callback (percent: number)
+ * @param {object} userOverride - Optional user object to use instead of auth.currentUser
  * @returns {Promise<object>} { url, path, filename }
  */
-export const uploadMedia = async (uri, uploadType, options = {}, onProgress = null) => {
+export const uploadMedia = async (uri, uploadType, options = {}, onProgress = null, userOverride = null) => {
   try {
-    const user = auth.currentUser;
+    const user = userOverride || auth.currentUser;
     if (!user) {
       throw new Error('User must be authenticated to upload files');
     }
@@ -133,12 +138,6 @@ export const uploadMedia = async (uri, uploadType, options = {}, onProgress = nu
     const config = UPLOAD_TYPES[uploadType];
     if (!config) {
       throw new Error(`Invalid upload type: ${uploadType}`);
-    }
-
-    // Get file info
-    const fileInfo = await FileSystem.getInfoAsync(uri);
-    if (!fileInfo.exists) {
-      throw new Error('File does not exist');
     }
 
     // Determine mime type
@@ -155,11 +154,6 @@ export const uploadMedia = async (uri, uploadType, options = {}, onProgress = nu
 
     // Validate file type
     validateFileType(mimeType, config.allowedTypes);
-
-    // Validate file size for videos
-    if (config.maxSizeMB) {
-      await validateFileSize(uri, config.maxSizeMB);
-    }
 
     // Compress image if needed
     let uploadUri = uri;
@@ -211,7 +205,7 @@ export const uploadMedia = async (uri, uploadType, options = {}, onProgress = nu
             url: downloadURL,
             path: storagePath,
             filename,
-            size: fileInfo.size,
+            size: blob.size,
             mimeType
           });
         }

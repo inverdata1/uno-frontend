@@ -98,7 +98,7 @@ export default function ClientProfileScreen() {
 
           {/* Settings Button - Top Right */}
           <TouchableOpacity
-            onPress={() => router.push('/profile/settings')}
+            onPress={() => router.push('/client/profile/settings')}
             style={{
               position: 'absolute',
               top: 16,

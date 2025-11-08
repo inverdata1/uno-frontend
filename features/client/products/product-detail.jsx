@@ -1,9 +1,9 @@
 import { Ionicons } from '@expo/vector-icons';
 import { useState } from 'react';
-import { ActivityIndicator, Dimensions, Image, Modal, ScrollView, StatusBar, TouchableOpacity, View } from 'react-native';
+import { ActivityIndicator, Dimensions, Image, ScrollView, StatusBar, TouchableOpacity, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import { useRouter } from 'expo-router';
 import { Text } from '../../../shared/components/ui';
-import BusinessProfile from '../businesses/business-profile';
 
 const { width } = Dimensions.get('window');
 
@@ -12,11 +12,11 @@ const { width } = Dimensions.get('window');
  * Instagram/TikTok Shop inspired design with floating header and modern layout
  */
 export default function ProductDetail({ product, onClose, onBusinessPress }) {
+  const router = useRouter();
   const [selectedImageIndex, setSelectedImageIndex] = useState(0);
   const [quantity, setQuantity] = useState(1);
   const [isFavorited, setIsFavorited] = useState(product?.isFavorited || false);
   const [selectedVariants, setSelectedVariants] = useState({});
-  const [businessProfileVisible, setBusinessProfileVisible] = useState(false);
   const [imageLoadingStates, setImageLoadingStates] = useState({});
   const [imageErrors, setImageErrors] = useState({});
 
@@ -42,11 +42,17 @@ export default function ProductDetail({ product, onClose, onBusinessPress }) {
 
   const handleBusinessPress = () => {
     // If parent provides onBusinessPress callback, use it (for navigation)
-    // Otherwise, open local modal (for standalone usage)
+    // Otherwise, navigate to business profile
     if (onBusinessPress && product?.storeId) {
       onBusinessPress(product.storeId);
+    } else if (product?.businessId) {
+      // Close the modal first, then navigate
+      onClose?.();
+      // Navigate to business profile
+      router.push(`/client/business/${product.businessId}`);
     } else {
-      setBusinessProfileVisible(true);
+      // Fallback: do nothing if no business ID
+      console.warn('No business ID available for navigation');
     }
   };
 
@@ -450,18 +456,6 @@ export default function ProductDetail({ product, onClose, onBusinessPress }) {
         </TouchableOpacity>
       </View>
 
-      {/* Business Profile Modal */}
-      <Modal
-        visible={businessProfileVisible}
-        animationType="slide"
-        presentationStyle="fullScreen"
-        onRequestClose={() => setBusinessProfileVisible(false)}
-      >
-        <BusinessProfile
-          business={product?.business}
-          onClose={() => setBusinessProfileVisible(false)}
-        />
-      </Modal>
       </SafeAreaView>
   );
 }

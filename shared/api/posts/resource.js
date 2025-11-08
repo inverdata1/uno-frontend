@@ -396,8 +396,8 @@ export class PostsResource extends BaseFirebaseService {
    * GET /posts/product/{productId}
    * Get posts featuring a specific product
    */
-  async get_product_id(data, params) {
-    const { id: productId } = params;
+  async get_product(data, params) {
+    const { productId } = params;
 
     const allPosts = await this.findWhere([
       ['isPublished', '==', true],
@@ -406,7 +406,7 @@ export class PostsResource extends BaseFirebaseService {
 
     // Filter posts that have this product tagged
     const postsWithProduct = allPosts.filter(post =>
-      post.taggedProducts && post.taggedProducts.includes(productId)
+      post.taggedProducts && post.taggedProducts.some(tag => tag.productId === productId)
     );
 
     return postsWithProduct.sort((a, b) => b.publishedAt?.toMillis() - a.publishedAt?.toMillis());

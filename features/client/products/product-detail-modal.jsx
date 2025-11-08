@@ -5,6 +5,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { Text } from '../../../shared/components/ui';
 import { useProduct } from '../../shared/products/hooks/use-products';
 import ProductDetail from './product-detail';
+import VideoViewer from '../social/videos/video-viewer';
 
 /**
  * Reusable Product Detail Modal
@@ -28,6 +29,9 @@ export default function ProductDetailModal({
   const router = useRouter();
   const { data: product, isLoading } = useProduct(productId);
   const pendingNavigationRef = useRef(null);
+  const [videoViewerVisible, setVideoViewerVisible] = useState(false);
+  const [videoViewerVideos, setVideoViewerVideos] = useState([]);
+  const [selectedVideoIndex, setSelectedVideoIndex] = useState(0);
 
   // When modal closes, check if there's pending navigation
   useEffect(() => {
@@ -62,6 +66,15 @@ export default function ProductDetailModal({
     onClose();
   };
 
+  const handleVideoPress = (video, allVideos) => {
+    // Find the index of the selected video
+    const videoIndex = allVideos.findIndex(v => v.id === video.id);
+    // Set up video viewer
+    setVideoViewerVideos(allVideos);
+    setSelectedVideoIndex(videoIndex >= 0 ? videoIndex : 0);
+    setVideoViewerVisible(true);
+  };
+
   if (!visible) return null;
 
   return (
@@ -77,11 +90,30 @@ export default function ProductDetailModal({
           <Text className="text-gray-500 text-sm mt-4">Cargando producto...</Text>
         </SafeAreaView>
       ) : product ? (
-        <ProductDetail
-          product={product}
-          onClose={onClose}
-          onBusinessPress={handleBusinessPress}
-        />
+        <>
+          <ProductDetail
+            product={product}
+            onClose={onClose}
+            onBusinessPress={handleBusinessPress}
+            onVideoPress={handleVideoPress}
+          />
+
+          {/* Video Viewer Modal */}
+          <VideoViewer
+            visible={videoViewerVisible}
+            videos={videoViewerVideos}
+            initialIndex={selectedVideoIndex}
+            onClose={() => setVideoViewerVisible(false)}
+            onProductPress={(product) => {
+              // Product is already showing, just close video viewer
+              setVideoViewerVisible(false);
+            }}
+            onBusinessPress={(businessId) => {
+              setVideoViewerVisible(false);
+              handleBusinessPress(businessId);
+            }}
+          />
+        </>
       ) : (
         <SafeAreaView className="flex-1 bg-white items-center justify-center px-6">
           <Text className="text-gray-900 text-lg font-semibold mb-2">

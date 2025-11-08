@@ -4,6 +4,7 @@ import { ActivityIndicator, Dimensions, Image, ScrollView, StatusBar, TouchableO
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
 import { Text } from '../../../shared/components/ui';
+import { useProductVideos } from '../../../shared/hooks/use-product-posts';
 
 const { width } = Dimensions.get('window');
 
@@ -11,7 +12,7 @@ const { width } = Dimensions.get('window');
  * Product Detail Screen
  * Instagram/TikTok Shop inspired design with floating header and modern layout
  */
-export default function ProductDetail({ product, onClose, onBusinessPress }) {
+export default function ProductDetail({ product, onClose, onBusinessPress, onVideoPress }) {
   const router = useRouter();
   const [selectedImageIndex, setSelectedImageIndex] = useState(0);
   const [quantity, setQuantity] = useState(1);
@@ -20,15 +21,18 @@ export default function ProductDetail({ product, onClose, onBusinessPress }) {
   const [imageLoadingStates, setImageLoadingStates] = useState({});
   const [imageErrors, setImageErrors] = useState({});
 
+  // Fetch videos that have this product tagged
+  const { data: productVideos = [], isLoading: videosLoading } = useProductVideos(product?.id);
+
   console.log('[ProductDetail] Product data:', {
     name: product?.name,
     business: product?.business,
-    businessId: product?.businessId
+    businessId: product?.businessId,
+    productVideosCount: productVideos.length
   });
 
-  // Mock data - will be replaced with real data
+  // Images and variants
   const images = product?.images || [product?.thumbnailUrl || 'https://via.placeholder.com/400'];
-  const relatedVideos = product?.relatedVideos || [];
   const variants = product?.variants || [];
 
   const handleAddToCart = () => {
@@ -58,7 +62,14 @@ export default function ProductDetail({ product, onClose, onBusinessPress }) {
 
   const handleVideoPress = (video) => {
     console.log('Open video:', video.id);
-    // TODO: Open video viewer with this video
+    // If parent provides onVideoPress callback, use it
+    if (onVideoPress) {
+      onVideoPress(video, productVideos);
+    } else {
+      // Fallback: close modal (parent should handle video viewer)
+      console.warn('No onVideoPress callback provided');
+      onClose?.();
+    }
   };
 
   const handleFollowToggle = (e) => {
@@ -276,7 +287,17 @@ export default function ProductDetail({ product, onClose, onBusinessPress }) {
         </View>
 
         {/* Related Videos - TikTok Style */}
-        {relatedVideos.length > 0 && (
+        {videosLoading ? (
+          <View className="px-4 mb-6">
+            <Text className="text-lg font-bold text-gray-900 mb-3">
+              Videos con este producto
+            </Text>
+            <View className="flex-row items-center justify-center py-8">
+              <ActivityIndicator size="small" color="#ef4444" />
+              <Text className="text-sm text-gray-500 ml-2">Cargando videos...</Text>
+            </View>
+          </View>
+        ) : productVideos.length > 0 ? (
           <View className="mb-6">
             <View className="px-4 mb-3 flex-row items-center justify-between">
               <View>
@@ -284,7 +305,7 @@ export default function ProductDetail({ product, onClose, onBusinessPress }) {
                   Videos con este producto
                 </Text>
                 <Text className="text-sm text-gray-500">
-                  {relatedVideos.length} videos
+                  {productVideos.length} {productVideos.length === 1 ? 'video' : 'videos'}
                 </Text>
               </View>
             </View>
@@ -294,37 +315,53 @@ export default function ProductDetail({ product, onClose, onBusinessPress }) {
               contentContainerStyle={{ paddingHorizontal: 16 }}
               className="gap-3"
             >
-              {relatedVideos.map((video, index) => (
+              {productVideos.map((post, index) => (
                 <TouchableOpacity
-                  key={video.id}
+                  key={post.id}
                   activeOpacity={0.9}
-                  onPress={() => handleVideoPress(video)}
-                  className="relative rounded-xl overflow-hidden"
-                  style={{ width: 130, height: 200, marginRight: index < relatedVideos.length - 1 ? 12 : 0 }}
+                  onPress={() => handleVideoPress(post)}
+                  className="relative rounded-xl overflow-hidden bg-gray-100"
+                  style={{ width: 130, height: 200, marginRight: index < productVideos.length - 1 ? 12 : 0 }}
                 >
-                  {video.thumbnailUrl ? (
+                  {post.thumbnailUrl ? (
                     <Image
-                      source={{ uri: video.thumbnailUrl }}
+                      source={{ uri: post.thumbnailUrl }}
                       className="w-full h-full"
                       resizeMode="cover"
                     />
                   ) : (
-                    <View className="flex-1 justify-center items-center bg-gray-100">
+                    <View className="flex-1 justify-center items-center">
                       <Ionicons name="play-circle" size={40} color="#9ca3af" />
                     </View>
                   )}
-                  {/* Play overlay */}
-                  <View className="absolute bottom-2 left-2 flex-row items-center">
-                    <Ionicons name="play" size={12} color="#fff" />
-                    <Text className="text-xs font-semibold text-white ml-1">
-                      {video.views || '1.2K'}
-                    </Text>
+                  {/* Play overlay with gradient */}
+                  <View className="absolute inset-0 justify-end">
+                    <View style={{
+                      height: 80,
+                      background: 'linear-gradient(to top, rgba(0,0,0,0.6), transparent)',
+                      paddingBottom: 8,
+                      paddingLeft: 8,
+                      justifyContent: 'flex-end'
+                    }}>
+                      <View className="flex-row items-center">
+                        <Ionicons name="play" size={14} color="#fff" />
+                        <Text className="text-xs font-semibold text-white ml-1">
+                          {post.viewCount ? `${post.viewCount >= 1000 ? `${(post.viewCount / 1000).toFixed(1)}K` : post.viewCount}` : ''}
+                        </Text>
+                      </View>
+                    </View>
+                  </View>
+                  {/* Play button icon in center */}
+                  <View className="absolute inset-0 justify-center items-center">
+                    <View className="w-12 h-12 rounded-full bg-black/30 items-center justify-center">
+                      <Ionicons name="play" size={24} color="#fff" />
+                    </View>
                   </View>
                 </TouchableOpacity>
               ))}
             </ScrollView>
           </View>
-        )}
+        ) : null}
 
         {/* Variants - Shopify Style */}
         {variants.length > 0 && (

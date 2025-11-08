@@ -10,7 +10,7 @@ export const useProductPosts = (productId) => {
     queryKey: ['product-posts', productId],
     queryFn: () => {
       if (!productId) return [];
-      return apiClient.get(`/posts/product/${productId}`)
+      return apiClient.get('/posts/product', { params: { productId } })
         .then(res => res.data || []);
     },
     enabled: !!productId,
@@ -28,7 +28,7 @@ export const useProductVideos = (productId) => {
     queryFn: async () => {
       if (!productId) return [];
 
-      const posts = await apiClient.get(`/posts/product/${productId}`)
+      const posts = await apiClient.get('/posts/product', { params: { productId } })
         .then(res => res.data || []);
 
       // Filter only video posts
@@ -49,7 +49,7 @@ export const useProductPhotos = (productId) => {
     queryFn: async () => {
       if (!productId) return [];
 
-      const posts = await apiClient.get(`/posts/product/${productId}`)
+      const posts = await apiClient.get('/posts/product', { params: { productId } })
         .then(res => res.data || []);
 
       // Filter only image posts

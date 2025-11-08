@@ -28,6 +28,7 @@ export default function ClientHomeScreen() {
   const [selectedStories, setSelectedStories] = useState([]);
   const [videoViewerVisible, setVideoViewerVisible] = useState(false);
   const [selectedVideoIndex, setSelectedVideoIndex] = useState(0);
+  const [videoViewerVideos, setVideoViewerVideos] = useState([]);
   const [productDetailVisible, setProductDetailVisible] = useState(false);
   const [selectedProduct, setSelectedProduct] = useState(null);
   const [productsBottomSheetVisible, setProductsBottomSheetVisible] = useState(false);
@@ -212,6 +213,7 @@ export default function ClientHomeScreen() {
               key={video.id}
               activeOpacity={0.9}
               onPress={() => {
+                setVideoViewerVideos(videos);
                 setSelectedVideoIndex(index);
                 setVideoViewerVisible(true);
               }}
@@ -468,7 +470,7 @@ export default function ClientHomeScreen() {
       {/* Video Viewer Modal */}
       <VideoViewer
         visible={videoViewerVisible}
-        videos={videos}
+        videos={videoViewerVideos}
         initialIndex={selectedVideoIndex}
         onClose={() => {
           setVideoViewerVisible(false);
@@ -514,6 +516,16 @@ export default function ClientHomeScreen() {
               setProductDetailVisible(false);
               // Wait for modal animation to complete before navigating
                 router.replace(`/client/business/${businessId}`);
+            }}
+            onVideoPress={(video, allVideos) => {
+              // Close product detail
+              setProductDetailVisible(false);
+              // Find the index of the selected video in the array
+              const videoIndex = allVideos.findIndex(v => v.id === video.id);
+              // Open video viewer with all product videos
+              setVideoViewerVideos(allVideos);
+              setSelectedVideoIndex(videoIndex >= 0 ? videoIndex : 0);
+              setVideoViewerVisible(true);
             }}
           />
         )}

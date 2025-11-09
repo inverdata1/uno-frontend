@@ -130,16 +130,15 @@ export default function BusinessUpgradeModal({ visible, onClose, onSuccess }) {
           alignItems: 'center',
           justifyContent: 'space-between',
           padding: 16,
-          borderBottomWidth: 1,
-          borderBottomColor: colors.border.light
+          backgroundColor: colors.primary[500]
         }}>
           <TouchableOpacity onPress={handleClose} disabled={isLoading}>
-            <Ionicons name="close" size={24} color={colors.text.primary} />
+            <Ionicons name="close" size={24} color="#fff" />
           </TouchableOpacity>
           <Text style={{
             fontSize: 18,
             fontWeight: '700',
-            color: colors.text.primary
+            color: '#fff'
           }}>
             Vende con UNO
           </Text>

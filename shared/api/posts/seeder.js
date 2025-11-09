@@ -24,7 +24,7 @@ export const SAMPLE_POSTS = [
     ],
     thumbnailUrl: 'https://images.unsplash.com/photo-1565299624946-b28f40a0ae38?w=300&h=300&fit=crop',
     taggedProducts: [],
-    hashtags: ['PizzaLovers', 'FoodPorn', 'Comida'],
+    keywords: ['PizzaLovers', 'FoodPorn', 'Comida'],
     mentions: [],
     isPublished: true
   },
@@ -43,7 +43,7 @@ export const SAMPLE_POSTS = [
     ],
     thumbnailUrl: 'https://images.unsplash.com/photo-1523381210434-271e8be1f52b?w=300&h=500&fit=crop',
     taggedProducts: ['product_1'],
-    hashtags: ['Fashion', 'Ropa', 'Moda'],
+    keywords: ['Fashion', 'Ropa', 'Moda'],
     mentions: [],
     isPublished: true
   },
@@ -62,7 +62,7 @@ export const SAMPLE_POSTS = [
     ],
     thumbnailUrl: 'https://images.unsplash.com/photo-1495474472287-4d71bcdd2085?w=300&h=500&fit=crop',
     taggedProducts: ['product_2', 'product_3'],
-    hashtags: ['Coffee', 'Cafe', 'CoffeeLover'],
+    keywords: ['Coffee', 'Cafe', 'CoffeeLover'],
     mentions: [],
     isPublished: true
   },
@@ -81,7 +81,7 @@ export const SAMPLE_POSTS = [
     ],
     thumbnailUrl: 'https://images.unsplash.com/photo-1542291026-7eec264c27ff?w=300&h=500&fit=crop',
     taggedProducts: ['product_4'],
-    hashtags: ['Sneakers', 'Unboxing', 'Fashion'],
+    keywords: ['Sneakers', 'Unboxing', 'Fashion'],
     mentions: [],
     isPublished: true
   },
@@ -100,7 +100,7 @@ export const SAMPLE_POSTS = [
     ],
     thumbnailUrl: 'https://images.unsplash.com/photo-1596704017254-9b121068ec31?w=300&h=500&fit=crop',
     taggedProducts: ['product_5', 'product_6', 'product_7'],
-    hashtags: ['Makeup', 'Beauty', 'Tutorial'],
+    keywords: ['Makeup', 'Beauty', 'Tutorial'],
     mentions: [],
     isPublished: true
   },
@@ -119,7 +119,7 @@ export const SAMPLE_POSTS = [
     ],
     thumbnailUrl: 'https://images.unsplash.com/photo-1590301157890-4810ed352733?w=300&h=500&fit=crop',
     taggedProducts: ['product_8'],
-    hashtags: ['Healthy', 'Food', 'Recipe'],
+    keywords: ['Healthy', 'Food', 'Recipe'],
     mentions: [],
     isPublished: true
   },
@@ -138,7 +138,7 @@ export const SAMPLE_POSTS = [
     ],
     thumbnailUrl: 'https://images.unsplash.com/photo-1524805444758-089113d48a6d?w=300&h=500&fit=crop',
     taggedProducts: ['product_9'],
-    hashtags: ['Watches', 'Fashion', 'Style'],
+    keywords: ['Watches', 'Fashion', 'Style'],
     mentions: [],
     isPublished: true
   },
@@ -157,7 +157,7 @@ export const SAMPLE_POSTS = [
     ],
     thumbnailUrl: 'https://images.unsplash.com/photo-1484480974693-6ca0a78fb36b?w=300&h=500&fit=crop',
     taggedProducts: ['product_10', 'product_11'],
-    hashtags: ['HomeDecor', 'Workspace', 'Decor'],
+    keywords: ['HomeDecor', 'Workspace', 'Decor'],
     mentions: [],
     isPublished: true
   },
@@ -185,7 +185,7 @@ export const SAMPLE_POSTS = [
     ],
     thumbnailUrl: 'https://images.unsplash.com/photo-1608248543803-ba4f8c70ae0b?w=300&h=300&fit=crop',
     taggedProducts: [],
-    hashtags: ['Skincare', 'Belleza', 'Beauty'],
+    keywords: ['Skincare', 'Belleza', 'Beauty'],
     mentions: [],
     isPublished: true
   }

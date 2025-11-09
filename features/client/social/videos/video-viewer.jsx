@@ -140,7 +140,7 @@ function VideoItem({ video, isActive, isPaused, onTogglePause, onLike, onSave, o
         {/* Caption */}
         <View style={{ marginBottom: 12 }}>
           <Text style={{ color: '#ffffff', fontSize: 15, fontWeight: '600', marginBottom: 4 }}>
-            @{video.businessName || 'Business'}
+            {video.businessName || 'Business'}
           </Text>
           <Text style={{ color: '#ffffff', fontSize: 14, lineHeight: 20 }} numberOfLines={3}>
             {video.caption || 'Check out this video!'}

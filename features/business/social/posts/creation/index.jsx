@@ -1,6 +1,7 @@
 import React, { useRef } from 'react';
 import { View, Modal, Alert } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import { usePostCreationState } from './hooks/use-post-creation-state';
 import { MediaSelectionStep } from './steps/media-selection';
 import { ProductTaggingStep } from './steps/product-tagging';
@@ -21,8 +22,10 @@ export function PostCreationFlow({ visible, onClose }) {
     selectedMedia,
     taggedProducts,
     caption,
+    keywords,
     isUploading,
     setCaption,
+    setKeywords,
     setIsUploading,
     goToNextStep,
     goToPreviousStep,
@@ -47,7 +50,6 @@ export function PostCreationFlow({ visible, onClose }) {
       // Prepare tagged products data
       const productTags = taggedProducts.map(tag => ({
         productId: tag.productId,
-        position: tag.position,
         mediaIndex: tag.mediaIndex,
       }));
 
@@ -60,6 +62,7 @@ export function PostCreationFlow({ visible, onClose }) {
         type: postType,
         mediaFiles,
         taggedProducts: productTags.length > 0 ? productTags : undefined,
+        keywords: keywords.length > 0 ? keywords : undefined,
       });
 
       // Success
@@ -113,7 +116,9 @@ export function PostCreationFlow({ visible, onClose }) {
           <CaptionDetailsStep
             selectedMedia={selectedMedia}
             caption={caption}
+            keywords={keywords}
             onCaptionChange={setCaption}
+            onKeywordsChange={setKeywords}
             onNext={goToNextStep}
             onBack={goToPreviousStep}
           />
@@ -144,9 +149,11 @@ export function PostCreationFlow({ visible, onClose }) {
       presentationStyle="fullScreen"
       onRequestClose={handleClose}
     >
-      <SafeAreaView style={{ flex: 1 }} edges={['top']}>
-        {renderCurrentStep()}
-      </SafeAreaView>
+      <GestureHandlerRootView style={{ flex: 1 }}>
+        <SafeAreaView style={{ flex: 1 }} edges={['top']}>
+          {renderCurrentStep()}
+        </SafeAreaView>
+      </GestureHandlerRootView>
     </Modal>
   );
 }

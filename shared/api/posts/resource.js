@@ -278,7 +278,7 @@ export class PostsResource extends BaseFirebaseService {
       viewCount: 0,
       saveCount: 0,
       publishedAt: data.isPublished !== false ? serverTimestamp() : null,
-      hashtags: data.hashtags || [],
+      keywords: data.keywords || [],
       mentions: data.mentions || [],
       taggedProducts: data.taggedProducts || []
     };
@@ -409,7 +409,11 @@ export class PostsResource extends BaseFirebaseService {
       post.taggedProducts && post.taggedProducts.some(tag => tag.productId === productId)
     );
 
-    return postsWithProduct.sort((a, b) => b.publishedAt?.toMillis() - a.publishedAt?.toMillis());
+    const sortedPosts = postsWithProduct.sort((a, b) => b.publishedAt?.toMillis() - a.publishedAt?.toMillis());
+
+    // Populate business info and tagged products
+    const postsWithBusiness = await this.populateBusinessInfo(sortedPosts);
+    return await this.populateTaggedProducts(postsWithBusiness);
   }
 
   /**

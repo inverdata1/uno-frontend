@@ -18,12 +18,12 @@
  *   thumbnailUrl: string,          // Main thumbnail
  *
  *   // Tagged Products
- *   taggedProducts: array,         // Array of tagged product objects with position data
- *   // Example: [{ productId: 'abc123', position: { x: 0.5, y: 0.5 }, mediaIndex: 0 }]
- *   // API populates with full product: [{ productId, position, mediaIndex, product: {...} }]
+ *   taggedProducts: array,         // Array of tagged product objects
+ *   // Example: [{ productId: 'abc123', mediaIndex: 0 }]
+ *   // API populates with full product: [{ productId, mediaIndex, product: {...} }]
  *
  *   // Metadata
- *   hashtags: array,               // Array of hashtags
+ *   keywords: array,               // Array of keywords/search terms (max 5)
  *   mentions: array,               // Array of mentioned user IDs
  *   location: object,              // Location data
  *   // Example: { name: 'Caracas', coordinates: {...} }
@@ -63,7 +63,7 @@ export const COLLECTION_SCHEMA = {
   media: 'array (required, min 1)',
   thumbnailUrl: 'string (required)',
   taggedProducts: 'array (optional)',
-  hashtags: 'array (optional)',
+  keywords: 'array (optional, max 5)',
   mentions: 'array (optional)',
   location: 'object (optional)',
   isActive: 'boolean (default true)',

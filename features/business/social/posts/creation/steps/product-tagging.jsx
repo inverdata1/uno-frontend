@@ -17,7 +17,6 @@ export function ProductTaggingStep({ selectedMedia, taggedProducts, onAddTag, on
   const [currentMediaIndex, setCurrentMediaIndex] = useState(0);
   const [showProductSheet, setShowProductSheet] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
-  const [tapPosition, setTapPosition] = useState(null);
   const bottomSheetRef = useRef(null);
 
   // Get current business context to fetch its products
@@ -37,32 +36,26 @@ export function ProductTaggingStep({ selectedMedia, taggedProducts, onAddTag, on
   const currentMedia = selectedMedia[currentMediaIndex];
   const currentTags = taggedProducts.filter(tag => tag.mediaIndex === currentMediaIndex);
 
-  const filteredProducts = allProducts.filter(product =>
-    product.name.toLowerCase().includes(searchQuery.toLowerCase())
-  );
+  // Filter out already tagged products and apply search
+  const filteredProducts = allProducts.filter(product => {
+    const isAlreadyTagged = currentTags.some(tag => tag.productId === product.id);
+    const matchesSearch = product.name.toLowerCase().includes(searchQuery.toLowerCase());
+    return !isAlreadyTagged && matchesSearch;
+  });
 
-  const handleImageTap = (event) => {
-    const { locationX, locationY } = event.nativeEvent;
-    const x = (locationX / width) * 100;
-    const y = (locationY / (width * 1.25)) * 100; // Assuming 4:5 aspect ratio
-
-    setTapPosition({ x, y });
+  const handleImageTap = () => {
     setShowProductSheet(true);
     bottomSheetRef.current?.snapToIndex(0);
   };
 
   const handleSelectProduct = (product) => {
-    if (!tapPosition) return;
-
     onAddTag({
       productId: product.id,
       productName: product.name,
       productImage: product.images?.[0],
-      position: tapPosition,
       mediaIndex: currentMediaIndex,
     });
 
-    setTapPosition(null);
     setSearchQuery('');
     bottomSheetRef.current?.close();
   };
@@ -106,7 +99,7 @@ export function ProductTaggingStep({ selectedMedia, taggedProducts, onAddTag, on
       {/* Media Preview with Tags */}
       <View style={{ flex: 1 }}>
         <TouchableOpacity
-          activeOpacity={1}
+          activeOpacity={0.9}
           onPress={handleImageTap}
           style={{
             width: width,
@@ -119,64 +112,6 @@ export function ProductTaggingStep({ selectedMedia, taggedProducts, onAddTag, on
             style={{ width: '100%', height: '100%' }}
             resizeMode="cover"
           />
-
-          {/* Product Tags */}
-          {currentTags.map((tag, index) => (
-            <View
-              key={index}
-              style={{
-                position: 'absolute',
-                left: `${tag.position.x}%`,
-                top: `${tag.position.y}%`,
-                transform: [{ translateX: -12 }, { translateY: -12 }]
-              }}
-            >
-              {/* Tag Marker */}
-              <TouchableOpacity
-                onPress={() => handleRemoveTag(tag.productId)}
-                style={{
-                  width: 24,
-                  height: 24,
-                  borderRadius: 12,
-                  backgroundColor: colors.primary[500],
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  borderWidth: 2,
-                  borderColor: '#fff',
-                  shadowColor: '#000',
-                  shadowOffset: { width: 0, height: 2 },
-                  shadowOpacity: 0.3,
-                  shadowRadius: 4,
-                  elevation: 4
-                }}
-              >
-                <Ionicons name="close" size={14} color="#fff" />
-              </TouchableOpacity>
-
-              {/* Product Name Label */}
-              <View style={{
-                position: 'absolute',
-                top: 28,
-                left: '50%',
-                transform: [{ translateX: '-50%' }],
-                backgroundColor: 'rgba(0,0,0,0.75)',
-                paddingHorizontal: 12,
-                paddingVertical: 6,
-                borderRadius: 12,
-                minWidth: 100,
-                alignItems: 'center'
-              }}>
-                <Text style={{
-                  fontSize: 12,
-                  fontWeight: '600',
-                  color: '#fff',
-                  textAlign: 'center'
-                }} numberOfLines={1}>
-                  {tag.productName}
-                </Text>
-              </View>
-            </View>
-          ))}
 
           {/* Tap Indicator */}
           <View style={{
@@ -315,9 +250,8 @@ export function ProductTaggingStep({ selectedMedia, taggedProducts, onAddTag, on
       <BottomSheet
         ref={bottomSheetRef}
         index={-1}
-        snapPoints={['75%']}
+        snapPoints={['75%', '90%']}
         enablePanDownToClose
-        onClose={() => setTapPosition(null)}
       >
         <BottomSheetView style={{ flex: 1, padding: 16 }}>
           <Text style={{
@@ -348,6 +282,7 @@ export function ProductTaggingStep({ selectedMedia, taggedProducts, onAddTag, on
           <FlatList
             data={filteredProducts}
             keyExtractor={(item) => item.id}
+            contentContainerStyle={{ paddingBottom: 100 }}
             renderItem={({ item }) => (
               <TouchableOpacity
                 onPress={() => handleSelectProduct(item)}

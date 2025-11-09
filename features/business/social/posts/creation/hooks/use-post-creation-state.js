@@ -13,6 +13,7 @@ export function usePostCreationState() {
   const [selectedMedia, setSelectedMedia] = useState([]); // Array of { uri, type, duration? }
   const [taggedProducts, setTaggedProducts] = useState([]); // Array of { productId, position: { x, y }, mediaIndex }
   const [caption, setCaption] = useState('');
+  const [keywords, setKeywords] = useState([]); // Array of strings (max 5)
   const [location, setLocation] = useState(null);
 
   // UI state
@@ -106,6 +107,7 @@ export function usePostCreationState() {
     setSelectedMedia([]);
     setTaggedProducts([]);
     setCaption('');
+    setKeywords([]);
     setLocation(null);
     setIsUploading(false);
   }, []);
@@ -137,11 +139,13 @@ export function usePostCreationState() {
     selectedMedia,
     taggedProducts,
     caption,
+    keywords,
     location,
     isUploading,
 
     // Setters
     setCaption,
+    setKeywords,
     setLocation,
     setIsUploading,
 

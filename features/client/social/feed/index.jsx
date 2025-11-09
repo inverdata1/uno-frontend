@@ -9,6 +9,7 @@ import { StoryRing, AddStoryButton } from './components/story-ring';
 import { Text } from '../../../../shared/components/ui/text';
 import { useCurrentUserType } from '../../../../shared/hooks/use-user-type';
 import StoryViewer from '../../../shared/social/stories/story-viewer';
+import PostViewer from '../../../shared/social/posts/post-viewer';
 import { usePosts, useLikePost, useSavePost } from '../../../../features/shared/social/hooks/use-posts';
 import { useStories } from '../../../../features/shared/social/hooks/use-stories';
 import { useBusinesses } from '../../../../features/shared/social/hooks/use-businesses';
@@ -26,6 +27,8 @@ export default function FeedScreen() {
   const [refreshing, setRefreshing] = useState(false);
   const [storyViewerVisible, setStoryViewerVisible] = useState(false);
   const [selectedStories, setSelectedStories] = useState([]);
+  const [postViewerVisible, setPostViewerVisible] = useState(false);
+  const [selectedPost, setSelectedPost] = useState(null);
 
   // Use domain hooks to fetch data
   const { data: posts = [], isLoading: postsLoading } = usePosts({ limit: 20 });
@@ -72,9 +75,9 @@ export default function FeedScreen() {
     console.log('Create story');
   };
 
-  const handlePostPress = (postId) => {
-    // TODO: Navigate to post detail
-    console.log('View post:', postId);
+  const handlePostPress = (post) => {
+    setSelectedPost(post);
+    setPostViewerVisible(true);
   };
 
   const handleBusinessPress = (businessId) => {
@@ -144,7 +147,7 @@ export default function FeedScreen() {
         businessData={businessData}
         isLiked={isLiked}
         isSaved={isSaved}
-        onPress={() => handlePostPress(post.id)}
+        onPress={() => handlePostPress(post)}
         onLike={() => handleLike(post.id, isLiked)}
         onSave={() => handleSave(post.id, isSaved)}
         onBusinessPress={() => handleBusinessPress(post.businessId)}
@@ -200,6 +203,20 @@ export default function FeedScreen() {
         stories={selectedStories}
         onClose={() => setStoryViewerVisible(false)}
       />
+
+      {selectedPost && (
+        <PostViewer
+          visible={postViewerVisible}
+          post={selectedPost}
+          businessData={businessMap[selectedPost.businessId] || {}}
+          onClose={() => {
+            setPostViewerVisible(false);
+            setSelectedPost(null);
+          }}
+          onBusinessPress={handleBusinessPress}
+          onProductPress={handleProductPress}
+        />
+      )}
     </SafeAreaView>
   );
 }

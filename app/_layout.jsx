@@ -10,6 +10,7 @@ import 'react-native-reanimated';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 import { BottomSheetModalProvider } from '@gorhom/bottom-sheet';
+import { Provider as PaperProvider } from 'react-native-paper';
 import "../global.css";
 import { queryClient } from '../shared/config/query-client';
 import { useAuthStore } from '../core/auth/stores/auth-store';
@@ -81,17 +82,19 @@ export default function RootLayout() {
     <GestureHandlerRootView style={{ flex: 1 }}>
       <SafeAreaProvider>
         <QueryClientProvider client={queryClient}>
-          <ThemeProvider value={DefaultTheme}>
-            <BottomSheetModalProvider>
-              <AppNavigator />
-              <StatusBar style="auto" />
+          <PaperProvider>
+            <ThemeProvider value={DefaultTheme}>
+              <BottomSheetModalProvider>
+                <AppNavigator />
+                <StatusBar style="auto" />
 
-              {/* DevTools only in development and web platform */}
-              {__DEV__ && Platform.OS === 'web' && ReactQueryDevtools && (
-                <ReactQueryDevtools initialIsOpen={false} />
-              )}
-            </BottomSheetModalProvider>
-          </ThemeProvider>
+                {/* DevTools only in development and web platform */}
+                {__DEV__ && Platform.OS === 'web' && ReactQueryDevtools && (
+                  <ReactQueryDevtools initialIsOpen={false} />
+                )}
+              </BottomSheetModalProvider>
+            </ThemeProvider>
+          </PaperProvider>
         </QueryClientProvider>
       </SafeAreaProvider>
     </GestureHandlerRootView>

@@ -1,9 +1,11 @@
 import React, { useState, useEffect, useRef, useCallback } from 'react';
-import { View, Image, TouchableOpacity, Dimensions, StyleSheet, Animated, Modal } from 'react-native';
+import { View, Image, TouchableOpacity, Dimensions, StyleSheet, Animated, Modal, Alert, Pressable } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
 import { Text } from '../../../../shared/components/ui';
+import { useDeleteStory } from '../hooks/use-stories';
+import { useCurrentUserType } from '../../../../shared/hooks/use-user-type';
 
 const { width, height } = Dimensions.get('window');
 
@@ -16,8 +18,17 @@ export default function StoryViewer({ visible, stories = [], initialIndex = 0, o
   const [currentStoryIndex, setCurrentStoryIndex] = useState(initialIndex);
   const [isPaused, setIsPaused] = useState(false);
   const [progressAnims, setProgressAnims] = useState([]);
+  const [menuVisible, setMenuVisible] = useState(false);
   const pausedValueRef = useRef(0);
   const currentStory = stories[currentStoryIndex];
+
+  const { currentUserType, currentContext } = useCurrentUserType();
+  const deleteStoryMutation = useDeleteStory();
+
+  // Check if current user is the owner of this story
+  const isOwner = currentUserType === 'business' &&
+    currentContext?.businessId &&
+    currentStory?.businessId === currentContext.businessId;
 
   // Initialize progress animations only once when stories array changes
   useEffect(() => {
@@ -165,6 +176,47 @@ export default function StoryViewer({ visible, stories = [], initialIndex = 0, o
     }
   };
 
+  const handleDelete = () => {
+    setMenuVisible(false);
+    setIsPaused(true);
+    Alert.alert(
+      'Eliminar historia',
+      '¿Estás seguro de que quieres eliminar esta historia?',
+      [
+        {
+          text: 'Cancelar',
+          style: 'cancel',
+          onPress: () => setIsPaused(false)
+        },
+        {
+          text: 'Eliminar',
+          style: 'destructive',
+          onPress: () => {
+            deleteStoryMutation.mutate(currentStory.id, {
+              onSuccess: () => {
+                // Remove deleted story from array
+                const updatedStories = stories.filter(s => s.id !== currentStory.id);
+                if (updatedStories.length === 0) {
+                  // No more stories, close viewer
+                  onClose();
+                } else if (currentStoryIndex >= updatedStories.length) {
+                  // Was last story, go to previous
+                  handlePrevious();
+                } else {
+                  // Go to next story
+                  handleNext();
+                }
+              },
+              onError: () => {
+                setIsPaused(false);
+              }
+            });
+          }
+        }
+      ]
+    );
+  };
+
   if (!visible || !currentStory) return null;
 
   return (
@@ -227,9 +279,22 @@ export default function StoryViewer({ visible, stories = [], initialIndex = 0, o
             <Text style={styles.businessName}>{currentStory.businessName || 'Business'}</Text>
             <Text style={styles.timeAgo}>12h</Text>
           </View>
-          <TouchableOpacity onPress={onClose} style={styles.closeButton}>
-            <Ionicons name="close" size={28} color="#ffffff" />
-          </TouchableOpacity>
+          <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
+            {isOwner && (
+              <TouchableOpacity
+                onPress={() => {
+                  setIsPaused(true);
+                  setMenuVisible(true);
+                }}
+                style={styles.menuButton}
+              >
+                <Ionicons name="ellipsis-horizontal" size={24} color="#ffffff" />
+              </TouchableOpacity>
+            )}
+            <TouchableOpacity onPress={onClose} style={styles.closeButton}>
+              <Ionicons name="close" size={28} color="#ffffff" />
+            </TouchableOpacity>
+          </View>
         </View>
 
         {/* Caption - Centered in middle if present */}
@@ -279,6 +344,52 @@ export default function StoryViewer({ visible, stories = [], initialIndex = 0, o
           </View>
         </View>
       </View>
+
+      {/* Custom Menu Modal */}
+      <Modal
+        visible={menuVisible}
+        transparent
+        animationType="fade"
+        onRequestClose={() => {
+          setMenuVisible(false);
+          setIsPaused(false);
+        }}
+      >
+        <Pressable
+          style={{
+            flex: 1,
+            backgroundColor: 'rgba(0, 0, 0, 0.5)',
+            justifyContent: 'flex-end'
+          }}
+          onPress={() => {
+            setMenuVisible(false);
+            setIsPaused(false);
+          }}
+        >
+          <View style={{
+            backgroundColor: '#ffffff',
+            borderTopLeftRadius: 16,
+            borderTopRightRadius: 16,
+            paddingBottom: 34
+          }}>
+            <TouchableOpacity
+              onPress={handleDelete}
+              style={{
+                flexDirection: 'row',
+                alignItems: 'center',
+                paddingVertical: 16,
+                paddingHorizontal: 20,
+                gap: 12
+              }}
+            >
+              <Ionicons name="trash" size={22} color="#DC2626" />
+              <Text style={{ fontSize: 16, color: '#DC2626' }}>
+                Eliminar
+              </Text>
+            </TouchableOpacity>
+          </View>
+        </Pressable>
+      </Modal>
     </Modal>
   );
 }
@@ -355,6 +466,12 @@ const styles = StyleSheet.create({
     color: 'rgba(255, 255, 255, 0.7)'
   },
   closeButton: {
+    width: 36,
+    height: 36,
+    alignItems: 'center',
+    justifyContent: 'center'
+  },
+  menuButton: {
     width: 36,
     height: 36,
     alignItems: 'center',

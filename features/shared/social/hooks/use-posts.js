@@ -92,6 +92,22 @@ export const useCreatePost = () => {
 };
 
 /**
+ * Update a post
+ */
+export const useUpdatePost = () => {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async ({ postId, data }) => {
+      return apiClient.put(`/posts/${postId}`, data).then(res => res.data);
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['posts'] });
+    },
+  });
+};
+
+/**
  * Delete a post
  */
 export const useDeletePost = () => {

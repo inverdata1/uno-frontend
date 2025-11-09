@@ -4,9 +4,12 @@ import { ActivityIndicator, Alert, Image, TouchableOpacity, View } from 'react-n
 import { Text } from '../../../../../shared/components/ui';
 import { useBusinessPosts, useDeletePost } from '../../../../../shared/hooks/use-business-posts';
 import { colors } from '../../../../../shared/utils/colors';
+import PostViewer from '../../../../shared/social/posts/post-viewer';
 
 export const PostsGrid = ({ onCreatePost }) => {
   const [activeTab, setActiveTab] = useState('grid'); // grid, videos, promotions
+  const [selectedPost, setSelectedPost] = useState(null);
+  const [postViewerVisible, setPostViewerVisible] = useState(false);
   const { data: posts = [], isLoading } = useBusinessPosts();
 
   const tabs = [
@@ -20,6 +23,16 @@ export const PostsGrid = ({ onCreatePost }) => {
     if (activeTab === 'promotions') return post.isPromotion;
     return true; // grid shows all
   });
+
+  const handlePostPress = (post) => {
+    setSelectedPost(post);
+    setPostViewerVisible(true);
+  };
+
+  const handleCloseViewer = () => {
+    setPostViewerVisible(false);
+    setSelectedPost(null);
+  };
 
   return (
     <View style={{
@@ -61,30 +74,26 @@ export const PostsGrid = ({ onCreatePost }) => {
       ) : filteredPosts.length === 0 ? (
         <EmptyState onCreatePost={onCreatePost} activeTab={activeTab} />
       ) : (
-        <PhotoGrid posts={filteredPosts} />
+        <PhotoGrid posts={filteredPosts} onPostPress={handlePostPress} />
+      )}
+
+      {/* Post Viewer */}
+      {selectedPost && (
+        <PostViewer
+          visible={postViewerVisible}
+          post={selectedPost}
+          businessData={{
+            name: selectedPost.businessName,
+            logo: selectedPost.logoUrl
+          }}
+          onClose={handleCloseViewer}
+        />
       )}
     </View>
   );
 };
 
-const PhotoGrid = ({ posts }) => {
-  const deletePost = useDeletePost();
-
-  const handleDeletePost = (post) => {
-    Alert.alert(
-      'Eliminar publicación',
-      '¿Estás seguro de que quieres eliminar esta publicación?',
-      [
-        { text: 'Cancelar', style: 'cancel' },
-        {
-          text: 'Eliminar',
-          style: 'destructive',
-          onPress: () => deletePost.mutate(post.id)
-        }
-      ]
-    );
-  };
-
+const PhotoGrid = ({ posts, onPostPress }) => {
   return (
     <View style={{
       flexDirection: 'row',
@@ -93,7 +102,7 @@ const PhotoGrid = ({ posts }) => {
       {posts.map((post) => (
         <TouchableOpacity
           key={post.id}
-          onLongPress={() => handleDeletePost(post)}
+          onPress={() => onPostPress(post)}
           activeOpacity={0.9}
           style={{
             width: '33.33%',

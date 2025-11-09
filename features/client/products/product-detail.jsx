@@ -1,10 +1,13 @@
 import { Ionicons } from '@expo/vector-icons';
 import { useState } from 'react';
-import { ActivityIndicator, Dimensions, Image, ScrollView, StatusBar, TouchableOpacity, View } from 'react-native';
+import { ActivityIndicator, Dimensions, Image, ScrollView, StatusBar, TouchableOpacity, View, Alert, Modal, Pressable } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
 import { Text } from '../../../shared/components/ui';
 import { useProductVideos } from '../../../shared/hooks/use-product-posts';
+import { useDeleteProduct } from '../../shared/products/hooks/use-products';
+import { useCurrentUserType } from '../../../shared/hooks/use-user-type';
+import { colors } from '../../../shared/utils/colors';
 
 const { width } = Dimensions.get('window');
 
@@ -20,9 +23,18 @@ export default function ProductDetail({ product, onClose, onBusinessPress, onVid
   const [selectedVariants, setSelectedVariants] = useState({});
   const [imageLoadingStates, setImageLoadingStates] = useState({});
   const [imageErrors, setImageErrors] = useState({});
+  const [menuVisible, setMenuVisible] = useState(false);
+
+  const { currentUserType, currentContext } = useCurrentUserType();
+  const deleteProductMutation = useDeleteProduct();
 
   // Fetch videos that have this product tagged
   const { data: productVideos = [], isLoading: videosLoading } = useProductVideos(product?.id);
+
+  // Check if current user is the owner of this product
+  const isOwner = currentUserType === 'business' &&
+    currentContext?.businessId &&
+    product?.businessId === currentContext.businessId;
 
   console.log('[ProductDetail] Product data:', {
     name: product?.name,
@@ -85,6 +97,37 @@ export default function ProductDetail({ product, onClose, onBusinessPress, onVid
     }));
   };
 
+  const handleDelete = () => {
+    setMenuVisible(false);
+    Alert.alert(
+      'Eliminar producto',
+      '¿Estás seguro de que quieres eliminar este producto?',
+      [
+        { text: 'Cancelar', style: 'cancel' },
+        {
+          text: 'Eliminar',
+          style: 'destructive',
+          onPress: () => {
+            deleteProductMutation.mutate(
+              { productId: product.id, businessId: currentContext.businessId },
+              {
+                onSuccess: () => {
+                  onClose();
+                }
+              }
+            );
+          }
+        }
+      ]
+    );
+  };
+
+  const handleEdit = () => {
+    setMenuVisible(false);
+    // TODO: Navigate to edit product screen
+    console.log('Edit product:', product.id);
+  };
+
   return (
       <SafeAreaView className="flex-1 bg-white" edges={['top', 'bottom']}>
         <StatusBar barStyle="dark-content" backgroundColor="#ffffff" />
@@ -102,12 +145,15 @@ export default function ProductDetail({ product, onClose, onBusinessPress, onVid
               </TouchableOpacity>
 
               <View className="flex-row items-center" style={{ gap: 16 }}>
-                <TouchableOpacity
-                  className="w-10 h-10 items-center justify-center"
-                  activeOpacity={0.6}
-                >
-                  <Ionicons name="ellipsis-vertical" size={22} color="#000000" />
-                </TouchableOpacity>
+                {isOwner && (
+                  <TouchableOpacity
+                    onPress={() => setMenuVisible(true)}
+                    className="w-10 h-10 items-center justify-center"
+                    activeOpacity={0.6}
+                  >
+                    <Ionicons name="ellipsis-vertical" size={22} color="#000000" />
+                  </TouchableOpacity>
+                )}
               </View>
             </View>
           </SafeAreaView>
@@ -492,6 +538,64 @@ export default function ProductDetail({ product, onClose, onBusinessPress, onVid
           </Text>
         </TouchableOpacity>
       </View>
+
+      {/* Custom Menu Modal */}
+      <Modal
+        visible={menuVisible}
+        transparent
+        animationType="fade"
+        onRequestClose={() => setMenuVisible(false)}
+      >
+        <Pressable
+          style={{
+            flex: 1,
+            backgroundColor: 'rgba(0, 0, 0, 0.5)',
+            justifyContent: 'flex-end'
+          }}
+          onPress={() => setMenuVisible(false)}
+        >
+          <View style={{
+            backgroundColor: '#ffffff',
+            borderTopLeftRadius: 16,
+            borderTopRightRadius: 16,
+            paddingBottom: 34
+          }}>
+            <TouchableOpacity
+              onPress={handleEdit}
+              style={{
+                flexDirection: 'row',
+                alignItems: 'center',
+                paddingVertical: 16,
+                paddingHorizontal: 20,
+                gap: 12
+              }}
+            >
+              <Ionicons name="pencil" size={22} color={colors.text.primary} />
+              <Text style={{ fontSize: 16, color: colors.text.primary }}>
+                Editar
+              </Text>
+            </TouchableOpacity>
+
+            <View style={{ height: 1, backgroundColor: colors.border.light }} />
+
+            <TouchableOpacity
+              onPress={handleDelete}
+              style={{
+                flexDirection: 'row',
+                alignItems: 'center',
+                paddingVertical: 16,
+                paddingHorizontal: 20,
+                gap: 12
+              }}
+            >
+              <Ionicons name="trash" size={22} color="#DC2626" />
+              <Text style={{ fontSize: 16, color: '#DC2626' }}>
+                Eliminar
+              </Text>
+            </TouchableOpacity>
+          </View>
+        </Pressable>
+      </Modal>
 
       </SafeAreaView>
   );

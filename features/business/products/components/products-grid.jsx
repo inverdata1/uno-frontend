@@ -6,6 +6,7 @@ import { colors } from '../../../../shared/utils/colors';
 import { useProducts, useDeleteProduct } from '../../../../features/shared/products/hooks/use-products';
 import { useBusinessContexts } from '../../../../shared/hooks/use-user-type';
 import { CreateProductModal } from './create-product-modal';
+import ProductDetailModal from '../../../client/products/product-detail-modal';
 
 export const ProductsGrid = ({ createModalVisible, setCreateModalVisible }) => {
   const businessContexts = useBusinessContexts();
@@ -13,6 +14,8 @@ export const ProductsGrid = ({ createModalVisible, setCreateModalVisible }) => {
   const businessId = currentBusiness?.businessId;
 
   const { data: products = [], isLoading } = useProducts({ businessId });
+  const [selectedProductId, setSelectedProductId] = useState(null);
+  const [productDetailVisible, setProductDetailVisible] = useState(false);
 
   // Use internal state if props not provided (for other screens)
   const [internalModalVisible, setInternalModalVisible] = useState(false);
@@ -21,6 +24,11 @@ export const ProductsGrid = ({ createModalVisible, setCreateModalVisible }) => {
 
   const handleCreateProduct = () => {
     setModalVisible(true);
+  };
+
+  const handleProductPress = (productId) => {
+    setSelectedProductId(productId);
+    setProductDetailVisible(true);
   };
 
   return (
@@ -32,18 +40,30 @@ export const ProductsGrid = ({ createModalVisible, setCreateModalVisible }) => {
       ) : products.length === 0 ? (
         <EmptyState onCreateProduct={handleCreateProduct} />
       ) : (
-        <PhotoGrid products={products} />
+        <PhotoGrid products={products} onProductPress={handleProductPress} />
       )}
 
       <CreateProductModal
         visible={modalVisible}
         onClose={() => setModalVisible(false)}
       />
+
+      {selectedProductId && (
+        <ProductDetailModal
+          visible={productDetailVisible}
+          productId={selectedProductId}
+          currentBusinessId={businessId}
+          onClose={() => {
+            setProductDetailVisible(false);
+            setSelectedProductId(null);
+          }}
+        />
+      )}
     </>
   );
 };
 
-const ProductCard = ({ product, onDelete }) => {
+const ProductCard = ({ product, onPress, onDelete }) => {
   const formatPrice = (price, currency = 'USD') => {
     if (currency === 'USD') {
       return `$${price.toFixed(2)}`;
@@ -70,6 +90,7 @@ const ProductCard = ({ product, onDelete }) => {
 
   return (
     <TouchableOpacity
+      onPress={() => onPress(product.id)}
       onLongPress={() => onDelete(product)}
       activeOpacity={0.7}
       style={{
@@ -194,7 +215,7 @@ const ProductCard = ({ product, onDelete }) => {
   );
 };
 
-const PhotoGrid = ({ products }) => {
+const PhotoGrid = ({ products, onProductPress }) => {
   const businessContexts = useBusinessContexts();
   const currentBusiness = businessContexts[0] || null;
   const businessId = currentBusiness?.businessId;
@@ -220,7 +241,11 @@ const PhotoGrid = ({ products }) => {
       data={products}
       keyExtractor={(item) => item.id}
       renderItem={({ item }) => (
-        <ProductCard product={item} onDelete={handleDeleteProduct} />
+        <ProductCard
+          product={item}
+          onPress={onProductPress}
+          onDelete={handleDeleteProduct}
+        />
       )}
       contentContainerStyle={{ paddingVertical: 16 }}
       showsVerticalScrollIndicator={false}

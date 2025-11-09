@@ -1,13 +1,13 @@
 import { Ionicons } from '@expo/vector-icons';
-import { useState } from 'react';
-import { ActivityIndicator, Dimensions, Image, ScrollView, StatusBar, TouchableOpacity, View, Alert, Modal, Pressable } from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
+import { useState } from 'react';
+import { ActivityIndicator, Alert, Dimensions, Image, Modal, Pressable, ScrollView, StatusBar, TouchableOpacity, View } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import { Text } from '../../../shared/components/ui';
 import { useProductVideos } from '../../../shared/hooks/use-product-posts';
-import { useDeleteProduct } from '../../shared/products/hooks/use-products';
 import { useCurrentUserType } from '../../../shared/hooks/use-user-type';
 import { colors } from '../../../shared/utils/colors';
+import { useDeleteProduct } from '../../shared/products/hooks/use-products';
 
 const { width } = Dimensions.get('window');
 
@@ -24,6 +24,7 @@ export default function ProductDetail({ product, onClose, onBusinessPress, onVid
   const [imageLoadingStates, setImageLoadingStates] = useState({});
   const [imageErrors, setImageErrors] = useState({});
   const [menuVisible, setMenuVisible] = useState(false);
+  const [previewMode, setPreviewMode] = useState(false);
 
   const { currentUserType, currentContext } = useCurrentUserType();
   const deleteProductMutation = useDeleteProduct();
@@ -35,6 +36,9 @@ export default function ProductDetail({ product, onClose, onBusinessPress, onVid
   const isOwner = currentUserType === 'business' &&
     currentContext?.businessId &&
     product?.businessId === currentContext.businessId;
+
+  // Show client view if: not owner OR owner in preview mode
+  const showClientView = !isOwner || previewMode;
 
   console.log('[ProductDetail] Product data:', {
     name: product?.name,
@@ -144,15 +148,38 @@ export default function ProductDetail({ product, onClose, onBusinessPress, onVid
                 <Ionicons name="arrow-back" size={26} color="#000000" />
               </TouchableOpacity>
 
-              <View className="flex-row items-center" style={{ gap: 16 }}>
+              <View className="flex-row items-center" style={{ gap: 12 }}>
                 {isOwner && (
-                  <TouchableOpacity
-                    onPress={() => setMenuVisible(true)}
-                    className="w-10 h-10 items-center justify-center"
-                    activeOpacity={0.6}
-                  >
-                    <Ionicons name="ellipsis-vertical" size={22} color="#000000" />
-                  </TouchableOpacity>
+                  <>
+                    <TouchableOpacity
+                      onPress={() => setPreviewMode(!previewMode)}
+                      className="px-3 py-1.5 rounded-full"
+                      style={{ backgroundColor: previewMode ? colors.primary[500] : colors.bg.secondary }}
+                      activeOpacity={0.7}
+                    >
+                      <View className="flex-row items-center" style={{ gap: 4 }}>
+                        <Ionicons
+                          name={previewMode ? "eye" : "eye-outline"}
+                          size={16}
+                          color={previewMode ? "#ffffff" : colors.text.primary}
+                        />
+                        <Text style={{
+                          fontSize: 12,
+                          fontWeight: '600',
+                          color: previewMode ? "#ffffff" : colors.text.primary
+                        }}>
+                          {previewMode ? "Vista regular" : "Vista del cliente"}
+                        </Text>
+                      </View>
+                    </TouchableOpacity>
+                    <TouchableOpacity
+                      onPress={() => setMenuVisible(true)}
+                      className="w-10 h-10 items-center justify-center"
+                      activeOpacity={0.6}
+                    >
+                      <Ionicons name="ellipsis-vertical" size={22} color="#000000" />
+                    </TouchableOpacity>
+                  </>
                 )}
               </View>
             </View>
@@ -276,54 +303,120 @@ export default function ProductDetail({ product, onClose, onBusinessPress, onVid
               </View>
             </View>
 
-            {/* Right Side: Favorite Button - Aligned to center */}
-            <TouchableOpacity
-              onPress={() => setIsFavorited(!isFavorited)}
-              className="w-12 h-12 rounded-full bg-gray-50 items-center justify-center self-center"
-            >
-              <Ionicons
-                name={isFavorited ? 'heart' : 'heart-outline'}
-                size={28}
-                color={isFavorited ? '#ef4444' : '#1f2937'}
-              />
-            </TouchableOpacity>
+            {/* Right Side: Favorite Button - Aligned to center (only for clients) */}
+            {showClientView && (
+              <TouchableOpacity
+                onPress={() => setIsFavorited(!isFavorited)}
+                className="w-12 h-12 rounded-full bg-gray-50 items-center justify-center self-center"
+              >
+                <Ionicons
+                  name={isFavorited ? 'heart' : 'heart-outline'}
+                  size={28}
+                  color={isFavorited ? '#ef4444' : '#1f2937'}
+                />
+              </TouchableOpacity>
+            )}
           </View>
         </View>
 
-        {/* Business Header - Clickable Card */}
-        <TouchableOpacity
-          onPress={handleBusinessPress}
-          activeOpacity={0.7}
-          className="mx-4 mb-4 p-3 bg-gray-50 rounded-xl flex-row items-center"
-        >
-          <View className="w-12 h-12 rounded-full bg-white mr-3 overflow-hidden border-2 border-white shadow-sm">
-            {product?.business?.logoUrl ? (
-              <Image
-                source={{ uri: product.business.logoUrl }}
-                className="w-full h-full"
-                resizeMode="cover"
-              />
-            ) : (
-              <View className="flex-1 justify-center items-center bg-gray-100">
-                <Ionicons name="storefront" size={20} color="#9ca3af" />
-              </View>
-            )}
-          </View>
-          <View className="flex-1">
-            <Text className="text-base font-semibold text-gray-900 mb-0.5">
-              {product?.business?.name || 'Business Name'}
-            </Text>
-            <Text className="text-xs text-gray-500">
-              Ver perfil del negocio
-            </Text>
-          </View>
+        {/* Business Header - Clickable Card (only for clients) */}
+        {showClientView && (
           <TouchableOpacity
-            onPress={handleFollowToggle}
-            className="px-4 py-2 rounded-full bg-red-500"
+            onPress={handleBusinessPress}
+            activeOpacity={0.7}
+            className="mx-4 mb-4 p-3 bg-gray-50 rounded-xl flex-row items-center"
           >
-            <Text className="text-sm font-semibold text-white">Seguir</Text>
+            <View className="w-12 h-12 rounded-full bg-white mr-3 overflow-hidden border-2 border-white shadow-sm">
+              {product?.business?.logoUrl ? (
+                <Image
+                  source={{ uri: product.business.logoUrl }}
+                  className="w-full h-full"
+                  resizeMode="cover"
+                />
+              ) : (
+                <View className="flex-1 justify-center items-center bg-gray-100">
+                  <Ionicons name="storefront" size={20} color="#9ca3af" />
+                </View>
+              )}
+            </View>
+            <View className="flex-1">
+              <Text className="text-base font-semibold text-gray-900 mb-0.5">
+                {product?.business?.name || 'Business Name'}
+              </Text>
+              <Text className="text-xs text-gray-500">
+                Ver perfil del negocio
+              </Text>
+            </View>
+            <TouchableOpacity
+              onPress={handleFollowToggle}
+              className="px-4 py-2 rounded-full bg-red-500"
+            >
+              <Text className="text-sm font-semibold text-white">Seguir</Text>
+            </TouchableOpacity>
           </TouchableOpacity>
-        </TouchableOpacity>
+        )}
+
+        {/* Owner Insights (only visible to owner, not in preview) */}
+        {isOwner && !previewMode && (
+          <View className="mx-4 mb-4 p-4 rounded-xl" style={{ backgroundColor: colors.bg.secondary }}>
+            <View className="flex-row items-center mb-3" style={{ gap: 8 }}>
+              <Ionicons name="analytics-outline" size={20} color={colors.primary[500]} />
+              <Text className="text-base font-bold" style={{ color: colors.text.primary }}>
+                Información del producto
+              </Text>
+            </View>
+            <View style={{ gap: 8 }}>
+              <View className="flex-row items-center justify-between">
+                <Text className="text-sm" style={{ color: colors.text.secondary }}>
+                  Estado
+                </Text>
+                <View className="flex-row items-center" style={{ gap: 6 }}>
+                  <View style={{
+                    width: 8,
+                    height: 8,
+                    borderRadius: 4,
+                    backgroundColor: product?.isAvailable ? '#10b981' : '#ef4444'
+                  }} />
+                  <Text className="text-sm font-semibold" style={{ color: colors.text.primary }}>
+                    {product?.isAvailable ? 'Disponible' : 'No disponible'}
+                  </Text>
+                </View>
+              </View>
+              {product?.trackInventory && (
+                <View className="flex-row items-center justify-between">
+                  <Text className="text-sm" style={{ color: colors.text.secondary }}>
+                    Inventario
+                  </Text>
+                  <Text className="text-sm font-semibold" style={{
+                    color: product?.stock === 0 ? '#ef4444' :
+                           product?.stock <= 5 ? '#f59e0b' :
+                           colors.text.primary
+                  }}>
+                    {product?.stock || 0} unidades
+                  </Text>
+                </View>
+              )}
+              <View className="flex-row items-center justify-between">
+                <Text className="text-sm" style={{ color: colors.text.secondary }}>
+                  Precio
+                </Text>
+                <Text className="text-sm font-semibold" style={{ color: colors.text.primary }}>
+                  ${product?.price || '0.00'}
+                </Text>
+              </View>
+              {product?.compareAtPrice && (
+                <View className="flex-row items-center justify-between">
+                  <Text className="text-sm" style={{ color: colors.text.secondary }}>
+                    Descuento
+                  </Text>
+                  <Text className="text-sm font-semibold" style={{ color: '#ef4444' }}>
+                    {Math.round(((product.compareAtPrice - product.price) / product.compareAtPrice) * 100)}% OFF
+                  </Text>
+                </View>
+              )}
+            </View>
+          </View>
+        )}
 
         {/* Description */}
         <View className="px-4 mb-8">
@@ -473,71 +566,132 @@ export default function ProductDetail({ product, onClose, onBusinessPress, onVid
         )}
 
 
-        {/* Quantity Selector - Modern Design */}
-        <View className="px-4 mb-6">
-          <Text className="text-base font-semibold text-gray-900 mb-3">
-            Cantidad
-          </Text>
-          <View
-            className="flex-row items-center rounded-2xl overflow-hidden"
-            style={{
-              backgroundColor: '#f9fafb',
-              borderWidth: 1,
-              borderColor: '#e5e7eb'
-            }}
-          >
-            <TouchableOpacity
-              onPress={() => setQuantity(Math.max(1, quantity - 1))}
-              activeOpacity={0.7}
+        {/* Quantity Selector - Modern Design (only for clients) */}
+        {showClientView && (
+          <View className="px-4 mb-6">
+            <Text className="text-base font-semibold text-gray-900 mb-3">
+              Cantidad
+            </Text>
+            <View
+              className="flex-row items-center rounded-2xl overflow-hidden"
               style={{
-                width: 56,
-                height: 56,
-                justifyContent: 'center',
-                alignItems: 'center',
-                backgroundColor: quantity === 1 ? 'transparent' : '#ffffff'
+                backgroundColor: '#f9fafb',
+                borderWidth: 1,
+                borderColor: '#e5e7eb'
               }}
             >
-              <Ionicons
-                name="remove"
-                size={24}
-                color={quantity === 1 ? '#d1d5db' : '#1f2937'}
-              />
-            </TouchableOpacity>
+              <TouchableOpacity
+                onPress={() => setQuantity(Math.max(1, quantity - 1))}
+                activeOpacity={0.7}
+                style={{
+                  width: 56,
+                  height: 56,
+                  justifyContent: 'center',
+                  alignItems: 'center',
+                  backgroundColor: quantity === 1 ? 'transparent' : '#ffffff'
+                }}
+              >
+                <Ionicons
+                  name="remove"
+                  size={24}
+                  color={quantity === 1 ? '#d1d5db' : '#1f2937'}
+                />
+              </TouchableOpacity>
 
-            <View className="flex-1 items-center justify-center" style={{ height: 56 }}>
-              <Text className="text-2xl font-bold text-gray-900">
-                {quantity}
-              </Text>
+              <View className="flex-1 items-center justify-center" style={{ height: 56 }}>
+                <Text className="text-2xl font-bold text-gray-900">
+                  {quantity}
+                </Text>
+              </View>
+
+              <TouchableOpacity
+                onPress={() => setQuantity(quantity + 1)}
+                activeOpacity={0.7}
+                style={{
+                  width: 56,
+                  height: 56,
+                  justifyContent: 'center',
+                  alignItems: 'center',
+                  backgroundColor: '#ffffff'
+                }}
+              >
+                <Ionicons name="add" size={24} color="#1f2937" />
+              </TouchableOpacity>
             </View>
-
-            <TouchableOpacity
-              onPress={() => setQuantity(quantity + 1)}
-              activeOpacity={0.7}
-              style={{
-                width: 56,
-                height: 56,
-                justifyContent: 'center',
-                alignItems: 'center',
-                backgroundColor: '#ffffff'
-              }}
-            >
-              <Ionicons name="add" size={24} color="#1f2937" />
-            </TouchableOpacity>
           </View>
-        </View>
+        )}
       </ScrollView>
 
-      {/* Bottom Fixed Add to Cart - Sticky like TikTok Shop */}
-      <View className="bg-white border-t border-gray-100 px-4 py-4 shadow-2xl" style={{ elevation: 10 }}>
-        <TouchableOpacity
-          onPress={handleAddToCart}
-          className="bg-red-500 py-4 rounded-xl items-center active:bg-red-600"
-        >
-          <Text className="text-lg font-bold text-white">
-            Añadir al carrito · ${((product?.price || 0) * quantity).toFixed(2)}
-          </Text>
-        </TouchableOpacity>
-      </View>
+      {/* Bottom Fixed Add to Cart - Sticky like TikTok Shop (only for clients) */}
+      {showClientView && (
+        <View className="bg-white border-t border-gray-100 px-4 py-4 shadow-2xl" style={{ elevation: 10 }}>
+          <TouchableOpacity
+            onPress={handleAddToCart}
+            className="bg-red-500 py-4 rounded-xl items-center active:bg-red-600"
+          >
+            <Text className="text-lg font-bold text-white">
+              Añadir al carrito · ${((product?.price || 0) * quantity).toFixed(2)}
+            </Text>
+          </TouchableOpacity>
+        </View>
+      )}
+
+      {/* Bottom Stats Bar for Business Owners (non-preview) */}
+      {isOwner && !previewMode && (
+        <View className="bg-white border-t border-gray-100 px-4 py-4" style={{ elevation: 10 }}>
+          <View className="flex-row items-center justify-around">
+            <View className="items-center">
+              <View className="flex-row items-center mb-1" style={{ gap: 4 }}>
+                <Ionicons name="eye-outline" size={20} color={colors.text.secondary} />
+                <Text className="text-2xl font-bold" style={{ color: colors.text.primary }}>
+                  {product?.viewCount || 0}
+                </Text>
+              </View>
+              <Text className="text-xs" style={{ color: colors.text.secondary }}>Vistas</Text>
+            </View>
+
+            <View style={{ width: 1, height: 40, backgroundColor: colors.border.light }} />
+
+            <View className="items-center">
+              <View className="flex-row items-center mb-1" style={{ gap: 4 }}>
+                <Ionicons name="heart-outline" size={20} color={colors.text.secondary} />
+                <Text className="text-2xl font-bold" style={{ color: colors.text.primary }}>
+                  {product?.favoriteCount || 0}
+                </Text>
+              </View>
+              <Text className="text-xs" style={{ color: colors.text.secondary }}>Favoritos</Text>
+            </View>
+
+            <View style={{ width: 1, height: 40, backgroundColor: colors.border.light }} />
+
+            <View className="items-center">
+              <View className="flex-row items-center mb-1" style={{ gap: 4 }}>
+                <Ionicons name="cart-outline" size={20} color={colors.text.secondary} />
+                <Text className="text-2xl font-bold" style={{ color: colors.text.primary }}>
+                  {product?.soldCount || 0}
+                </Text>
+              </View>
+              <Text className="text-xs" style={{ color: colors.text.secondary }}>Vendidos</Text>
+            </View>
+
+            <View style={{ width: 1, height: 40, backgroundColor: colors.border.light }} />
+
+            <View className="items-center">
+              <View className="flex-row items-center mb-1" style={{ gap: 4 }}>
+                <Ionicons
+                  name={product?.trackInventory ? "cube-outline" : "infinite-outline"}
+                  size={20}
+                  color={colors.text.secondary}
+                />
+                <Text className="text-2xl font-bold" style={{ color: colors.text.primary }}>
+                  {product?.trackInventory ? (product?.stock || 0) : '∞'}
+                </Text>
+              </View>
+              <Text className="text-xs" style={{ color: colors.text.secondary }}>Stock</Text>
+            </View>
+          </View>
+        </View>
+      )}
 
       {/* Custom Menu Modal */}
       <Modal

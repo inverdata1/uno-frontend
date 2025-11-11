@@ -708,46 +708,43 @@ export default function ProductDetail({ product, onClose, onBusinessPress, onVid
           }}
           onPress={() => setMenuVisible(false)}
         >
-          <View style={{
-            backgroundColor: '#ffffff',
-            borderTopLeftRadius: 16,
-            borderTopRightRadius: 16,
-            paddingBottom: 34
-          }}>
-            <TouchableOpacity
-              onPress={handleEdit}
-              style={{
-                flexDirection: 'row',
-                alignItems: 'center',
-                paddingVertical: 16,
-                paddingHorizontal: 20,
-                gap: 12
-              }}
-            >
-              <Ionicons name="pencil" size={22} color={colors.text.primary} />
-              <Text style={{ fontSize: 16, color: colors.text.primary }}>
-                Editar
-              </Text>
-            </TouchableOpacity>
+          <SafeAreaView edges={['bottom']} style={{ backgroundColor: '#ffffff', borderTopLeftRadius: 16, borderTopRightRadius: 16 }}>
+            <View style={{ paddingTop: 8 }}>
+              <TouchableOpacity
+                onPress={handleEdit}
+                style={{
+                  flexDirection: 'row',
+                  alignItems: 'center',
+                  paddingVertical: 16,
+                  paddingHorizontal: 20,
+                  gap: 12
+                }}
+              >
+                <Ionicons name="pencil" size={22} color={colors.text.primary} />
+                <Text style={{ fontSize: 16, color: colors.text.primary }}>
+                  Editar
+                </Text>
+              </TouchableOpacity>
 
-            <View style={{ height: 1, backgroundColor: colors.border.light }} />
+              <View style={{ height: 1, backgroundColor: colors.border.light }} />
 
-            <TouchableOpacity
-              onPress={handleDelete}
-              style={{
-                flexDirection: 'row',
-                alignItems: 'center',
-                paddingVertical: 16,
-                paddingHorizontal: 20,
-                gap: 12
-              }}
-            >
-              <Ionicons name="trash" size={22} color="#DC2626" />
-              <Text style={{ fontSize: 16, color: '#DC2626' }}>
-                Eliminar
-              </Text>
-            </TouchableOpacity>
-          </View>
+              <TouchableOpacity
+                onPress={handleDelete}
+                style={{
+                  flexDirection: 'row',
+                  alignItems: 'center',
+                  paddingVertical: 16,
+                  paddingHorizontal: 20,
+                  gap: 12
+                }}
+              >
+                <Ionicons name="trash" size={22} color="#DC2626" />
+                <Text style={{ fontSize: 16, color: '#DC2626' }}>
+                  Eliminar
+                </Text>
+              </TouchableOpacity>
+            </View>
+          </SafeAreaView>
         </Pressable>
       </Modal>
 

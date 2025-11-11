@@ -76,11 +76,35 @@ export const useDeleteStory = () => {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: async (storyId) => {
-      return apiClient.delete(`/stories/${storyId}`).then(res => res.data);
+    mutationFn: async ({ storyId, businessId }) => {
+      return apiClient.delete(`/stories/id`, { params: { id: storyId, businessId } }).then(res => res.data);
     },
-    onSuccess: () => {
+    onSuccess: (data, { storyId, businessId }) => {
+      // Optimistically remove from all caches immediately
+
+      // 1. Remove from business-specific stories
+      queryClient.setQueryData(['stories', 'business', businessId], (old) => {
+        if (!old) return old;
+        return old.filter(story => story.id !== storyId);
+      });
+
+      // 2. Remove from main stories feed (grouped by business)
+      queryClient.setQueryData(['stories'], (old) => {
+        if (!old) return old;
+        return old.map(businessGroup => {
+          if (businessGroup.businessId === businessId) {
+            return {
+              ...businessGroup,
+              stories: businessGroup.stories.filter(story => story.id !== storyId)
+            };
+          }
+          return businessGroup;
+        }).filter(businessGroup => businessGroup.stories.length > 0); // Remove empty groups
+      });
+
+      // 3. Invalidate to refetch fresh data
       queryClient.invalidateQueries({ queryKey: ['stories'] });
+      queryClient.invalidateQueries({ queryKey: ['stories', 'business', businessId] });
     },
   });
 };

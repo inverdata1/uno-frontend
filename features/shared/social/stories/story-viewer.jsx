@@ -192,25 +192,25 @@ export default function StoryViewer({ visible, stories = [], initialIndex = 0, o
           text: 'Eliminar',
           style: 'destructive',
           onPress: () => {
-            deleteStoryMutation.mutate(currentStory.id, {
-              onSuccess: () => {
-                // Remove deleted story from array
-                const updatedStories = stories.filter(s => s.id !== currentStory.id);
-                if (updatedStories.length === 0) {
-                  // No more stories, close viewer
+            deleteStoryMutation.mutate(
+              { storyId: currentStory.id, businessId: currentContext.businessId },
+              {
+                onSuccess: () => {
+                  // Close viewer immediately after successful deletion
+                  // The parent component will handle refetching updated stories
                   onClose();
-                } else if (currentStoryIndex >= updatedStories.length) {
-                  // Was last story, go to previous
-                  handlePrevious();
-                } else {
-                  // Go to next story
-                  handleNext();
+                },
+                onError: (error) => {
+                  console.error('Failed to delete story:', error);
+                  setIsPaused(false);
+                  Alert.alert(
+                    'Error',
+                    'No se pudo eliminar la historia. Inténtalo de nuevo.',
+                    [{ text: 'OK' }]
+                  );
                 }
-              },
-              onError: () => {
-                setIsPaused(false);
               }
-            });
+            );
           }
         }
       ]
@@ -370,7 +370,8 @@ export default function StoryViewer({ visible, stories = [], initialIndex = 0, o
             backgroundColor: '#ffffff',
             borderTopLeftRadius: 16,
             borderTopRightRadius: 16,
-            paddingBottom: 34
+            paddingTop: 8,
+            paddingBottom: Math.max(insets.bottom, 20)
           }}>
             <TouchableOpacity
               onPress={handleDelete}

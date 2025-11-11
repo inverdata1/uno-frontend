@@ -26,7 +26,7 @@ export default function BusinessDashboardScreen() {
     today: {
       orders: 12,
       ordersChange: '+15%',
-      revenue: 2450,
+      revenue: 0,
       revenueChange: '+22%',
       avgOrder: 204,
       avgOrderChange: '+8%',
@@ -36,7 +36,7 @@ export default function BusinessDashboardScreen() {
     week: {
       orders: 67,
       ordersChange: '+18%',
-      revenue: 14320,
+      revenue: 0,
       revenueChange: '+25%',
       avgOrder: 214,
       avgOrderChange: '+5%',
@@ -46,7 +46,7 @@ export default function BusinessDashboardScreen() {
     month: {
       orders: 248,
       ordersChange: '+28%',
-      revenue: 52840,
+      revenue: 0,
       revenueChange: '+32%',
       avgOrder: 213,
       avgOrderChange: '+3%',

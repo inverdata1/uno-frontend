@@ -1,8 +1,8 @@
-import { useEffect, useState } from 'react';
+import { useEffect } from 'react';
 import { useRouter } from 'expo-router';
 import { View } from 'react-native';
-import { useAuthStore } from '../shared/stores/auth-store';
-import { useAppStore } from '../shared/stores/app-store';
+import { useAuthStore } from '../core/auth/stores/auth-store';
+import { useCurrentUserType } from '../shared/hooks/use-user-type';
 import { Text } from '../shared/components/ui';
 
 function LoadingScreen() {
@@ -19,67 +19,38 @@ function LoadingScreen() {
 }
 
 export default function IndexScreen() {
-  console.log('🟢 INDEX SCREEN RENDERED');
   const router = useRouter();
   const { isAuthenticated, isLoading: authLoading } = useAuthStore();
-  const { isOnboardingCompleted } = useAppStore();
-  const [hasNavigated, setHasNavigated] = useState(false);
-
-  // Track when this component mounts and unmounts
-  useEffect(() => {
-    console.log('🎬 INDEX SCREEN MOUNTED');
-    return () => {
-      console.log('💀 INDEX SCREEN UNMOUNTED');
-    };
-  }, []);
+  const { currentUserType, isLoading: userTypeLoading } = useCurrentUserType();
 
   useEffect(() => {
-    console.log('🚀 Index useEffect triggered - hasNavigated:', hasNavigated);
+    console.log('📍 Index screen - Auth state:', { isAuthenticated, authLoading, currentUserType, userTypeLoading });
 
-    // Don't do anything if we already navigated
-    if (hasNavigated) {
-      console.log('🚫 Already navigated, NEVER routing again');
-      return;
-    }
-
-    console.log('📊 Current state:', {
-      authLoading,
-      isAuthenticated,
-      isOnboardingCompleted
-    });
-
-    // Don't do anything if auth is still loading
+    // Wait for auth to load first
     if (authLoading) {
-      console.log('⏳ Still loading auth, waiting...');
+      console.log('⏳ Waiting for auth to load...');
       return;
     }
 
-    console.log('✅ Making FIRST AND ONLY routing decision');
-
-    // Make routing decision with EXPLICIT logging
+    // If not authenticated, redirect to welcome immediately
     if (!isAuthenticated) {
-      console.log('🔍 User not authenticated');
-      if (!isOnboardingCompleted) {
-        console.log('🔍 Onboarding NOT completed');
-        console.log('🎯 ROUTING TO: onboarding');
-        router.replace('/(auth)/onboarding');
-      } else {
-        console.log('🔍 Onboarding IS completed');
-        console.log('🎯 ROUTING TO: login');
-        router.replace('/(auth)/login');
-      }
-    } else {
-      console.log('🔍 User IS authenticated');
-      console.log('🎯 ROUTING TO: main app');
-      router.replace('/(main)');
+      console.log('🚪 Not authenticated, redirecting to welcome');
+      router.replace('/(auth)/welcome');
+      return;
     }
 
-    // Mark as navigated to prevent future routing
-    setHasNavigated(true);
-    console.log('✅ Navigation completed - hasNavigated set to TRUE, NEVER routing again');
+    // If authenticated, wait for user type to load
+    if (userTypeLoading) {
+      console.log('⏳ Waiting for user type to load...');
+      return;
+    }
 
-  }, [hasNavigated]); // ONLY depend on hasNavigated
+    // Redirect to user type specific section
+    if (currentUserType) {
+      console.log(`🚀 Redirecting to ${currentUserType}/(tabs)`);
+      router.replace(`/${currentUserType}/(tabs)`);
+    }
+  }, [isAuthenticated, authLoading, currentUserType, userTypeLoading, router]);
 
-  // Show loading screen while determining route
   return <LoadingScreen />;
 }

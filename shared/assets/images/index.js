@@ -1,16 +1,17 @@
 // Centralized image imports for consistent usage across the app
 
-// Onboarding Images
-export const onboardingImages = {
-  paymentTracking: require('./onboarding/onboarding-payment-tracking.webp'),
- shoppingStores: require('./onboarding/onboarding-shopping-stores.webp'),
-  dealsOffers: require('./onboarding/onboarding-deals-offers.webp'),
+// Welcome Images
+export const welcomeImages = {
+  paymentTracking: require('./welcome/welcome-payment-tracking.webp'),
+  shoppingStores: require('./welcome/welcome-shopping-stores.webp'),
+  dealsOffers: require('./welcome/welcome-deals-offers.webp'),
 };
 
 // Illustrations
 export const illustrations = {
   // Add general illustrations here as needed
   // deliveryHero: require('./illustrations/illustration-delivery-hero.webp'),
+  map: require('./illustrations/map.webp'),
 };
 
 // Icons
@@ -23,4 +24,9 @@ export const customIcons = {
 export const backgrounds = {
   // Add background images here
   // gradientPrimary: require('./backgrounds/background-gradient-primary.webp'),
+};
+
+// Lottie Animations
+export const lottieAnimations = {
+  map: require('../lottie/map.json'),
 };

@@ -4,6 +4,7 @@ const { theme } = require('./shared/config/theme');
 module.exports = {
   content: [
     "./app/**/*.{js,jsx,ts,tsx}",
+    "./auth/**/*.{js,jsx,ts,tsx}",
     "./features/**/*.{js,jsx,ts,tsx}",
     "./shared/**/*.{js,jsx,ts,tsx}",
     "./components/**/*.{js,jsx,ts,tsx}",
@@ -36,6 +37,11 @@ module.exports = {
 
         success: theme.colors.success,              // Success colors
         warning: theme.colors.warning,              // Warning colors
+
+        // Mode colors
+        'mode-client': theme.colors.modes.client.primary,
+        'mode-business': theme.colors.modes.business.primary,
+        'mode-delivery': theme.colors.modes.delivery.primary
       },
       spacing: theme.spacing,
       fontSize: theme.fontSize,

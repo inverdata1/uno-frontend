@@ -1,5 +1,6 @@
-import React, { useState, useRef, useEffect } from 'react';
-import { TextInput, View, Keyboard } from 'react-native';
+import { Ionicons } from '@expo/vector-icons';
+import { useEffect, useRef, useState } from 'react';
+import { Keyboard, TextInput, View } from 'react-native';
 import { cn } from '../../utils/cn';
 import { Text } from './text';
 
@@ -54,41 +55,34 @@ export const PhoneInput = ({
 
   return (
     <View className="mb-3">
-      <View
+      <TextInput
+        ref={inputRef}
         className={cn(
-          'flex-row items-center border rounded-xl',
-          'bg-gray-50 border-gray-200',
-          error && 'border-red-300 bg-red-50',
-          isFocused && !error && 'border-primary-500 bg-white',
+          'border rounded-xl px-4 py-4',
+          'text-foreground text-base',
+          // Placeholder styles
+          'placeholder:text-gray-400',
+          // Base state
+          'bg-gray-50 border-gray-400',
+          // Focused state (overrides base)
+          isFocused && 'border-primary-500 bg-white',
+          // Error state (overrides both base and focused)
+          error && 'border-red-400 bg-red-50 placeholder:text-red-400',
           className
         )}
-      >
-        {/* Country Code */}
-        <View className="flex-row items-center px-4 py-4 border-r border-gray-300">
-          <Text className="text-foreground font-medium">+58</Text>
-        </View>
-
-        {/* Phone Number Input */}
-        <TextInput
-          ref={inputRef}
-          className={cn(
-            'flex-1 px-3 py-4 text-foreground text-base',
-            'placeholder:text-gray-400'
-          )}
-          placeholder="04XX XXX XXXX"
-          value={formatDisplayValue(cleanValue)}
-          onChangeText={handleChangeText}
-          onFocus={handleFocus}
-          onBlur={handleBlur}
-          keyboardType="numeric"
-          maxLength={13} // 11 digits + 2 spaces
-          {...props}
-        />
-      </View>
+        placeholder="Número de teléfono"
+        value={formatDisplayValue(cleanValue)}
+        onChangeText={handleChangeText}
+        onFocus={handleFocus}
+        onBlur={handleBlur}
+        keyboardType="numeric"
+        maxLength={13} // 11 digits + 2 spaces
+        {...props}
+      />
 
       {error && (
         <View className="flex-row items-center mt-2">
-          <Text className="text-red-500 text-xs mr-1">⚠</Text>
+          <Ionicons name="warning-outline" size={12} color="#ef4444" style={{ marginRight: 4 }} />
           <Text className="text-red-500 text-xs font-medium flex-1">
             {(() => {
               if (typeof error === 'string') return error;

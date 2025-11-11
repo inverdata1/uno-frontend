@@ -1,0 +1,20 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(find:*)",
+      "Bash(ls:*)",
+      "Bash(mkdir:*)",
+      "Bash(npx react-native log-android:*)",
+      "Bash(cat:*)",
+      "Bash(grep:*)",
+      "Bash(bash:*)",
+      "Bash(echo:*)",
+      "Bash(npx expo start --clear)",
+      "Bash(mv:*)",
+      "Bash(rmdir:*)",
+      "Bash(npx expo prebuild:*)"
+    ],
+    "deny": [],
+    "ask": []
+  }
+}

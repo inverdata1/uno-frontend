@@ -1,6 +1,6 @@
-import React, { useState, useRef, useEffect } from 'react';
-import { TextInput, View, Keyboard, TouchableOpacity } from 'react-native';
-import { Feather } from '@expo/vector-icons';
+import { Ionicons } from '@expo/vector-icons';
+import { useEffect, useRef, useState } from 'react';
+import { Keyboard, TextInput, TouchableOpacity, View } from 'react-native';
 import { cn } from '../../utils/cn';
 import { Text } from './text';
 
@@ -47,13 +47,15 @@ export const Input = ({
           ref={inputRef}
           className={cn(
             'border rounded-xl px-4 py-4',
-            'text-foreground placeholder:text-gray-400 text-base',
+            'text-foreground text-base',
+            // Placeholder styles
+            'placeholder:text-gray-400',
             // Base state
-            'bg-gray-50 border-gray-200',
+            'bg-gray-50 border-gray-400',
             // Focused state (overrides base)
             actuallyFocused && 'border-primary-500 bg-white',
             // Error state (overrides both base and focused)
-            error && 'border-red-300 bg-red-50',
+            error && 'border-red-400 bg-red-50 placeholder:text-red-400',
             isPasswordField && 'pr-12', // Add padding for eye icon
             className
           )}
@@ -69,8 +71,8 @@ export const Input = ({
             onPress={() => setShowPassword(!showPassword)}
             className="absolute right-4 top-4 bottom-4 justify-center"
           >
-            <Feather
-              name={showPassword ? 'eye' : 'eye-off'}
+            <Ionicons
+              name={showPassword ? 'eye-outline' : 'eye-off-outline'}
               size={20}
               color="#6b7280"
             />
@@ -80,7 +82,7 @@ export const Input = ({
 
       {error && (
         <View className="flex-row items-center mt-2">
-          <Text className="text-red-500 text-xs mr-1">⚠</Text>
+          <Ionicons name="warning-outline" size={12} color="#ef4444" style={{ marginRight: 4 }} />
           <Text className="text-red-500 text-xs font-medium flex-1">
             {(() => {
               if (typeof error === 'string') return error;

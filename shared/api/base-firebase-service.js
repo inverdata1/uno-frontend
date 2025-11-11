@@ -4,6 +4,7 @@ import {
   getDoc,
   getDocs,
   addDoc,
+  setDoc,
   updateDoc,
   deleteDoc,
   query,
@@ -19,6 +20,7 @@ import {
  */
 export class BaseFirebaseService {
   constructor(client, collectionName) {
+    this.client = client; // Store client reference for accessing other resources
     this.db = client.db;
     this.collectionName = collectionName;
     this.collection = collection(this.db, collectionName);
@@ -76,24 +78,42 @@ export class BaseFirebaseService {
   /**
    * Create a new document
    * @param {Object} data - Document data
+   * @param {string} [customId] - Optional custom document ID
    * @returns {Promise<Object>} Created document with ID
    */
-  async create(data) {
+  async create(data, customId = null) {
+    const now = new Date();
+
+    let documentId;
+
+    if (customId) {
+      documentId = customId;
+    } else {
+      // Pre-generate ID for auto-generated case so we can store it in the document
+      const tempRef = doc(collection(this.db, this.collectionName));
+      documentId = tempRef.id;
+    }
+
+    // Use provided timestamps or create new ones
+    // Use JavaScript Date objects instead of serverTimestamp() for immediate consistency
+    // ALWAYS include id field in the document data
     const docData = {
       ...data,
-      createdAt: serverTimestamp(),
-      updatedAt: serverTimestamp()
+      id: documentId,  // Store document ID in the document itself
+      createdAt: data.createdAt || now,
+      updatedAt: data.updatedAt || now
     };
 
-    const docRef = await addDoc(this.collection, docData);
+    if (customId) {
+      // Use setDoc with custom ID
+      await setDoc(doc(this.db, this.collectionName, customId), docData);
+    } else {
+      // Use setDoc with pre-generated ID
+      await setDoc(doc(this.db, this.collectionName, documentId), docData);
+    }
 
-    // Return with actual timestamp since serverTimestamp() returns null initially
-    return {
-      id: docRef.id,
-      ...data,
-      createdAt: new Date(),
-      updatedAt: new Date()
-    };
+    // Return the document data (id already included)
+    return docData;
   }
 
   /**

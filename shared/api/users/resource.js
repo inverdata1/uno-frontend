@@ -231,8 +231,7 @@ export class UsersResource extends BaseFirebaseService {
 
       return userTypesData;
     } catch (error) {
-      console.error(`❌ ERROR in get_user_types for ${userId}:`, error.message);
-      console.error('Full error:', error);
+      console.warn(`⚠️ Warning in get_user_types for ${userId}:`, error.message);
       return null;
     }
   }

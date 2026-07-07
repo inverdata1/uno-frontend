@@ -20,7 +20,6 @@ export const usePosts = ({ businessId, userId, type, limit = 20 } = {}) => {
       if (type) params.type = type;
       return apiClient.get('/posts', { params }).then(res => res.data);
     },
-    enabled: !!businessId || !!userId,
     staleTime: 5 * 60 * 1000, // 5 minutes
   });
 };
@@ -114,10 +113,17 @@ export const useDeletePost = () => {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: async (postId) => {
-      return apiClient.delete(`/posts/${postId}`).then(res => res.data);
+    mutationFn: async ({ postId, businessId }) => {
+      return apiClient.delete(`/posts/id`, { params: { id: postId, businessId } }).then(res => res.data);
     },
-    onSuccess: () => {
+    onSuccess: (data, { postId, businessId }) => {
+      // Optimistically remove from cache immediately
+      queryClient.setQueryData(['posts', { businessId }], (old) => {
+        if (!old) return old;
+        return old.filter(post => post.id !== postId);
+      });
+
+      // Invalidate all post queries
       queryClient.invalidateQueries({ queryKey: ['posts'] });
     },
   });

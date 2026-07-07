@@ -104,19 +104,38 @@ export const useUpdatePost = () => {
  */
 export const useDeletePost = () => {
   const queryClient = useQueryClient();
-  const businessId = useBusinessId();
+  const contextBusinessId = useBusinessId();
 
   return useMutation({
-    mutationFn: async (postId) => {
+    mutationFn: async (input) => {
+      // Support both formats: just postId OR { postId, businessId }
+      const postId = typeof input === 'string' ? input : input.postId;
+      const businessId = typeof input === 'string' ? contextBusinessId : (input.businessId || contextBusinessId);
+
       if (!businessId) {
         throw new Error('No business context available');
       }
 
-      return apiClient.delete(`/posts/${postId}`, {
-        params: { businessId }
+      return apiClient.delete(`/posts/id`, {
+        params: { id: postId, businessId }
       }).then(res => res.data);
     },
-    onSuccess: () => {
+    onSuccess: (data, input) => {
+      const postId = typeof input === 'string' ? input : input.postId;
+      const businessId = typeof input === 'string' ? contextBusinessId : (input.businessId || contextBusinessId);
+
+      // Optimistically remove from cache immediately
+      queryClient.setQueryData(['business-posts', businessId], (old) => {
+        if (!old) return old;
+        return old.filter(post => post.id !== postId);
+      });
+
+      queryClient.setQueryData(['posts', { businessId }], (old) => {
+        if (!old) return old;
+        return old.filter(post => post.id !== postId);
+      });
+
+      // Invalidate to refetch fresh data
       queryClient.invalidateQueries(['business-posts', businessId]);
       queryClient.invalidateQueries(['posts']);
     },

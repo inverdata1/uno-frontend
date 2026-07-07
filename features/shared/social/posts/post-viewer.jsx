@@ -218,11 +218,22 @@ export default function PostViewer({
           text: 'Eliminar',
           style: 'destructive',
           onPress: () => {
-            deletePostMutation.mutate(post.id, {
-              onSuccess: () => {
-                onClose();
+            deletePostMutation.mutate(
+              { postId: post.id, businessId: currentContext.businessId },
+              {
+                onSuccess: () => {
+                  onClose();
+                },
+                onError: (error) => {
+                  console.error('Failed to delete post:', error);
+                  Alert.alert(
+                    'Error',
+                    'No se pudo eliminar la publicación. Inténtalo de nuevo.',
+                    [{ text: 'OK' }]
+                  );
+                }
               }
-            });
+            );
           }
         }
       ]

@@ -1,5 +1,5 @@
 import React, { useState, useCallback, useRef, useEffect } from 'react';
-import { View, TouchableOpacity, ActivityIndicator } from 'react-native';
+import { View, TouchableOpacity, ActivityIndicator, Platform } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
 import BottomSheet, { BottomSheetView } from '@gorhom/bottom-sheet';
@@ -16,6 +16,17 @@ export const UserTypeSwitcherModal = ({ visible, onClose, onUserTypeSwitch }) =>
   const [selectedUserType, setSelectedUserType] = useState(currentUserType);
   const [selectedBusiness, setSelectedBusiness] = useState(null);
   const [switchingTo, setSwitchingTo] = useState(null);
+  
+  // State to unmount bottom sheet on Web completely when closed
+  const [shouldRender, setShouldRender] = useState(false);
+  useEffect(() => {
+    if (visible) {
+      setShouldRender(true);
+    } else {
+      const timer = setTimeout(() => setShouldRender(false), 300);
+      return () => clearTimeout(timer);
+    }
+  }, [visible]);
 
   // Debug logging for business contexts
   React.useEffect(() => {
@@ -237,6 +248,10 @@ export const UserTypeSwitcherModal = ({ visible, onClose, onUserTypeSwitch }) =>
       </TouchableOpacity>
     );
   };
+
+  if (!shouldRender && Platform.OS === 'web') {
+    return null;
+  }
 
   return (
     <BottomSheet

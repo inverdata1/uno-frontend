@@ -4,6 +4,8 @@ import { UserTypeSwitcherModal } from '../../../shared/components/layout/user-ty
 import { theme } from '../../../shared/config/theme';
 import { useAppStore } from '../../../shared/stores/app-store';
 import { getTabIcon } from '../../../shared/utils/tab-helpers';
+import { Platform, useWindowDimensions } from 'react-native';
+import { WebSidebar } from '../../../shared/components/layout/web-sidebar';
 
 /**
  * Business Tabs Layout
@@ -12,10 +14,13 @@ import { getTabIcon } from '../../../shared/utils/tab-helpers';
 export default function BusinessTabsLayout() {
   const insets = useSafeAreaInsets();
   const { userTypeSwitcherVisible, closeUserTypeSwitcher } = useAppStore();
+  const { width } = useWindowDimensions();
+  const isDesktopWeb = Platform.OS === 'web' && width > 768;
 
   return (
     <>
       <Tabs
+        tabBar={isDesktopWeb ? (props) => <WebSidebar {...props} /> : undefined}
         screenOptions={{
           headerShown: false,
           tabBarActiveTintColor: theme.colors.primary[500],
@@ -23,7 +28,8 @@ export default function BusinessTabsLayout() {
           tabBarStyle: {
             paddingBottom: Math.max(insets.bottom, 5),
             paddingTop: 5,
-            height: 60 + Math.max(insets.bottom - 5, 0)
+            height: 60 + Math.max(insets.bottom - 5, 0),
+            display: isDesktopWeb ? 'none' : 'flex'
           },
           lazy: true,
           unmountOnBlur: true,

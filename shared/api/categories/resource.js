@@ -1,11 +1,11 @@
-import { BaseFirebaseService } from '../base-firebase-service';
+import { BaseApiService } from '../base-api-service';
 import { COLLECTION_NAME } from './collection';
 
 /**
  * Categories Resource
  * Handles category CRUD operations and hierarchical queries
  */
-export class CategoriesResource extends BaseFirebaseService {
+export class CategoriesResource extends BaseApiService {
   constructor(client) {
     super(client, COLLECTION_NAME);
   }

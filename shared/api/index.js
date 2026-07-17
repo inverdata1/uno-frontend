@@ -1,4 +1,4 @@
-import { FirebaseClient } from './firebase-client';
+import { ApiClient } from './api-client';
 import { UsersResource } from './users/resource';
 import { BusinessesResource } from './businesses/resource';
 import { BranchesResource } from './branches/resource';
@@ -13,34 +13,34 @@ import { FavoritesResource } from './favorites/resource';
 import { FollowsResource } from './follows/resource';
 
 /**
- * Initialize Firebase API system
+ * Initialize REST API system
  * Creates client instance and registers all resources
  */
 
-// Create main Firebase client
-const firebaseClient = new FirebaseClient();
+// Create main API client
+const apiClient = new ApiClient();
 
 // Register all resources
-firebaseClient.registerResource('users', UsersResource);
-firebaseClient.registerResource('businesses', BusinessesResource);
-firebaseClient.registerResource('branches', BranchesResource);
-firebaseClient.registerResource('addresses', AddressesResource);
-firebaseClient.registerResource('address-types', AddressTypesResource);
-firebaseClient.registerResource('venezuelan-states', VenezuelanStatesResource);
+apiClient.registerResource('users', UsersResource);
+apiClient.registerResource('businesses', BusinessesResource);
+apiClient.registerResource('branches', BranchesResource);
+apiClient.registerResource('addresses', AddressesResource);
+apiClient.registerResource('address-types', AddressTypesResource);
+apiClient.registerResource('venezuelan-states', VenezuelanStatesResource);
 
 // Social Commerce Resources
-firebaseClient.registerResource('categories', CategoriesResource);
-firebaseClient.registerResource('products', ProductsResource);
-firebaseClient.registerResource('posts', PostsResource);
-firebaseClient.registerResource('stories', StoriesResource);
-firebaseClient.registerResource('favorites', FavoritesResource);
-firebaseClient.registerResource('follows', FollowsResource);
+apiClient.registerResource('categories', CategoriesResource);
+apiClient.registerResource('products', ProductsResource);
+apiClient.registerResource('posts', PostsResource);
+apiClient.registerResource('stories', StoriesResource);
+apiClient.registerResource('favorites', FavoritesResource);
+apiClient.registerResource('follows', FollowsResource);
 
 // Log registered resources for debugging
-console.log('🔥 Firebase API initialized with resources:', firebaseClient.listResources());
+console.log('🌐 REST API initialized with resources:', apiClient.listResources());
 
 // Export configured client
-export { firebaseClient };
+export { apiClient as firebaseClient }; // Exported as firebaseClient to avoid breaking existing imports temporarily, though it's now an API client
 
 // Export individual resources for direct access if needed
 export {
@@ -59,4 +59,4 @@ export {
 };
 
 // Export base service for extending
-export { BaseFirebaseService } from './base-firebase-service';
+export { BaseApiService as BaseFirebaseService } from './base-api-service';

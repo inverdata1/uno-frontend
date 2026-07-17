@@ -1,10 +1,4 @@
-import {
-  createUserWithEmailAndPassword,
-  signInWithEmailAndPassword,
-  signOut,
-  onAuthStateChanged
-} from 'firebase/auth';
-import { auth } from '../../../shared/config/firebase';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import { apiClient } from '../../../shared/config/api-client';
 import { uploadMedia } from '../../../shared/services/media-upload';
 
@@ -14,48 +8,62 @@ export const authService = {
    */
   async signUp({ firstName, lastName, email, phone, dateOfBirth, password, selectedUserType = 'client', businessData }) {
     try {
-      // Create Firebase auth user
-      const userCredential = await createUserWithEmailAndPassword(auth, email, password);
-      const user = userCredential.user;
-
-      // Create user document using our API system with selected user type
+      // 1. Prepare userTypes structure
       const userTypes = {};
-
-      // Always enable client user type by default
-      userTypes.client = {
-        status: 'active',
-        createdAt: new Date()
-      };
-
-      // Add selected user type if different from client
+      userTypes.client = { status: 'active', createdAt: new Date() };
+      
       if (selectedUserType !== 'client') {
-        userTypes[selectedUserType] = {
-          status: selectedUserType === 'delivery' ? 'pending' : 'active', // Delivery user type needs approval
-          createdAt: new Date()
+        userTypes[selectedUserType] = { 
+          status: selectedUserType === 'delivery' ? 'pending' : 'active', 
+          createdAt: new Date() 
         };
       }
 
-      // If user is registering as a business, create business profile FIRST
+      // 2. Call our NestJS Auth endpoint
+      const registerResponse = await apiClient.post('/auth/register', {
+        email,
+        password,
+        firstName,
+        lastName,
+        phone: `+58${phone}`,
+        dateOfBirth,
+        userTypes,
+        currentUserType: selectedUserType,
+        preferences: {
+          language: 'es',
+          currency: 'USD',
+          notifications: {
+            orders: true,
+            promotions: false,
+            email: true
+          }
+        }
+      });
+      
+      const { user, access_token } = registerResponse.data;
+
+      // 3. Store tokens in AsyncStorage so future requests are authenticated
+      await AsyncStorage.setItem('userToken', access_token);
+      await AsyncStorage.setItem('userId', user.id);
+
+      // 4. Create business profile if requested
       let businessId = null;
       if (selectedUserType === 'business' && businessData) {
         console.log('📊 Creating business profile during registration...');
 
-        // Upload images if provided
         let logoUrl = null;
         let bannerUrl = null;
 
         if (businessData.logoUri) {
           console.log('📤 Uploading business logo...');
-          const logoResult = await uploadMedia(businessData.logoUri, 'BUSINESS_LOGO', {}, null, user);
+          const logoResult = await uploadMedia(businessData.logoUri, 'BUSINESS_LOGO', {}, null, { uid: user.id });
           logoUrl = logoResult.url;
-          console.log('✅ Logo uploaded:', logoUrl);
         }
 
         if (businessData.bannerUri) {
           console.log('📤 Uploading business banner...');
-          const bannerResult = await uploadMedia(businessData.bannerUri, 'BUSINESS_BANNER', {}, null, user);
+          const bannerResult = await uploadMedia(businessData.bannerUri, 'BUSINESS_BANNER', {}, null, { uid: user.id });
           bannerUrl = bannerResult.url;
-          console.log('✅ Banner uploaded:', bannerUrl);
         }
 
         const business = await apiClient.post('/businesses', {
@@ -67,52 +75,27 @@ export const authService = {
           phone: businessData.phone,
           logoUrl: logoUrl,
           bannerUrl: bannerUrl,
-        }, { params: { userId: user.uid } });
+        });
 
         businessId = business.data.id;
         console.log('✅ Business profile created:', businessId);
+
+        // Update the user with their newly created currentBusinessId
+        await apiClient.put(`/users/profile`, { currentBusinessId: businessId }, { params: { userId: user.id } });
       }
-
-      // Create user document with business ID already included
-      const userData = {
-        id: user.uid,
-        firstName,
-        lastName,
-        email,
-        phone: `+58${phone}`, // Convert 04XX XXX XXXX to +58 04XX XXX XXXX
-        dateOfBirth: dateOfBirth,
-        createdAt: new Date(),
-        isActive: true,
-        userTypes: userTypes, // API field name (will transform in backend later)
-        currentUserType: selectedUserType, // API field name (will transform in backend later)
-        currentBusinessId: businessId,
-        currentBranchId: null,
-        // User preferences
-        preferences: {
-          language: 'es',
-          currency: 'USD',
-          notifications: {
-            orders: true,
-            promotions: false,
-            email: true
-          }
-        }
-      };
-
-      // Create user document using our API client
-      await apiClient.post('/users', userData, { params: { userId: user.uid } });
-      console.log('✅ User document created with businessId:', businessId);
 
       return {
         user: {
-          uid: user.uid,
+          uid: user.id, // Using 'uid' for backwards compatibility in frontend state
           email: user.email,
-          ...userData
+          currentBusinessId: businessId,
+          ...user
         }
       };
     } catch (error) {
-      const handledError = this.handleAuthError(error);
-      return { error: handledError.message };
+      console.error('Registration error:', error);
+      const msg = error.response?.data?.message || error.message || 'Error en el registro';
+      return { error: msg };
     }
   },
 
@@ -121,24 +104,24 @@ export const authService = {
    */
   async signIn({ email, password }) {
     try {
-      const userCredential = await signInWithEmailAndPassword(auth, email, password);
-      const user = userCredential.user;
+      // 1. Call login endpoint
+      const loginResponse = await apiClient.post('/auth/login', { email, password });
+      const { user, access_token } = loginResponse.data;
 
-      // Get user data through our API system
-      const userProfile = await apiClient.get('/users/profile', { params: { userId: user.uid } });
-      const userTypesData = await apiClient.get('/users/user-types', { params: { userId: user.uid } });
+      // 2. Store session
+      await AsyncStorage.setItem('userToken', access_token);
+      await AsyncStorage.setItem('userId', user.id);
 
       return {
         user: {
-          uid: user.uid,
-          email: user.email,
-          ...userProfile.data,
-          ...userTypesData.data
+          uid: user.id,
+          ...user
         }
       };
     } catch (error) {
-      const handledError = this.handleAuthError(error);
-      return { error: handledError.message };
+      console.error('Login error:', error);
+      const msg = error.response?.data?.message || 'Email o contraseña incorrectos';
+      return { error: msg };
     }
   },
 
@@ -147,94 +130,49 @@ export const authService = {
    */
   async signOut() {
     try {
-      await signOut(auth);
+      await AsyncStorage.removeItem('userToken');
+      await AsyncStorage.removeItem('userId');
       return { success: true };
     } catch (error) {
-      throw this.handleAuthError(error);
+      return { error: 'Error al cerrar sesión' };
     }
   },
 
   /**
-   * Get current user data through our API system
+   * Get current user data using API
    */
   async getCurrentUserData() {
     try {
-      const currentUser = auth.currentUser;
-      if (!currentUser) return null;
+      const token = await AsyncStorage.getItem('userToken');
+      const userId = await AsyncStorage.getItem('userId');
+      
+      if (!token || !userId) return null;
 
-      const userProfile = await apiClient.get('/users/profile', { params: { userId: currentUser.uid } });
-      const userTypesData = await apiClient.get('/users/user-types', { params: { userId: currentUser.uid } });
-
+      // Ensure we hit the API with the token to validate it
+      const userProfile = await apiClient.get('/users/profile', { params: { userId } });
       return {
-        uid: currentUser.uid,
-        email: currentUser.email,
-        ...userProfile.data,
-        ...userTypesData.data
+        uid: userId,
+        ...userProfile.data
       };
     } catch (error) {
+      console.warn('Could not fetch user session data:', error.message);
       return null;
     }
   },
 
   /**
-   * Listen to auth state changes
+   * Listen to auth state changes (Mimics Firebase onAuthStateChanged)
    */
   onAuthStateChanged(callback) {
-    return onAuthStateChanged(auth, async (user) => {
-      if (user) {
-        // Get user data through our API system
-        // Note: During registration, the store manually sets user data to avoid race conditions
-        // This listener is mainly for app restarts and auth state persistence
-        try {
-          const userProfile = await apiClient.get('/users/profile', { params: { userId: user.uid } });
-          const userTypesData = await apiClient.get('/users/user-types', { params: { userId: user.uid } });
-
-          callback({
-            uid: user.uid,
-            email: user.email,
-            emailVerified: user.emailVerified,
-            ...userProfile.data,
-            ...userTypesData.data
-          });
-        } catch (error) {
-          // If user document doesn't exist yet (e.g., during registration),
-          // the store will handle setting the user state manually
-          console.warn('Auth state changed but user profile not ready:', error.message);
-
-          // For existing users (e.g., app restart), provide basic auth info
-          callback({
-            uid: user.uid,
-            email: user.email,
-            emailVerified: user.emailVerified,
-            firstName: '',
-            lastName: '',
-            phone: '',
-            userTypes: { client: { status: 'active' } },
-            currentUserType: 'client'
-          });
-        }
-      } else {
-        callback(null);
-      }
+    // Automatically invoke with current session state
+    this.getCurrentUserData().then(userData => {
+      callback(userData);
     });
-  },
 
-  /**
-   * Handle Firebase auth errors
-   */
-  handleAuthError(error) {
-    const errorMessages = {
-      'auth/email-already-in-use': 'Este email ya está registrado',
-      'auth/weak-password': 'La contraseña debe tener al menos 6 caracteres',
-      'auth/invalid-email': 'Email inválido',
-      'auth/user-disabled': 'Esta cuenta ha sido deshabilitada',
-      'auth/user-not-found': 'Usuario no encontrado',
-      'auth/wrong-password': 'Contraseña incorrecta',
-      'auth/invalid-credential': 'Email o contraseña incorrectos',
-      'auth/too-many-requests': 'Demasiados intentos. Intenta más tarde',
-      'auth/network-request-failed': 'Error de conexión. Verifica tu internet',
+    // In a real app we might want to use EventEmitters to broadcast auth state changes,
+    // but for now, returning a mock unsubscribe function keeps React Native happy
+    return () => {
+      // unsubscribe
     };
-
-    return new Error(errorMessages[error.code] || 'Error de autenticación');
   }
 };

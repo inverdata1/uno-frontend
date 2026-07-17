@@ -1,4 +1,4 @@
-import { BaseFirebaseService } from '../base-firebase-service';
+import { BaseApiService } from '../base-api-service';
 import { COLLECTION_NAME } from './collection';
 
 /**
@@ -8,7 +8,7 @@ import { COLLECTION_NAME } from './collection';
  * Every business has at least one branch (default "Principal" branch).
  * Multi-location businesses can have multiple branches.
  */
-export class BranchesResource extends BaseFirebaseService {
+export class BranchesResource extends BaseApiService {
   constructor(client) {
     super(client, COLLECTION_NAME);
   }

@@ -1,11 +1,11 @@
-import { BaseFirebaseService } from '../base-firebase-service';
+import { BaseApiService } from '../base-api-service';
 import { COLLECTION_NAME, FOLLOWING_TYPES } from './collection';
 
 /**
  * Follows Resource
  * Handles user following relationships
  */
-export class FollowsResource extends BaseFirebaseService {
+export class FollowsResource extends BaseApiService {
   constructor(client) {
     super(client, COLLECTION_NAME);
   }

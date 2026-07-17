@@ -1,5 +1,5 @@
 import { getStorage, ref, uploadBytesResumable, getDownloadURL, deleteObject } from 'firebase/storage';
-import { auth } from '../config/firebase';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import { manipulateAsync, SaveFormat } from 'expo-image-manipulator';
 
 /**
@@ -125,13 +125,17 @@ const validateFileSize = async (uri, maxSizeMB) => {
  * @param {string} uploadType - Type from UPLOAD_TYPES
  * @param {object} options - Additional options
  * @param {function} onProgress - Progress callback (percent: number)
- * @param {object} userOverride - Optional user object to use instead of auth.currentUser
+ * @param {object} userOverride - Optional user object {uid: string}
  * @returns {Promise<object>} { url, path, filename }
  */
 export const uploadMedia = async (uri, uploadType, options = {}, onProgress = null, userOverride = null) => {
   try {
-    const user = userOverride || auth.currentUser;
-    if (!user) {
+    let userId = userOverride?.uid;
+    if (!userId) {
+      userId = await AsyncStorage.getItem('userId');
+    }
+    
+    if (!userId) {
       throw new Error('User must be authenticated to upload files');
     }
 
@@ -162,8 +166,8 @@ export const uploadMedia = async (uri, uploadType, options = {}, onProgress = nu
     }
 
     // Generate filename
-    const filename = generateFilename(options.filename || `file.${extension}`, user.uid);
-    const storagePath = `${config.path}/${user.uid}/${filename}`;
+    const filename = generateFilename(options.filename || `file.${extension}`, userId);
+    const storagePath = `${config.path}/${userId}/${filename}`;
 
     // Read file as blob
     const response = await fetch(uploadUri);
@@ -176,7 +180,7 @@ export const uploadMedia = async (uri, uploadType, options = {}, onProgress = nu
     const uploadTask = uploadBytesResumable(storageRef, blob, {
       contentType: mimeType,
       customMetadata: {
-        uploadedBy: user.uid,
+        uploadedBy: userId,
         uploadType,
         originalFilename: options.filename || 'unknown',
         ...options.metadata

@@ -1,12 +1,17 @@
 import { Ionicons } from '@expo/vector-icons';
-import { Keyboard, KeyboardAvoidingView, Platform, ScrollView, StyleSheet, TouchableWithoutFeedback, View } from 'react-native';
+import { Keyboard, KeyboardAvoidingView, Platform, ScrollView, StyleSheet, TouchableWithoutFeedback, View, useWindowDimensions } from 'react-native';
 import BusinessOnboardingStep from '../../../../features/client/businesses/business-onboarding-step';
 import { UserTypeSelector } from '../../../../shared/components/layout/user-type-selector';
 import { Button, Text } from '../../../../shared/components/ui';
+import { WebAuthLayout } from '../../../../shared/components/layout/web-auth-layout';
 import { useRegistration } from '../../hooks/register/use-registration';
+import { useAuthStore } from '../../stores/auth-store';
 import { BasicInfoStep } from './basic-info-step';
 
 export const RegistrationForm = ({ onComplete }) => {
+  const { width } = useWindowDimensions();
+  const isDesktop = Platform.OS === 'web' && width >= 768;
+
   const {
     // Form
     form,
@@ -32,23 +37,11 @@ export const RegistrationForm = ({ onComplete }) => {
     clearFocus,
   } = useRegistration({ onComplete });
 
-  return (
-    <KeyboardAvoidingView
-      className="flex-1"
-      behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
-    >
-      <ScrollView
-        ref={scrollViewRef}
-        className="flex-1"
-        contentContainerStyle={{ flexGrow: 1 }}
-        keyboardShouldPersistTaps="handled"
-        showsVerticalScrollIndicator={false}
-      >
-        <TouchableWithoutFeedback onPress={() => {
-          Keyboard.dismiss();
-          clearFocus();
-        }}>
-          <View className="flex-1 px-6 py-8">
+  // On web desktop: use responsive card layout without TouchableWithoutFeedback (which steals input focus)
+  if (isDesktop) {
+    return (
+      <WebAuthLayout scrollable={true}>
+        <View>
             {/* Logo */}
             <View className="items-center mb-8">
               <View style={styles.logoContainer}>
@@ -458,6 +451,14 @@ export const RegistrationForm = ({ onComplete }) => {
 
             {/* Navigation Buttons */}
             <View className="mb-6">
+              {useAuthStore.getState().error && (
+                <View className="mb-4 bg-red-50 p-3 rounded-lg border border-red-200">
+                  <Text className="text-red-600 text-center text-sm font-medium">
+                    {useAuthStore.getState().error}
+                  </Text>
+                </View>
+              )}
+
               {currentStep < totalSteps ? (
                 // Next Step Button
                 <Button
@@ -496,6 +497,102 @@ export const RegistrationForm = ({ onComplete }) => {
               )}
             </View>
 
+        </View>
+      </WebAuthLayout>
+    );
+  }
+
+  // Native layout
+  return (
+    <KeyboardAvoidingView
+      className="flex-1"
+      behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+    >
+      <ScrollView
+        ref={scrollViewRef}
+        className="flex-1"
+        contentContainerStyle={{ flexGrow: 1 }}
+        keyboardShouldPersistTaps="handled"
+        showsVerticalScrollIndicator={false}
+      >
+        <TouchableWithoutFeedback onPress={() => {
+          Keyboard.dismiss();
+          clearFocus();
+        }}>
+          <View className="flex-1 px-6 py-8">
+            {/* Logo */}
+            <View className="items-center mb-8">
+              <View style={styles.logoContainer}>
+                <Text style={styles.logoText}>UNO</Text>
+              </View>
+              <Text variant="heading" className="text-center">
+                Crear Cuenta
+              </Text>
+              <Text variant="body" className="text-center text-muted-foreground mt-2">
+                Paso {currentStep} • {totalSteps} pasos
+              </Text>
+            </View>
+
+            {/* Progress Bar */}
+            <View className="flex-row mb-8 px-2">
+              {Array.from({ length: totalSteps }).map((_, index) => (
+                <View key={index + 1} className="flex-1 mx-1">
+                  <View className={`h-2 rounded-full ${
+                    index + 1 <= currentStep ? 'bg-primary-500' : 'bg-gray-200'
+                  }`} />
+                </View>
+              ))}
+            </View>
+
+            {/* Step Content */}
+            <View className="mb-6">
+              {currentStep === 1 && (
+                <BasicInfoStep
+                  form={form}
+                  createFieldProps={createFieldProps}
+                  triggerUpdate={triggerUpdate}
+                  scrollViewRef={scrollViewRef}
+                />
+              )}
+              {currentStep === 2 && (
+                <UserTypeSelector
+                  selectedUserType={selectedUserType}
+                  onUserTypeSelect={setSelectedUserType}
+                />
+              )}
+              {currentStep === 3 && selectedUserType === 'business' && (
+                <BusinessOnboardingStep
+                  businessData={businessData}
+                  onBusinessDataChange={setBusinessData}
+                  scrollViewRef={scrollViewRef}
+                />
+              )}
+            </View>
+
+            {/* Navigation Buttons */}
+            <View className="mb-6">
+              {useAuthStore.getState().error && (
+                <View className="mb-4 bg-red-50 p-3 rounded-lg border border-red-200">
+                  <Text className="text-red-600 text-center text-sm font-medium">
+                    {useAuthStore.getState().error}
+                  </Text>
+                </View>
+              )}
+              {currentStep < totalSteps ? (
+                <Button variant="primary" size="lg" className="w-full" onPress={nextStep} disabled={!canProceedToNextStep()}>
+                  Continuar
+                </Button>
+              ) : (
+                <Button variant="primary" size="lg" className="w-full" onPress={form.handleSubmit} disabled={!form.state.canSubmit || isLoading}>
+                  {isLoading ? 'Creando cuenta...' : 'Crear Cuenta'}
+                </Button>
+              )}
+              {currentStep > 1 && (
+                <Button variant="outline" size="lg" className="w-full mt-3" onPress={prevStep} disabled={isLoading}>
+                  Atrás
+                </Button>
+              )}
+            </View>
           </View>
         </TouchableWithoutFeedback>
       </ScrollView>

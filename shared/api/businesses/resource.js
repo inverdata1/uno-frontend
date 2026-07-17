@@ -1,4 +1,4 @@
-import { BaseFirebaseService } from '../base-firebase-service';
+import { BaseApiService } from '../base-api-service';
 import { BranchesResource } from '../branches/resource';
 import { MediaProcessingService } from '../media/service';
 import { COLLECTION_NAME } from './collection';
@@ -7,7 +7,7 @@ import { COLLECTION_NAME } from './collection';
  * Businesses Resource
  * Handles business profile and operations
  */
-export class BusinessesResource extends BaseFirebaseService {
+export class BusinessesResource extends BaseApiService {
   constructor(client) {
     super(client, COLLECTION_NAME);
     this.branchesService = new BranchesResource(client);

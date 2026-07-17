@@ -95,7 +95,7 @@ export class BaseFirebaseService {
     }
 
     // Use provided timestamps or create new ones
-    // Use JavaScript Date objects instead of serverTimestamp() for immediate consistency
+    // Use JavaScript Date objects instead of new Date().toISOString() for immediate consistency
     // ALWAYS include id field in the document data
     const docData = {
       ...data,
@@ -125,7 +125,7 @@ export class BaseFirebaseService {
   async update(id, data) {
     const docData = {
       ...data,
-      updatedAt: serverTimestamp()
+      updatedAt: new Date().toISOString()
     };
 
     await updateDoc(doc(this.db, this.collectionName, id), docData);

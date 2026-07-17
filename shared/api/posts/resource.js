@@ -1,13 +1,13 @@
-import { BaseFirebaseService } from '../base-firebase-service';
+import { BaseApiService } from '../base-api-service';
 import { COLLECTION_NAME, POST_TYPES } from './collection';
-import { serverTimestamp } from 'firebase/firestore';
+
 import { MediaProcessingService } from '../media/service';
 
 /**
  * Posts Resource
  * Handles social feed posts with product tagging
  */
-export class PostsResource extends BaseFirebaseService {
+export class PostsResource extends BaseApiService {
   constructor(client) {
     super(client, COLLECTION_NAME);
   }
@@ -208,7 +208,7 @@ export class PostsResource extends BaseFirebaseService {
     if (post.type === POST_TYPES.VIDEO) {
       this.update(id, {
         viewCount: (post.viewCount || 0) + 1,
-        updatedAt: serverTimestamp()
+        updatedAt: new Date().toISOString()
       }).catch(err => console.error('Failed to increment view count:', err));
     }
 
@@ -277,7 +277,7 @@ export class PostsResource extends BaseFirebaseService {
       shareCount: 0,
       viewCount: 0,
       saveCount: 0,
-      publishedAt: data.isPublished !== false ? serverTimestamp() : null,
+      publishedAt: data.isPublished !== false ? new Date().toISOString() : null,
       keywords: data.keywords || [],
       mentions: data.mentions || [],
       taggedProducts: data.taggedProducts || []
@@ -309,7 +309,7 @@ export class PostsResource extends BaseFirebaseService {
 
     // If publishing a draft, set publishedAt
     if (!post.isPublished && data.isPublished === true) {
-      data.publishedAt = serverTimestamp();
+      data.publishedAt = new Date().toISOString();
     }
 
     return await this.update(id, data);
@@ -334,7 +334,7 @@ export class PostsResource extends BaseFirebaseService {
 
     return await this.update(id, {
       isActive: false,
-      updatedAt: serverTimestamp()
+      updatedAt: new Date().toISOString()
     });
   }
 
@@ -426,7 +426,7 @@ export class PostsResource extends BaseFirebaseService {
 
     return await this.update(id, {
       likeCount: (post.likeCount || 0) + 1,
-      updatedAt: serverTimestamp()
+      updatedAt: new Date().toISOString()
     });
   }
 
@@ -440,7 +440,7 @@ export class PostsResource extends BaseFirebaseService {
 
     return await this.update(id, {
       likeCount: Math.max((post.likeCount || 0) - 1, 0),
-      updatedAt: serverTimestamp()
+      updatedAt: new Date().toISOString()
     });
   }
 
@@ -454,7 +454,7 @@ export class PostsResource extends BaseFirebaseService {
 
     return await this.update(id, {
       saveCount: (post.saveCount || 0) + 1,
-      updatedAt: serverTimestamp()
+      updatedAt: new Date().toISOString()
     });
   }
 
@@ -468,7 +468,7 @@ export class PostsResource extends BaseFirebaseService {
 
     return await this.update(id, {
       saveCount: Math.max((post.saveCount || 0) - 1, 0),
-      updatedAt: serverTimestamp()
+      updatedAt: new Date().toISOString()
     });
   }
 
@@ -482,7 +482,7 @@ export class PostsResource extends BaseFirebaseService {
 
     return await this.update(id, {
       shareCount: (post.shareCount || 0) + 1,
-      updatedAt: serverTimestamp()
+      updatedAt: new Date().toISOString()
     });
   }
 
@@ -505,7 +505,7 @@ export class PostsResource extends BaseFirebaseService {
 
     return await this.update(id, {
       isPinned: !post.isPinned,
-      updatedAt: serverTimestamp()
+      updatedAt: new Date().toISOString()
     });
   }
 }

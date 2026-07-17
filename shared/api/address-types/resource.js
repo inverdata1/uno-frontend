@@ -1,11 +1,11 @@
-import { BaseFirebaseService } from '../base-firebase-service';
+import { BaseApiService } from '../base-api-service';
 import { COLLECTION_NAME } from './collection';
 
 /**
  * Address Types resource - handles address type catalog operations
  * Extends BaseFirebaseService for common CRUD operations
  */
-export class AddressTypesResource extends BaseFirebaseService {
+export class AddressTypesResource extends BaseApiService {
   constructor(client) {
     super(client, COLLECTION_NAME);
   }

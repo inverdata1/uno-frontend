@@ -1,12 +1,12 @@
-import { BaseFirebaseService } from '../base-firebase-service';
-import { serverTimestamp } from 'firebase/firestore';
+import { BaseApiService } from '../base-api-service';
+
 import { COLLECTION_NAME } from './collection';
 
 /**
  * Addresses resource - handles all address-related operations
  * Extends BaseFirebaseService for common CRUD operations
  */
-export class AddressesResource extends BaseFirebaseService {
+export class AddressesResource extends BaseApiService {
   constructor(client) {
     super(client, COLLECTION_NAME);
   }
@@ -116,7 +116,7 @@ export class AddressesResource extends BaseFirebaseService {
 
     return await this.update(id, {
       isActive: false,
-      updatedAt: serverTimestamp()
+      updatedAt: new Date().toISOString()
     });
   }
 
@@ -165,7 +165,7 @@ export class AddressesResource extends BaseFirebaseService {
     // Set this one as default
     return await this.update(id, {
       isDefault: true,
-      updatedAt: serverTimestamp()
+      updatedAt: new Date().toISOString()
     });
   }
 
@@ -185,7 +185,7 @@ export class AddressesResource extends BaseFirebaseService {
     const updates = currentDefaults.map(address =>
       this.update(address.id, {
         isDefault: false,
-        updatedAt: serverTimestamp()
+        updatedAt: new Date().toISOString()
       })
     );
 

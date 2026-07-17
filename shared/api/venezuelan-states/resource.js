@@ -1,11 +1,11 @@
-import { BaseFirebaseService } from '../base-firebase-service';
+import { BaseApiService } from '../base-api-service';
 import { COLLECTION_NAME } from './collection';
 
 /**
  * Venezuelan States resource - handles state catalog operations
  * Extends BaseFirebaseService for common CRUD operations
  */
-export class VenezuelanStatesResource extends BaseFirebaseService {
+export class VenezuelanStatesResource extends BaseApiService {
   constructor(client) {
     super(client, COLLECTION_NAME);
   }

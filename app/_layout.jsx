@@ -1,6 +1,6 @@
 import { DefaultTheme, ThemeProvider } from '@react-navigation/native';
 import { QueryClientProvider } from '@tanstack/react-query';
-import { Stack, useRouter, useSegments } from 'expo-router';
+import { Stack, useRouter, useRootNavigationState, useSegments } from 'expo-router';
 import * as SplashScreen from 'expo-splash-screen';
 import { StatusBar } from 'expo-status-bar';
 import React from 'react';
@@ -18,16 +18,6 @@ import { useAuthStore } from '../core/auth/stores/auth-store';
 // Keep the splash screen visible while we fetch resources
 SplashScreen.preventAutoHideAsync();
 
-// Conditionally import ReactQuery DevTools only for web
-let ReactQueryDevtools = null;
-if (__DEV__ && Platform.OS === 'web') {
-  try {
-    ReactQueryDevtools = require('@tanstack/react-query-devtools').ReactQueryDevtools;
-  } catch (e) {
-    console.log('ReactQuery DevTools not available for this platform');
-  }
-}
-
 export const unstable_settings = {
   initialRouteName: 'index',
 };
@@ -35,20 +25,22 @@ export const unstable_settings = {
 function AppNavigator() {
   const router = useRouter();
   const segments = useSegments();
+  const navigationState = useRootNavigationState();
   const { isAuthenticated, isLoading } = useAuthStore();
 
   // Handle auth state changes and redirect appropriately
   React.useEffect(() => {
-    if (isLoading) return;
+    // Wait until the navigator is fully mounted AND auth state is resolved
+    if (!navigationState?.key || isLoading) return;
 
     const inAuthGroup = segments[0] === '(auth)';
 
     if (!isAuthenticated && !inAuthGroup) {
       // User is not authenticated and not in auth screens, redirect to welcome
-      console.log('🚪 User logged out, redirecting to welcome');
+      console.log('🚪 User not authenticated, redirecting to welcome');
       router.replace('/(auth)/welcome');
     }
-  }, [isAuthenticated, segments, isLoading]);
+  }, [isAuthenticated, segments, isLoading, navigationState?.key]);
 
   return (
     <Stack screenOptions={{ headerShown: false }}>
@@ -60,6 +52,7 @@ function AppNavigator() {
     </Stack>
   );
 }
+
 
 export default function RootLayout() {
   // Initialize auth state on app start
@@ -87,11 +80,6 @@ export default function RootLayout() {
               <BottomSheetModalProvider>
                 <AppNavigator />
                 <StatusBar style="auto" />
-
-                {/* DevTools only in development and web platform */}
-                {__DEV__ && Platform.OS === 'web' && ReactQueryDevtools && (
-                  <ReactQueryDevtools initialIsOpen={false} />
-                )}
               </BottomSheetModalProvider>
             </ThemeProvider>
           </PaperProvider>

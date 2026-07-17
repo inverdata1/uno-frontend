@@ -1,18 +1,16 @@
 import axios from 'axios';
 import { firebaseClient } from '../api';
-import { auth } from './firebase';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 
 // Configuration flags
-const USE_FIREBASE = true; // Set to false when you have real backend
-const API_BASE_URL = 'https://api.uno-delivery.com'; // Your future backend URL
+const USE_FIREBASE = false; // Set to false to route requests to NestJS backend via Axios
+const API_BASE_URL = 'http://localhost:3000'; 
 
 /**
- * Unified API client that can switch between Firebase and real backend
- * When USE_FIREBASE is true, routes requests to Firebase adapter
- * When USE_FIREBASE is false, uses axios for HTTP requests
+ * Unified API client
  */
 
-// Create axios instance for future backend use
+// Create axios instance for direct external requests if needed
 const axiosClient = axios.create({
   baseURL: API_BASE_URL,
   timeout: 15000,
@@ -22,14 +20,12 @@ const axiosClient = axios.create({
   },
 });
 
-// Axios interceptors (for future backend)
+// Axios interceptors
 axiosClient.interceptors.request.use(
   async (config) => {
     try {
-      // Get Firebase Auth token for backend authentication
-      const user = auth.currentUser;
-      if (user) {
-        const token = await user.getIdToken();
+      const token = await AsyncStorage.getItem('userToken');
+      if (token) {
         config.headers.Authorization = `Bearer ${token}`;
       }
 
@@ -52,8 +48,11 @@ axiosClient.interceptors.response.use(
     console.error(`❌ HTTP Error: ${error.response?.status} ${error.config?.url}`, error.response?.data);
 
     if (error.response?.status === 401) {
-      console.warn('🔐 Unauthorized - redirecting to login');
-      // TODO: Handle unauthorized
+      console.warn('🔐 Unauthorized - clearing token and redirecting to login');
+      // Clear storage so we don't get stuck in a loop of trying to use an invalid token
+      AsyncStorage.removeItem('userToken').catch(() => {});
+      AsyncStorage.removeItem('userId').catch(() => {});
+      // TODO: Handle unauthorized (e.g. event emitter to logout)
     }
 
     return Promise.reject(error);
@@ -61,26 +60,23 @@ axiosClient.interceptors.response.use(
 );
 
 /**
- * Get current user ID for Firebase operations
+ * Get current user ID (reads from AsyncStorage now)
  */
-const getCurrentUserId = () => {
-  const user = auth.currentUser;
-  if (!user) {
+const getCurrentUserId = async () => {
+  const userId = await AsyncStorage.getItem('userId');
+  if (!userId) {
     throw new Error('User not authenticated');
   }
-  return user.uid;
+  return userId;
 };
 
 /**
  * Check if operation requires authentication
  */
 const requiresAuth = (url, method) => {
-  // User creation endpoint doesn't require current authentication
-  if (method.toLowerCase() === 'post' && url === '/users') {
-    return false;
-  }
+  if (method.toLowerCase() === 'post' && url === '/users') return false;
+  if (method.toLowerCase() === 'post' && url.startsWith('/auth/')) return false;
 
-  // Public read endpoints that don't require authentication
   const publicReadEndpoints = [
     '/posts',
     '/products',
@@ -106,10 +102,9 @@ const requiresAuth = (url, method) => {
 export const apiClient = {
   async get(url, config = {}) {
     if (USE_FIREBASE) {
-      // Add userId to params for Firebase operations (only if auth required)
       const params = { ...config.params };
       if (requiresAuth(url, 'get')) {
-        params.userId = getCurrentUserId();
+        params.userId = await getCurrentUserId();
       }
 
       const data = await firebaseClient.get(url, params);
@@ -122,9 +117,8 @@ export const apiClient = {
   async post(url, data, config = {}) {
     if (USE_FIREBASE) {
       const params = { ...config.params };
-      // Only add userId if authentication is required for this endpoint
       if (requiresAuth(url, 'post')) {
-        params.userId = getCurrentUserId();
+        params.userId = await getCurrentUserId();
       }
 
       const responseData = await firebaseClient.post(url, data, params);
@@ -138,7 +132,7 @@ export const apiClient = {
     if (USE_FIREBASE) {
       const params = { ...config.params };
       if (requiresAuth(url, 'put')) {
-        params.userId = getCurrentUserId();
+        params.userId = await getCurrentUserId();
       }
 
       const responseData = await firebaseClient.put(url, data, params);
@@ -152,7 +146,7 @@ export const apiClient = {
     if (USE_FIREBASE) {
       const params = { ...config.params };
       if (requiresAuth(url, 'patch')) {
-        params.userId = getCurrentUserId();
+        params.userId = await getCurrentUserId();
       }
 
       const responseData = await firebaseClient.patch(url, data, params);
@@ -166,7 +160,7 @@ export const apiClient = {
     if (USE_FIREBASE) {
       const params = { ...config.params };
       if (requiresAuth(url, 'delete')) {
-        params.userId = getCurrentUserId();
+        params.userId = await getCurrentUserId();
       }
 
       const responseData = await firebaseClient.delete(url, params);

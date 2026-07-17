@@ -1,13 +1,18 @@
 import { useForm } from '@tanstack/react-form';
-import { useRef, useState } from 'react';
+import { useRef, useState, useEffect } from 'react';
 import { isBusinessDataValid } from '../../../../features/client/businesses/business-onboarding-step';
 import { useFocusManager } from '../../../../shared/hooks';
 import { registerSchema } from '../../schemas/register/register-schema';
 import { useAuthStore } from '../../stores/auth-store';
 
 export const useRegistration = ({ onComplete }) => {
-  const { signUp, isLoading } = useAuthStore();
+  const { signUp, isLoading, clearError } = useAuthStore();
   const { createFieldProps, clearFocus } = useFocusManager();
+
+  // Clear any existing auth errors when opening the registration form
+  useEffect(() => {
+    clearError();
+  }, [clearError]);
 
   // ScrollView ref for keyboard handling
   const scrollViewRef = useRef(null);

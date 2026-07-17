@@ -10,8 +10,15 @@ export const queryClient = new QueryClient({
       // Cache time: how long data stays in cache when not in use (10 minutes)
       gcTime: 1000 * 60 * 10,
 
-      // Retry failed requests 2 times
-      retry: 2,
+      // Retry failed requests 2 times, except for 401 or 404 errors
+      retry: (failureCount, error) => {
+        // No reintentar si el servidor dice que no estamos autorizados (401)
+        // o si el recurso no existe (404)
+        if (error?.response?.status === 401 || error?.response?.status === 404) {
+          return false;
+        }
+        return failureCount < 2;
+      },
 
       // Retry delay increases exponentially
       retryDelay: (attemptIndex) => Math.min(1000 * 2 ** attemptIndex, 30000),

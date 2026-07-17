@@ -1,5 +1,5 @@
-import { serverTimestamp } from 'firebase/firestore';
-import { BaseFirebaseService } from '../base-firebase-service';
+// import removed
+import { BaseApiService } from '../base-api-service';
 import { BranchesResource } from '../branches/resource';
 import { COLLECTION_NAME } from './collection';
 
@@ -7,10 +7,10 @@ import { COLLECTION_NAME } from './collection';
  * Users resource - handles all user-related operations
  * Extends BaseFirebaseService for common CRUD operations
  */
-export class UsersResource extends BaseFirebaseService {
+export class UsersResource extends BaseApiService {
   constructor(client) {
     super(client, COLLECTION_NAME);
-    this.businessesService = new BaseFirebaseService(client, 'businesses');
+    this.businessesService = new BaseApiService(client, 'businesses');
     this.branchesService = new BranchesResource(client);
   }
 
@@ -134,7 +134,7 @@ export class UsersResource extends BaseFirebaseService {
       currentUserType: userType,
       currentBusinessId: businessId || null,
       currentBranchId: branchId || null,
-      lastUserTypeSwitch: serverTimestamp()
+      lastUserTypeSwitch: new Date().toISOString()
     };
 
     const updatedUser = await this.update(userId, updateData);

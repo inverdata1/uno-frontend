@@ -18,6 +18,56 @@ export const DatePicker = ({
 }) => {
   const [showPicker, setShowPicker] = useState(false);
 
+  // Web implementation using native HTML5 input
+  if (Platform.OS === 'web') {
+    return (
+      <View className={cn('mb-3', className)}>
+        <View
+          className={cn(
+            'flex-row items-center px-4 py-4 border rounded-xl',
+            'bg-gray-50 border-gray-400',
+            error && 'border-red-300 bg-red-50',
+            disabled && 'opacity-50'
+          )}
+          style={{ focusVisible: { borderColor: '#ef4444' } }}
+        >
+          <input
+            type="date"
+            value={value ? value.toISOString().split('T')[0] : ''}
+            onChange={(e) => {
+              if (e.target.value && onChange) {
+                // Ensure date is parsed in local time, not UTC, to avoid off-by-one errors
+                const [year, month, day] = e.target.value.split('-');
+                onChange(new Date(year, month - 1, day));
+              } else if (!e.target.value && onChange) {
+                onChange(null);
+              }
+            }}
+            disabled={disabled}
+            max={maximumDate ? maximumDate.toISOString().split('T')[0] : undefined}
+            min={minimumDate ? minimumDate.toISOString().split('T')[0] : undefined}
+            style={{
+              flex: 1,
+              border: 'none',
+              background: 'transparent',
+              fontSize: '16px',
+              color: value ? '#111827' : '#9CA3AF',
+              outline: 'none',
+              width: '100%'
+            }}
+            {...props}
+          />
+        </View>
+        {error && (
+          <Text className="text-red-500 text-sm mt-1 px-1">
+            {error}
+          </Text>
+        )}
+      </View>
+    );
+  }
+
+  // Native implementation
   const formatDate = (date) => {
     if (!date) return '';
     const day = date.getDate().toString().padStart(2, '0');

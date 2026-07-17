@@ -1,13 +1,13 @@
-import { BaseFirebaseService } from '../base-firebase-service';
+import { BaseApiService } from '../base-api-service';
 import { COLLECTION_NAME } from './collection';
-import { serverTimestamp } from 'firebase/firestore';
+
 import { MediaProcessingService } from '../media/service';
 
 /**
  * Products Resource
  * Handles product catalog operations for businesses
  */
-export class ProductsResource extends BaseFirebaseService {
+export class ProductsResource extends BaseApiService {
   constructor(client) {
     super(client, COLLECTION_NAME);
   }
@@ -159,7 +159,7 @@ export class ProductsResource extends BaseFirebaseService {
     // Increment view count asynchronously (don't wait)
     this.update(id, {
       viewCount: (product.viewCount || 0) + 1,
-      updatedAt: serverTimestamp()
+      updatedAt: new Date().toISOString()
     }).catch(err => console.error('Failed to increment view count:', err));
 
     // Populate business info
@@ -212,8 +212,8 @@ export class ProductsResource extends BaseFirebaseService {
       orderCount: 0,
       rating: 0,
       reviewCount: 0,
-      createdAt: serverTimestamp(),
-      updatedAt: serverTimestamp()
+      createdAt: new Date().toISOString(),
+      updatedAt: new Date().toISOString()
     };
 
     const newProduct = await this.create(productData);
@@ -312,7 +312,7 @@ export class ProductsResource extends BaseFirebaseService {
 
     return await this.update(id, {
       isActive: false,
-      updatedAt: serverTimestamp()
+      updatedAt: new Date().toISOString()
     });
   }
 
@@ -387,7 +387,7 @@ export class ProductsResource extends BaseFirebaseService {
     return await this.update(id, {
       stock: newStock,
       isAvailable: newStock > 0,
-      updatedAt: serverTimestamp()
+      updatedAt: new Date().toISOString()
     });
   }
 
@@ -410,7 +410,7 @@ export class ProductsResource extends BaseFirebaseService {
 
     return await this.update(id, {
       isFeatured: !product.isFeatured,
-      updatedAt: serverTimestamp()
+      updatedAt: new Date().toISOString()
     });
   }
 
@@ -424,7 +424,7 @@ export class ProductsResource extends BaseFirebaseService {
 
     return await this.update(id, {
       favoriteCount: (product.favoriteCount || 0) + 1,
-      updatedAt: serverTimestamp()
+      updatedAt: new Date().toISOString()
     });
   }
 
@@ -438,7 +438,7 @@ export class ProductsResource extends BaseFirebaseService {
 
     return await this.update(id, {
       favoriteCount: Math.max((product.favoriteCount || 0) - 1, 0),
-      updatedAt: serverTimestamp()
+      updatedAt: new Date().toISOString()
     });
   }
 }

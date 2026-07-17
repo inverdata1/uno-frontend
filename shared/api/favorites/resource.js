@@ -1,11 +1,11 @@
-import { BaseFirebaseService } from '../base-firebase-service';
+import { BaseApiService } from '../base-api-service';
 import { COLLECTION_NAME, FAVORITE_TYPES } from './collection';
 
 /**
  * Favorites Resource
  * Handles user saved items (products and posts)
  */
-export class FavoritesResource extends BaseFirebaseService {
+export class FavoritesResource extends BaseApiService {
   constructor(client) {
     super(client, COLLECTION_NAME);
   }

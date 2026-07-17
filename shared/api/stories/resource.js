@@ -1,13 +1,13 @@
-import { BaseFirebaseService } from '../base-firebase-service';
+import { BaseApiService } from '../base-api-service';
 import { COLLECTION_NAME, STORY_TYPES, STORY_DURATION, STORY_EXPIRATION_HOURS } from './collection';
-import { serverTimestamp, Timestamp } from 'firebase/firestore';
+
 import { MediaProcessingService } from '../media/service';
 
 /**
  * Stories Resource
  * Handles temporary stories (24h expiration)
  */
-export class StoriesResource extends BaseFirebaseService {
+export class StoriesResource extends BaseApiService {
   constructor(client) {
     super(client, COLLECTION_NAME);
   }
@@ -92,7 +92,7 @@ export class StoriesResource extends BaseFirebaseService {
     // Increment view count
     this.update(id, {
       viewCount: (story.viewCount || 0) + 1,
-      updatedAt: serverTimestamp()
+      updatedAt: new Date().toISOString()
     }).catch(err => console.error('Failed to increment view count:', err));
 
     return story;
@@ -235,7 +235,7 @@ export class StoriesResource extends BaseFirebaseService {
 
     return await this.update(id, {
       viewCount: (story.viewCount || 0) + 1,
-      updatedAt: serverTimestamp()
+      updatedAt: new Date().toISOString()
     });
   }
 
@@ -249,7 +249,7 @@ export class StoriesResource extends BaseFirebaseService {
 
     return await this.update(id, {
       tapForwardCount: (story.tapForwardCount || 0) + 1,
-      updatedAt: serverTimestamp()
+      updatedAt: new Date().toISOString()
     });
   }
 
@@ -263,7 +263,7 @@ export class StoriesResource extends BaseFirebaseService {
 
     return await this.update(id, {
       tapBackCount: (story.tapBackCount || 0) + 1,
-      updatedAt: serverTimestamp()
+      updatedAt: new Date().toISOString()
     });
   }
 
@@ -277,7 +277,7 @@ export class StoriesResource extends BaseFirebaseService {
 
     return await this.update(id, {
       exitCount: (story.exitCount || 0) + 1,
-      updatedAt: serverTimestamp()
+      updatedAt: new Date().toISOString()
     });
   }
 
@@ -291,7 +291,7 @@ export class StoriesResource extends BaseFirebaseService {
 
     return await this.update(id, {
       replyCount: (story.replyCount || 0) + 1,
-      updatedAt: serverTimestamp()
+      updatedAt: new Date().toISOString()
     });
   }
 
@@ -305,7 +305,7 @@ export class StoriesResource extends BaseFirebaseService {
 
     return await this.update(id, {
       shareCount: (story.shareCount || 0) + 1,
-      updatedAt: serverTimestamp()
+      updatedAt: new Date().toISOString()
     });
   }
 
@@ -326,7 +326,7 @@ export class StoriesResource extends BaseFirebaseService {
       .map(story => this.update(story.id, {
         isExpired: true,
         isActive: false,
-        updatedAt: serverTimestamp()
+        updatedAt: new Date().toISOString()
       }));
 
     await Promise.all(updates);

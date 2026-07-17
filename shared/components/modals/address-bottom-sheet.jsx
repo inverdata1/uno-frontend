@@ -1,6 +1,6 @@
 import { Ionicons } from '@expo/vector-icons';
 import { BottomSheetBackdrop, BottomSheetModal, BottomSheetView } from '@gorhom/bottom-sheet';
-import LottieView from 'lottie-react-native';
+import { LottieView } from '../ui/lottie-view';
 import { useEffect, useRef, useState } from 'react';
 import { Pressable, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';

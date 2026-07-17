@@ -144,34 +144,43 @@ export const uploadMedia = async (uri, uploadType, options = {}, onProgress = nu
       throw new Error(`Invalid upload type: ${uploadType}`);
     }
 
-    // Determine mime type
-    const extension = uri.split('.').pop().toLowerCase();
-    const mimeTypeMap = {
-      jpg: 'image/jpeg',
-      jpeg: 'image/jpeg',
-      png: 'image/png',
-      webp: 'image/webp',
-      mp4: 'video/mp4',
-      mov: 'video/quicktime'
-    };
-    const mimeType = mimeTypeMap[extension] || 'application/octet-stream';
+    // Read file as blob to get real mimeType (especially important for Web blob URLs)
+    let uploadUri = uri;
+    let response = await fetch(uploadUri);
+    let blob = await response.blob();
+    
+    let mimeType = blob.type;
+    
+    if (!mimeType || mimeType === 'application/octet-stream') {
+      const extension = uri.split('.').pop().toLowerCase();
+      const mimeTypeMap = {
+        jpg: 'image/jpeg',
+        jpeg: 'image/jpeg',
+        png: 'image/png',
+        webp: 'image/webp',
+        mp4: 'video/mp4',
+        mov: 'video/quicktime'
+      };
+      mimeType = mimeTypeMap[extension] || 'application/octet-stream';
+    }
 
     // Validate file type
     validateFileType(mimeType, config.allowedTypes);
 
     // Compress image if needed
-    let uploadUri = uri;
     if (mimeType.startsWith('image/') && config.maxWidth) {
-      uploadUri = await compressImage(uri, config);
+      const compressedUri = await compressImage(uri, config);
+      if (compressedUri !== uri) {
+        uploadUri = compressedUri;
+        response = await fetch(uploadUri);
+        blob = await response.blob();
+      }
     }
 
     // Generate filename
-    const filename = generateFilename(options.filename || `file.${extension}`, userId);
+    const extensionForName = mimeType.split('/')[1] || 'bin';
+    const filename = generateFilename(options.filename || `file.${extensionForName}`, userId);
     const storagePath = `${config.path}/${userId}/${filename}`;
-
-    // Read file as blob
-    const response = await fetch(uploadUri);
-    const blob = await response.blob();
 
     // Create storage reference
     const storageRef = ref(storage, storagePath);

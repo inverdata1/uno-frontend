@@ -23,7 +23,9 @@ export default function BusinessOnboardingStep({
     coordinates: businessData.coordinates || null,
     phone: businessData.phone || '',
     logoUri: businessData.logoUri || null,
+    logoMimeType: businessData.logoMimeType || null,
     bannerUri: businessData.bannerUri || null,
+    bannerMimeType: businessData.bannerMimeType || null,
   });
 
   const updateField = (field, value) => {
@@ -44,6 +46,7 @@ export default function BusinessOnboardingStep({
 
       if (!result.canceled && result.assets[0]) {
         updateField('logoUri', result.assets[0].uri);
+        updateField('logoMimeType', result.assets[0].mimeType || result.assets[0].type);
       }
     } catch (error) {
       Alert.alert('Error', 'No se pudo seleccionar la imagen. Intenta nuevamente.');
@@ -63,6 +66,7 @@ export default function BusinessOnboardingStep({
 
       if (!result.canceled && result.assets[0]) {
         updateField('bannerUri', result.assets[0].uri);
+        updateField('bannerMimeType', result.assets[0].mimeType || result.assets[0].type);
       }
     } catch (error) {
       Alert.alert('Error', 'No se pudo seleccionar la imagen. Intenta nuevamente.');

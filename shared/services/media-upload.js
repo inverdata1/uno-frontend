@@ -149,7 +149,7 @@ export const uploadMedia = async (uri, uploadType, options = {}, onProgress = nu
     let response = await fetch(uploadUri);
     let blob = await response.blob();
     
-    let mimeType = blob.type;
+    let mimeType = options.mimeType || blob.type;
     
     if (!mimeType || mimeType === 'application/octet-stream') {
       const extension = uri.split('.').pop().toLowerCase();

@@ -56,13 +56,13 @@ export const authService = {
 
         if (businessData.logoUri) {
           console.log('📤 Uploading business logo...');
-          const logoResult = await uploadMedia(businessData.logoUri, 'BUSINESS_LOGO', {}, null, { uid: user.id });
+          const logoResult = await uploadMedia(businessData.logoUri, 'BUSINESS_LOGO', { mimeType: businessData.logoMimeType }, null, { uid: user.id });
           logoUrl = logoResult.url;
         }
 
         if (businessData.bannerUri) {
           console.log('📤 Uploading business banner...');
-          const bannerResult = await uploadMedia(businessData.bannerUri, 'BUSINESS_BANNER', {}, null, { uid: user.id });
+          const bannerResult = await uploadMedia(businessData.bannerUri, 'BUSINESS_BANNER', { mimeType: businessData.bannerMimeType }, null, { uid: user.id });
           bannerUrl = bannerResult.url;
         }
 
@@ -94,6 +94,24 @@ export const authService = {
       };
     } catch (error) {
       console.error('Registration error:', error);
+      
+      // Rollback: If user was created but subsequent steps failed, delete the user
+      // Check if we reached step 2 (we have a token saved)
+      const storedToken = await AsyncStorage.getItem('userToken');
+      const storedUserId = await AsyncStorage.getItem('userId');
+      if (storedToken && storedUserId) {
+        console.log(`⚠️ Rolling back registration for user ${storedUserId}...`);
+        try {
+          await apiClient.delete(`/users/${storedUserId}`);
+          // Clear the partial session
+          await AsyncStorage.removeItem('userToken');
+          await AsyncStorage.removeItem('userId');
+          console.log('✅ Rollback successful.');
+        } catch (rollbackError) {
+          console.error('❌ Rollback failed:', rollbackError);
+        }
+      }
+
       const msg = error.response?.data?.message || error.message || 'Error en el registro';
       return { error: msg };
     }

@@ -1,10 +1,11 @@
 import axios from 'axios';
 import { firebaseClient } from '../api';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import { API_CONFIG } from './api-config';
 
 // Configuration flags
 const USE_FIREBASE = false; // Set to false to route requests to NestJS backend via Axios
-const API_BASE_URL = 'http://localhost:3000'; 
+const API_BASE_URL = API_CONFIG.baseURL; 
 
 /**
  * Unified API client

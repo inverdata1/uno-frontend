@@ -15,7 +15,8 @@ export const AddressForm = ({
   onCancel,
   mode = 'client',
   isLoading = false,
-  disableKeyboardAvoidingView = false
+  disableKeyboardAvoidingView = false,
+  ScrollViewComponent = ScrollView
 }) => {
   const [forceUpdate, setForceUpdate] = useState(0);
   const [currentStep, setCurrentStep] = useState(1);
@@ -133,19 +134,11 @@ export const AddressForm = ({
     </View>
   );
 
-  const renderContent = () => (
-    <ScrollView
-      className="flex-1"
-      showsVerticalScrollIndicator={false}
-      keyboardShouldPersistTaps="handled"
-    >
-        <TouchableWithoutFeedback onPress={() => {
-          Keyboard.dismiss();
-          clearFocus();
-        }}>
-          <View className="p-6">
-          {/* Step Indicator */}
-          {renderStepIndicator()}
+  const renderContent = () => {
+    const content = (
+      <View className="p-6">
+        {/* Step Indicator */}
+        {renderStepIndicator()}
 
           {/* Step Header */}
           <View className="mb-6">
@@ -494,10 +487,29 @@ export const AddressForm = ({
               />
             )}
           </View>
-        </View>
-        </TouchableWithoutFeedback>
-    </ScrollView>
-  );
+      </View>
+    );
+
+    const wrappedContent = Platform.OS === 'web' ? content : (
+      <TouchableWithoutFeedback onPress={() => {
+        Keyboard.dismiss();
+        clearFocus();
+      }}>
+        {content}
+      </TouchableWithoutFeedback>
+    );
+
+    return (
+      <ScrollViewComponent
+        style={{ flex: 1 }}
+        contentContainerStyle={{ flexGrow: 1 }}
+        showsVerticalScrollIndicator={false}
+        keyboardShouldPersistTaps="handled"
+      >
+        {wrappedContent}
+      </ScrollViewComponent>
+    );
+  };
 
   if (disableKeyboardAvoidingView) {
     return (

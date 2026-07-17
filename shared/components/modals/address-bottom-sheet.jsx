@@ -1,8 +1,8 @@
 import { Ionicons } from '@expo/vector-icons';
-import { BottomSheetBackdrop, BottomSheetModal, BottomSheetView } from '@gorhom/bottom-sheet';
+import { BottomSheetBackdrop, BottomSheetModal, BottomSheetView, BottomSheetScrollView } from '@gorhom/bottom-sheet';
 import { LottieView } from '../ui/lottie-view';
 import { useEffect, useRef, useState } from 'react';
-import { Pressable, View } from 'react-native';
+import { Pressable, View, Platform } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { lottieAnimations } from '../../assets/images';
 import { AddressForm } from '../forms/address-form';
@@ -52,18 +52,24 @@ const LottieMapImage = () => {
 
   return (
     <View className="w-full mb-1 items-center">
-      <View style={{ width: '90%', aspectRatio: 16/9, borderRadius: 16, overflow: 'hidden' }}>
-        <LottieView
-          ref={animationRef}
-          source={lottieAnimations.map}
-          loop={false} // Never auto-loop, we control everything manually
-          onAnimationFinish={handleAnimationFinish}
-          style={{
-            width: '100%',
-            height: '100%'
-          }}
-        />
-      </View>
+      {Platform.OS === 'web' ? (
+        <View className="w-24 h-24 rounded-3xl bg-green-100 items-center justify-center mb-6 mt-4">
+          <Ionicons name="location" size={40} color="#059669" />
+        </View>
+      ) : (
+        <View style={{ width: '90%', maxWidth: 300, maxHeight: 180, aspectRatio: 16/9, borderRadius: 16, overflow: 'hidden' }}>
+          <LottieView
+            ref={animationRef}
+            source={lottieAnimations.map}
+            loop={false}
+            onAnimationFinish={handleAnimationFinish}
+            style={{
+              width: '100%',
+              height: '100%'
+            }}
+          />
+        </View>
+      )}
     </View>
   );
 };
@@ -397,7 +403,7 @@ export const AddressManager = ({
   );
 
   const renderFormContent = () => (
-    <View className="flex-1">
+    <View style={{ flex: 1, minHeight: 0 }}>
       {/* Form Header */}
       <View className="flex-row items-center px-6 pb-4 pt-4">
         <Pressable
@@ -419,6 +425,7 @@ export const AddressManager = ({
         mode={userType}
         isLoading={isLoading}
         disableKeyboardAvoidingView={true}
+        ScrollViewComponent={BottomSheetScrollView}
       />
     </View>
   );
@@ -439,6 +446,7 @@ export const AddressManager = ({
       onChange={handleSheetChanges}
       backdropComponent={CustomBackdrop}
       handleComponent={CustomHandle}
+      enableContentPanningGesture={Platform.OS !== 'web'}
       keyboardBehavior="fillParent"
       keyboardBlurBehavior="restore"
       android_keyboardInputMode="adjustResize"
@@ -448,9 +456,9 @@ export const AddressManager = ({
         borderTopRightRadius: 20,
       }}
     >
-      <BottomSheetView className="flex-1">
+      <View style={{ flex: 1, height: '100%', overflow: 'hidden' }}>
         {view === 'list' ? renderListContent() : renderFormContent()}
-      </BottomSheetView>
+      </View>
 
       {/* Delete Confirmation Dialog - Outside BottomSheet */}
       {addressToDelete && (

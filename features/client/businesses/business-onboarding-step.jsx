@@ -175,6 +175,7 @@ export default function BusinessOnboardingStep({
           height={250}
           initialLocation={businessData.coordinates}
           onLocationSelect={(location) => updateField('coordinates', location)}
+          onAddressDetected={(address) => updateField('address', address)}
           className="border border-gray-400 rounded-xl"
         />
       </View>

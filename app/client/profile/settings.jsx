@@ -6,7 +6,7 @@ import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context'
 import { useAuthStore } from '../../../core/auth/stores/auth-store';
 import BusinessUpgradeModal from '../../../features/client/businesses/business-upgrade-modal';
 import { SettingsItem } from '../../../shared/components/profile';
-import { Text } from '../../../shared/components/ui';
+import { Text, ConfirmationModal } from '../../../shared/components/ui';
 import { getUserTypeConfig } from '../../../shared/config/user-types';
 import { useCurrentUserType } from '../../../shared/hooks/use-user-type';
 import { useAppStore } from '../../../shared/stores/app-store';
@@ -19,40 +19,30 @@ export default function ClientSettingsScreen() {
   const { currentUserType, availableUserTypes = [] } = useCurrentUserType();
   const { openUserTypeSwitcher } = useAppStore();
   const [businessUpgradeModalVisible, setBusinessUpgradeModalVisible] = useState(false);
+  const [logoutModalVisible, setLogoutModalVisible] = useState(false);
+  const [isLoggingOut, setIsLoggingOut] = useState(false);
 
   const userTypeInfo = getUserTypeConfig(currentUserType);
 
   const handleLogout = useCallback(() => {
-    if (Platform.OS === 'web') {
-      const confirmLogout = window.confirm('¿Estás seguro que quieres cerrar sesión?');
-      if (confirmLogout) {
-        signOut().catch(() => window.alert('No se pudo cerrar sesión'));
-      }
-      return;
-    }
+    setLogoutModalVisible(true);
+  }, []);
 
-    Alert.alert(
-      'Cerrar Sesión',
-      '¿Estás seguro que quieres cerrar sesión?',
-      [
-        {
-          text: 'Cancelar',
-          style: 'cancel',
-        },
-        {
-          text: 'Cerrar Sesión',
-          style: 'destructive',
-          onPress: async () => {
-            try {
-              await signOut();
-            } catch (error) {
-              Alert.alert('Error', 'No se pudo cerrar sesión');
-            }
-          },
-        },
-      ]
-    );
-  }, [signOut]);
+  const confirmLogout = async () => {
+    setIsLoggingOut(true);
+    try {
+      await signOut();
+      setLogoutModalVisible(false);
+    } catch (error) {
+      if (Platform.OS === 'web') {
+        window.alert('No se pudo cerrar sesión');
+      } else {
+        Alert.alert('Error', 'No se pudo cerrar sesión');
+      }
+    } finally {
+      setIsLoggingOut(false);
+    }
+  };
 
   return (
     <SafeAreaView style={{ flex: 1, backgroundColor: colors.bg.secondary }} edges={['top']}>
@@ -329,6 +319,18 @@ export default function ClientSettingsScreen() {
         onSuccess={() => {
           setBusinessUpgradeModalVisible(false);
         }}
+      />
+
+      <ConfirmationModal
+        visible={logoutModalVisible}
+        title="Cerrar Sesión"
+        message="¿Estás seguro que quieres cerrar sesión?"
+        confirmText="Cerrar Sesión"
+        cancelText="Cancelar"
+        isDestructive={true}
+        isLoading={isLoggingOut}
+        onConfirm={confirmLogout}
+        onCancel={() => setLogoutModalVisible(false)}
       />
     </SafeAreaView>
   );

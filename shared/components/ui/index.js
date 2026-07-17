@@ -10,3 +10,4 @@ export { BottomSheetComponent as BottomSheet } from './bottom-sheet';
 export { MapPicker } from './map-picker';
 export { AddressTypeSelector } from './address-type-selector';
 export { StateSelector } from './state-selector';
+export { ConfirmationModal } from './confirmation-modal';

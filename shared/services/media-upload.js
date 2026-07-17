@@ -146,10 +146,27 @@ export const uploadMedia = async (uri, uploadType, options = {}, onProgress = nu
 
     // Read file as blob to get real mimeType (especially important for Web blob URLs)
     let uploadUri = uri;
-    let response = await fetch(uploadUri);
-    let blob = await response.blob();
+    let mimeType = options.mimeType;
     
-    let mimeType = options.mimeType || blob.type;
+    let response;
+    let blob;
+
+    if (uri.startsWith('data:')) {
+      if (!mimeType) mimeType = uri.split(';')[0].split(':')[1];
+      // Create a blob from base64 data URI
+      const base64Data = uri.split(',')[1];
+      const byteCharacters = atob(base64Data);
+      const byteNumbers = new Array(byteCharacters.length);
+      for (let i = 0; i < byteCharacters.length; i++) {
+        byteNumbers[i] = byteCharacters.charCodeAt(i);
+      }
+      const byteArray = new Uint8Array(byteNumbers);
+      blob = new Blob([byteArray], { type: mimeType });
+    } else {
+      response = await fetch(uploadUri);
+      blob = await response.blob();
+      if (!mimeType) mimeType = blob.type;
+    }
     
     if (!mimeType || mimeType === 'application/octet-stream') {
       const extension = uri.split('.').pop().toLowerCase();

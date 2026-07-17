@@ -1,7 +1,7 @@
 import { Ionicons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
 import { useCallback } from 'react';
-import { Alert, ScrollView, TouchableOpacity, View } from 'react-native';
+import { Alert, ScrollView, TouchableOpacity, View, Platform } from 'react-native';
 import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useAuthStore } from '../../../core/auth/stores/auth-store';
 import { SettingsItem } from '../../../shared/components/profile';
@@ -19,6 +19,14 @@ export default function BusinessSettingsScreen() {
   const userTypeInfo = getUserTypeConfig(currentUserType);
 
   const handleLogout = useCallback(() => {
+    if (Platform.OS === 'web') {
+      const confirmLogout = window.confirm('¿Estás seguro que quieres cerrar sesión?');
+      if (confirmLogout) {
+        signOut().catch(() => window.alert('No se pudo cerrar sesión'));
+      }
+      return;
+    }
+
     Alert.alert(
       'Cerrar Sesión',
       '¿Estás seguro que quieres cerrar sesión?',

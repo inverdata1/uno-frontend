@@ -104,10 +104,10 @@ const styles = StyleSheet.create({
     backgroundColor: colors.bg.secondary,
   },
   confirmButton: {
-    backgroundColor: colors.primary,
+    backgroundColor: colors.primary[500],
   },
   destructiveButton: {
-    backgroundColor: colors.status.error,
+    backgroundColor: colors.danger[500],
   },
   cancelText: {
     fontSize: 16,

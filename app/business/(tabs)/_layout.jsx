@@ -4,8 +4,9 @@ import { UserTypeSwitcherModal } from '../../../shared/components/layout/user-ty
 import { theme } from '../../../shared/config/theme';
 import { useAppStore } from '../../../shared/stores/app-store';
 import { getTabIcon } from '../../../shared/utils/tab-helpers';
-import { Platform, useWindowDimensions } from 'react-native';
+import { Platform, useWindowDimensions, View } from 'react-native';
 import { WebSidebar } from '../../../shared/components/layout/web-sidebar';
+import { useState, useEffect } from 'react';
 
 /**
  * Business Tabs Layout
@@ -15,63 +16,77 @@ export default function BusinessTabsLayout() {
   const insets = useSafeAreaInsets();
   const { userTypeSwitcherVisible, closeUserTypeSwitcher } = useAppStore();
   const { width } = useWindowDimensions();
-  const isDesktopWeb = Platform.OS === 'web' && width > 768;
+  
+  const [isMounted, setIsMounted] = useState(false);
+  useEffect(() => setIsMounted(true), []);
+  
+  const isDesktopWeb = isMounted && Platform.OS === 'web' && width > 768;
+
+  const businessRoutes = [
+    { label: 'Dashboard', path: '/business', icon: 'stats-chart' },
+    { label: 'Crear', path: '/business/social', icon: 'add-circle' },
+    { label: 'Tienda', path: '/business/store', icon: 'storefront' },
+    { label: 'Perfil', path: '/business/profile', icon: 'person' },
+  ];
 
   return (
-    <>
-      <Tabs
-        tabBar={isDesktopWeb ? (props) => <WebSidebar {...props} /> : undefined}
-        screenOptions={{
-          headerShown: false,
-          tabBarActiveTintColor: theme.colors.primary[500],
-          tabBarInactiveTintColor: theme.colors.text.secondary,
-          tabBarStyle: {
-            paddingBottom: Math.max(insets.bottom, 5),
-            paddingTop: 5,
-            height: 60 + Math.max(insets.bottom - 5, 0),
-            display: isDesktopWeb ? 'none' : 'flex'
-          },
-          lazy: true,
-          unmountOnBlur: true,
-        }}>
+    <View style={{ flex: 1, flexDirection: isDesktopWeb ? 'row' : 'column' }}>
+      {isDesktopWeb && <WebSidebar routes={businessRoutes} />}
+      
+      <View style={{ flex: 1 }}>
+        <Tabs
+          screenOptions={{
+            headerShown: false,
+            tabBarActiveTintColor: theme.colors.primary[500],
+            tabBarInactiveTintColor: theme.colors.text.secondary,
+            tabBarStyle: {
+              paddingBottom: Math.max(insets.bottom, 5),
+              paddingTop: 5,
+              height: 60 + Math.max(insets.bottom - 5, 0),
+              display: isDesktopWeb ? 'none' : 'flex'
+            },
+            lazy: true,
+            unmountOnBlur: true,
+          }}>
 
-        {/* Dashboard Tab */}
-        <Tabs.Screen
-          name="index"
-          options={{
-            title: 'Dashboard',
-            tabBarIcon: ({ focused }) => getTabIcon('stats-chart', focused),
-          }}
-        />
+          {/* Dashboard Tab */}
+          <Tabs.Screen
+            name="index"
+            options={{
+              title: 'Dashboard',
+              tabBarIcon: ({ focused }) => getTabIcon('stats-chart', focused),
+            }}
+          />
 
-        {/* Create Post Tab */}
-        <Tabs.Screen
-          name="social"
-          options={{
-            title: 'Crear',
-            tabBarIcon: ({ focused }) => getTabIcon('add-circle', focused),
-          }}
-        />
+          {/* Create Post Tab */}
+          <Tabs.Screen
+            name="social"
+            options={{
+              title: 'Crear',
+              tabBarIcon: ({ focused }) => getTabIcon('add-circle', focused),
+            }}
+          />
 
-        {/* Store Tab */}
-        <Tabs.Screen
-          name="store"
-          options={{
-            title: 'Tienda',
-            tabBarIcon: ({ focused }) => getTabIcon('storefront', focused),
-          }}
-        />
+          {/* Store Tab */}
+          <Tabs.Screen
+            name="store"
+            options={{
+              title: 'Tienda',
+              tabBarIcon: ({ focused }) => getTabIcon('storefront', focused),
+            }}
+          />
 
-        {/* Profile Tab */}
-        <Tabs.Screen
-          name="profile"
-          options={{
-            title: 'Perfil',
-            tabBarIcon: ({ focused }) => getTabIcon('person', focused),
-          }}
-        />
+          {/* Profile Tab */}
+          <Tabs.Screen
+            name="profile"
+            options={{
+              title: 'Perfil',
+              tabBarIcon: ({ focused }) => getTabIcon('person', focused),
+            }}
+          />
 
-      </Tabs>
+        </Tabs>
+      </View>
 
       {/* Global User Type Switcher Modal */}
       <UserTypeSwitcherModal
@@ -79,6 +94,6 @@ export default function BusinessTabsLayout() {
         onClose={closeUserTypeSwitcher}
         onUserTypeSwitch={closeUserTypeSwitcher}
       />
-    </>
+    </View>
   );
 }

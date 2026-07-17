@@ -1,8 +1,12 @@
 import { View, Text, TouchableOpacity, StyleSheet } from 'react-native';
 import { theme } from '../../config/theme';
 import { Ionicons } from '@expo/vector-icons';
+import { useRouter, usePathname } from 'expo-router';
 
-export const WebSidebar = ({ state, descriptors, navigation }) => {
+export const WebSidebar = ({ routes }) => {
+  const router = useRouter();
+  const pathname = usePathname();
+
   return (
     <View style={styles.sidebarContainer}>
       {/* Brand / Logo Area */}
@@ -12,36 +16,17 @@ export const WebSidebar = ({ state, descriptors, navigation }) => {
 
       {/* Navigation Links */}
       <View style={styles.navContainer}>
-        {state.routes.map((route, index) => {
-          const { options } = descriptors[route.key];
-          const label =
-            options.tabBarLabel !== undefined
-              ? options.tabBarLabel
-              : options.title !== undefined
-              ? options.title
-              : route.name;
-
-          const isFocused = state.index === index;
+        {routes.map((route) => {
+          // Exact match or active sub-route match
+          const isFocused = pathname === route.path || (route.path !== '/' && pathname.startsWith(route.path + '/'));
 
           const onPress = () => {
-            const event = navigation.emit({
-              type: 'tabPress',
-              target: route.key,
-              canPreventDefault: true,
-            });
-
-            if (!isFocused && !event.defaultPrevented) {
-              navigation.navigate(route.name, route.params);
-            }
+            router.push(route.path);
           };
 
           return (
             <TouchableOpacity
-              key={route.key}
-              accessibilityRole="button"
-              accessibilityState={isFocused ? { selected: true } : {}}
-              accessibilityLabel={options.tabBarAccessibilityLabel}
-              testID={options.tabBarTestID}
+              key={route.path}
               onPress={onPress}
               style={[
                 styles.navItem,
@@ -49,17 +34,17 @@ export const WebSidebar = ({ state, descriptors, navigation }) => {
               ]}
             >
               <View style={styles.iconContainer}>
-                {options.tabBarIcon ? (
-                  options.tabBarIcon({ focused: isFocused, color: isFocused ? theme.colors.primary[500] : theme.colors.text.secondary, size: 24 })
-                ) : (
-                  <Ionicons name="ellipse" size={24} color={isFocused ? theme.colors.primary[500] : theme.colors.text.secondary} />
-                )}
+                <Ionicons 
+                  name={route.icon} 
+                  size={24} 
+                  color={isFocused ? theme.colors.primary[500] : theme.colors.text.secondary} 
+                />
               </View>
               <Text style={[
                 styles.navLabel,
                 isFocused && styles.navLabelFocused
               ]}>
-                {label}
+                {route.label}
               </Text>
             </TouchableOpacity>
           );

@@ -3,7 +3,6 @@ import { View, ActivityIndicator, TextInput, TouchableOpacity } from 'react-nati
 import { Ionicons } from '@expo/vector-icons';
 import { Text } from './text';
 import { cn } from '../../utils/cn';
-import 'leaflet/dist/leaflet.css';
 
 let L, MapContainer, TileLayer, Marker, useMapEvents;
 if (typeof window !== 'undefined') {
@@ -21,6 +20,15 @@ if (typeof window !== 'undefined') {
     iconUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/images/marker-icon.png',
     shadowUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/images/marker-shadow.png',
   });
+
+  // Inject Leaflet CSS dynamically to prevent Metro Bundler warning
+  if (!document.getElementById('leaflet-css')) {
+    const link = document.createElement('link');
+    link.id = 'leaflet-css';
+    link.rel = 'stylesheet';
+    link.href = 'https://unpkg.com/leaflet@1.7.1/dist/leaflet.css';
+    document.head.appendChild(link);
+  }
 }
 
 const LocationMarker = ({ position, setPosition, onLocationSelect }) => {

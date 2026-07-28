@@ -3,7 +3,7 @@ import { TouchableOpacity, View } from 'react-native';
 import { Text } from '../../../../../shared/components/ui';
 import { colors } from '../../../../../shared/utils/colors';
 
-export const QuickActions = ({ onCreatePost, onCreatePromotion }) => {
+export const QuickActions = ({ onCreatePost, onCreateVideo, onCreatePromotion }) => {
   return (
     <View style={{
       flexDirection: 'row',
@@ -33,25 +33,32 @@ export const QuickActions = ({ onCreatePost, onCreatePromotion }) => {
           fontWeight: '700',
           color: colors.text.inverse
         }}>
-          Nueva Publicación
+          Nuevo Post
         </Text>
       </TouchableOpacity>
 
       <TouchableOpacity
-        onPress={onCreatePromotion}
-        activeOpacity={0.7}
+        onPress={onCreateVideo}
+        activeOpacity={0.85}
         style={{
-          paddingHorizontal: 18,
+          flex: 1,
+          backgroundColor: colors.primary[100],
           paddingVertical: 14,
           borderRadius: 8,
-          backgroundColor: colors.bg.secondary,
-          borderWidth: 1,
-          borderColor: colors.border.light,
+          flexDirection: 'row',
           alignItems: 'center',
-          justifyContent: 'center'
+          justifyContent: 'center',
+          gap: 8
         }}
       >
-        <Ionicons name="megaphone" size={20} color="#f59e0b" />
+        <Ionicons name="videocam" size={22} color={colors.primary[700]} />
+        <Text style={{
+          fontSize: 15,
+          fontWeight: '700',
+          color: colors.primary[700]
+        }}>
+          Nuevo Video
+        </Text>
       </TouchableOpacity>
     </View>
   );

@@ -16,6 +16,7 @@ import { useAppStore } from '../../../shared/stores/app-store';
 import { colors } from '../../../shared/utils/colors';
 import { getModeColors } from '../../../shared/utils/colors';
 import { ProductsGrid } from '../products/components/products-grid';
+import { PostsGrid } from '../social/posts/components/posts-grid';
 import { EditProfileModal } from './components/edit-profile-modal';
 
 export default function BusinessProfileScreen() {
@@ -635,40 +636,7 @@ export default function BusinessProfileScreen() {
           {/* Content Area */}
           <View style={{ paddingBottom: 32 }}>
             {activeTab === 'posts' && (
-              <View style={{
-                backgroundColor: colors.bg.secondary,
-                borderRadius: 16,
-                padding: 40,
-                alignItems: 'center'
-              }}>
-                <View style={{
-                  width: 80,
-                  height: 80,
-                  borderRadius: 40,
-                  backgroundColor: colors.bg.primary,
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  marginBottom: 16
-                }}>
-                  <Ionicons name="images-outline" size={40} color={colors.text.secondary} />
-                </View>
-                <Text style={{
-                  fontSize: 18,
-                  fontWeight: '700',
-                  color: colors.text.primary,
-                  marginBottom: 8,
-                  textAlign: 'center'
-                }}>
-                  Aún no tienes posts
-                </Text>
-                <Text style={{
-                  fontSize: 14,
-                  color: colors.text.secondary,
-                  textAlign: 'center'
-                }}>
-                  Tus posts aparecerán aquí
-                </Text>
-              </View>
+              <PostsGrid onCreatePost={() => router.push('/business/social')} />
             )}
 
             {activeTab === 'products' && (

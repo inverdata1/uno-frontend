@@ -22,12 +22,15 @@ import { useAuthStore } from '../../core/auth/stores/auth-store';
  */
 export const useUserType = () => {
   const isAuthenticated = useAuthStore(state => state.isAuthenticated);
+  const user = useAuthStore(state => state.user);
   
   return useQuery({
-    queryKey: ['user-types'],
-    enabled: isAuthenticated,
+    queryKey: ['user-types', user?.id],
+    enabled: isAuthenticated && !!user?.id,
     queryFn: async () => {
-      const res = await apiClient.get('/users/user-types');
+      const res = await apiClient.get('/users/user-types', {
+        params: { userId: user.id }
+      });
 
       // Safe defaults if API returns null
       if (!res.data) {

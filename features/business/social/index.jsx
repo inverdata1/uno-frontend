@@ -18,7 +18,15 @@ export default function BusinessSocialScreen() {
   const [selectedStories, setSelectedStories] = useState([]);
   const [selectedStoryIndex, setSelectedStoryIndex] = useState(0);
 
+  const [allowedMediaTypes, setAllowedMediaTypes] = useState(['image', 'video']); // default to both for backwards compat
+
   const handleCreatePost = () => {
+    setAllowedMediaTypes(['image']);
+    setCreatePostModalVisible(true);
+  };
+
+  const handleCreateVideo = () => {
+    setAllowedMediaTypes(['video']);
     setCreatePostModalVisible(true);
   };
 
@@ -60,12 +68,7 @@ export default function BusinessSocialScreen() {
             Publicaciones
           </Text>
           <View style={{ flexDirection: 'row', gap: 16 }}>
-            <TouchableOpacity activeOpacity={0.6}>
-              <Ionicons name="search-outline" size={24} color={colors.text.primary} />
-            </TouchableOpacity>
-            <TouchableOpacity activeOpacity={0.6}>
-              <Ionicons name="ellipsis-vertical" size={24} color={colors.text.primary} />
-            </TouchableOpacity>
+            {/* Icons removed as requested */}
           </View>
         </View>
 
@@ -75,6 +78,7 @@ export default function BusinessSocialScreen() {
         {/* Quick Actions */}
         <QuickActions
           onCreatePost={handleCreatePost}
+          onCreateVideo={handleCreateVideo}
           onCreatePromotion={handleCreatePromotion}
         />
 
@@ -85,6 +89,7 @@ export default function BusinessSocialScreen() {
       {/* Create Post Flow - New Multi-Step Experience */}
       <PostCreationFlow
         visible={createPostModalVisible}
+        allowedMediaTypes={allowedMediaTypes}
         onClose={() => setCreatePostModalVisible(false)}
       />
 

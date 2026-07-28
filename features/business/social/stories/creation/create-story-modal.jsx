@@ -1,153 +1,158 @@
-import { Ionicons } from '@expo/vector-icons';
-import * as MediaLibrary from 'expo-media-library';
-import { useEffect, useState } from 'react';
-import { ActivityIndicator, Alert, Dimensions, FlatList, Image, Modal, ScrollView, StatusBar, TextInput, TouchableOpacity, View } from 'react-native';
+import React, { useState } from 'react';
+import { View, Modal, TouchableOpacity, Image, ActivityIndicator, Alert, StatusBar, TextInput, Platform, KeyboardAvoidingView } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import { Ionicons } from '@expo/vector-icons';
+import * as ImagePicker from 'expo-image-picker';
+import { ref, uploadBytes, getDownloadURL } from 'firebase/storage';
+import { storage } from '../../../../../shared/config/firebase';
+import { apiClient } from '../../../../../shared/config/api-client';
 import { Text } from '../../../../../shared/components/ui';
-import { useCreateStoryWithMedia } from '../../../../../shared/hooks/use-create-story-with-media';
 import { colors } from '../../../../../shared/utils/colors';
-
-const { width } = Dimensions.get('window');
+import { useCurrentUserType } from '../../../../../shared/hooks/use-user-type';
+import { useCreateStory } from '../../../../../shared/hooks/use-business-social';
+import { useAuthStore } from '../../../../../core/auth/stores/auth-store';
+import { VideoView, useVideoPlayer } from 'expo-video';
 
 export const CreateStoryModal = ({ visible, onClose }) => {
-  const [galleryPhotos, setGalleryPhotos] = useState([]);
-  const [selectedMedia, setSelectedMedia] = useState(null);
-  const [caption, setCaption] = useState('');
-  const [hasPermission, setHasPermission] = useState(false);
-  const [albums, setAlbums] = useState([]);
-  const [selectedAlbum, setSelectedAlbum] = useState(null);
-  const [showAlbumPicker, setShowAlbumPicker] = useState(false);
-  const [hasMore, setHasMore] = useState(true);
-  const [endCursor, setEndCursor] = useState(null);
-  const [albumThumbnails, setAlbumThumbnails] = useState({});
+  const [selectedAsset, setSelectedAsset] = useState(null);
+  const [tags, setTags] = useState('');
+  const [duration, setDuration] = useState(24);
   const [isUploading, setIsUploading] = useState(false);
-  const createStoryMutation = useCreateStoryWithMedia();
+  
+  const { user } = useAuthStore();
+  const { currentContext } = useCurrentUserType();
+  const businessId = currentContext?.businessId;
+  const createStoryMutation = useCreateStory();
 
-  useEffect(() => {
-    if (visible) {
-      loadAlbums();
-    }
-  }, [visible]);
+  const player = useVideoPlayer(selectedAsset?.uri, (player) => {
+    player.loop = true;
+    player.play();
+  });
 
-  useEffect(() => {
-    if (selectedAlbum) {
-      loadGalleryPhotos(true);
-    }
-  }, [selectedAlbum]);
-
-  const loadAlbums = async () => {
-    const { status } = await MediaLibrary.requestPermissionsAsync();
-
-    if (status !== 'granted') {
-      setHasPermission(false);
-      return;
-    }
-
-    setHasPermission(true);
-
-    // Load all albums
-    const albumsList = await MediaLibrary.getAlbumsAsync({
-      includeSmartAlbums: true,
-    });
-
-    // Sort albums by assetCount in descending order
-    const sortedAlbums = albumsList.sort((a, b) => b.assetCount - a.assetCount);
-
-    setAlbums(sortedAlbums);
-
-    // Load thumbnails for each album
-    const thumbnails = {};
-    for (const album of sortedAlbums) {
-      const assets = await MediaLibrary.getAssetsAsync({
-        album: album.id,
-        first: 1,
-        mediaType: [MediaLibrary.MediaType.photo, MediaLibrary.MediaType.video],
-        sortBy: [MediaLibrary.SortBy.creationTime],
+  const handlePickMedia = async () => {
+    try {
+      const result = await ImagePicker.launchImageLibraryAsync({
+        mediaTypes: ImagePicker.MediaTypeOptions.All,
+        videoMaxDuration: 30, // iOS limits to 30s in the picker
+        quality: 1,
       });
-      if (assets.assets.length > 0) {
-        thumbnails[album.id] = assets.assets[0].uri;
-      }
-    }
-    setAlbumThumbnails(thumbnails);
 
-    // Set default album to "Recent" or first album
-    const recentAlbum = sortedAlbums.find(album => album.title === 'Recent' || album.title === 'Recents');
-    setSelectedAlbum(recentAlbum || sortedAlbums[0]);
+      if (!result.canceled && result.assets && result.assets[0]) {
+        const asset = result.assets[0];
+        
+        // Manual check for Android which might not enforce videoMaxDuration in all pickers
+        if (asset.type === 'video' && asset.duration && asset.duration > 31000) { // giving 1s grace period
+          Alert.alert('Video muy largo', 'Las historias en video no pueden durar más de 30 segundos.');
+          return;
+        }
+        
+        setSelectedAsset(asset);
+      }
+    } catch (error) {
+      console.error('Error picking media:', error);
+      Alert.alert('Error', 'No se pudo abrir la galería de medios');
+    }
   };
 
-  const loadGalleryPhotos = async (reset = false) => {
-    if (!selectedAlbum) return;
-
+  const uploadMediaWithFallback = async (asset) => {
+    const imageUri = asset.uri;
+    const isVideo = asset.type === 'video' || asset.mimeType?.startsWith('video/') || imageUri.endsWith('.mp4');
+    const mediaTypeStr = isVideo ? 'video' : 'image';
+    const ext = asset.uri?.split('.').pop() || (isVideo ? 'mp4' : 'jpg');
+    
     try {
-      const media = await MediaLibrary.getAssetsAsync({
-        album: selectedAlbum.id,
-        first: 100,
-        after: reset ? undefined : endCursor,
-        mediaType: [MediaLibrary.MediaType.photo, MediaLibrary.MediaType.video],
-        sortBy: [MediaLibrary.SortBy.creationTime],
+      // 1. Try Firebase first
+      const response = await fetch(imageUri);
+      const blob = await response.blob();
+      const filename = `businesses/${businessId || 'unknown'}/stories/${mediaTypeStr}_${Date.now()}.${ext}`;
+      const storageRef = ref(storage, filename);
+      await uploadBytes(storageRef, blob);
+      return await getDownloadURL(storageRef);
+    } catch (err) {
+      console.warn('Firebase upload failed, attempting local backend fallback...', err);
+      
+      // 2. Fallback to local backend
+      const formData = new FormData();
+      formData.append(isVideo ? 'video' : 'image', {
+        uri: imageUri,
+        name: asset.name || `${mediaTypeStr}_${Date.now()}.${ext}`,
+        type: asset.mimeType || (isVideo ? 'video/mp4' : 'image/jpeg')
       });
-
-      if (reset) {
-        setGalleryPhotos(media.assets);
-      } else {
-        setGalleryPhotos([...galleryPhotos, ...media.assets]);
+      formData.append('productName', 'story_media');
+      if (businessId) {
+        formData.append('businessId', businessId);
       }
 
-      setEndCursor(media.endCursor);
-      setHasMore(media.hasNextPage);
-    } catch (error) {
-      console.error('Error loading gallery photos:', error);
+      const uploadRes = await apiClient.post(isVideo ? '/upload/video' : '/upload/image', formData, {
+        headers: {
+          Accept: 'application/json',
+          'Content-Type': 'multipart/form-data',
+        }
+      });
+
+      if (uploadRes.data?.url) {
+        const backendUrl = process.env.EXPO_PUBLIC_API_URL?.replace(/\/api$/, '') || 'http://localhost:3000';
+        return `${backendUrl}${uploadRes.data.url}`;
+      } else {
+        throw new Error('No URL returned from upload');
+      }
     }
   };
 
   const handlePublish = async () => {
-    if (!selectedMedia) {
+    if (!selectedAsset) {
       Alert.alert('Error', 'Selecciona una imagen o video');
+      return;
+    }
+
+    if (!businessId) {
+      Alert.alert('Error', 'Necesitas registrar un negocio antes de crear historias.');
       return;
     }
 
     setIsUploading(true);
 
     try {
-      const mediaType = selectedMedia.mediaType === 'video' ? 'video' : 'image';
-      const duration = mediaType === 'video' ? Math.ceil(selectedMedia.duration) : 5;
+      // 1. Upload Media
+      const uploadedUrl = await uploadMediaWithFallback(selectedAsset);
+      
+      const isVideo = selectedAsset.mimeType?.startsWith('video/') || selectedAsset.uri.endsWith('.mp4');
+      
+      // Parse tags
+      const tagsArray = tags.split(',').map(t => t.trim()).filter(t => t.length > 0);
 
+      // 2. Create Story
       await createStoryMutation.mutateAsync({
-        type: mediaType,
-        mediaFile: selectedMedia.uri,
-        caption: caption.trim(),
-        duration
+        businessId,
+        userId: user?.id,
+        mediaUrl: uploadedUrl,
+        mediaType: isVideo ? 'video' : 'image',
+        tags: tagsArray,
+        duration: isVideo ? 30 : 5, // Media duration
+        expiresInHours: duration // Story lifetime
       });
 
       // Reset and close
-      setSelectedMedia(null);
-      setCaption('');
-      setIsUploading(false);
-      onClose();
+      handleClose();
       Alert.alert('¡Listo!', 'Tu historia se ha publicado');
     } catch (error) {
       console.error('Error creating story:', error);
+      Alert.alert('Error', 'No se pudo publicar la historia. Intenta de nuevo.');
+    } finally {
       setIsUploading(false);
-
-      if (error.message?.includes('No business context available')) {
-        Alert.alert(
-          'Negocio requerido',
-          'Necesitas registrar un negocio antes de crear historias. Por favor, ve a tu perfil y crea tu negocio.',
-          [{ text: 'Entendido' }]
-        );
-      } else {
-        Alert.alert('Error', 'No se pudo crear la historia. Intenta de nuevo.');
-      }
     }
   };
 
   const handleClose = () => {
     if (!isUploading) {
-      setSelectedMedia(null);
-      setCaption('');
+      setSelectedAsset(null);
+      setTags('');
+      setDuration(24);
       onClose();
     }
   };
+
+  const isVideo = selectedAsset?.mimeType?.startsWith('video/') || selectedAsset?.uri?.endsWith('.mp4');
 
   return (
     <Modal
@@ -181,7 +186,7 @@ export const CreateStoryModal = ({ visible, onClose }) => {
           </Text>
           <TouchableOpacity
             onPress={handlePublish}
-            disabled={!selectedMedia || isUploading}
+            disabled={!selectedAsset || isUploading}
             activeOpacity={0.6}
           >
             {isUploading ? (
@@ -190,7 +195,7 @@ export const CreateStoryModal = ({ visible, onClose }) => {
               <Text style={{
                 fontSize: 16,
                 fontWeight: '700',
-                color: !selectedMedia ? colors.text.secondary : colors.primary[500]
+                color: !selectedAsset ? colors.text.secondary : colors.primary[500]
               }}>
                 Publicar
               </Text>
@@ -198,338 +203,130 @@ export const CreateStoryModal = ({ visible, onClose }) => {
           </TouchableOpacity>
         </View>
 
-        <View style={{ flex: 1 }}>
-          {/* Preview Section - Top Half (9:16 aspect ratio) */}
-          <View style={{
-            height: width * (16 / 9),
-            maxHeight: '50%',
-            backgroundColor: colors.bg.secondary,
-            borderBottomWidth: 1,
-            borderBottomColor: colors.border.light,
-            position: 'relative'
-          }}>
-            {selectedMedia ? (
-              <>
-                <Image
-                  source={{ uri: selectedMedia.uri }}
-                  style={{ width: '100%', height: '100%' }}
-                  resizeMode="contain"
-                />
-                {/* Caption Input Overlay */}
-                <View style={{
-                  position: 'absolute',
-                  bottom: 0,
-                  left: 0,
-                  right: 0,
-                  padding: 16,
-                  backgroundColor: 'rgba(0,0,0,0.3)'
-                }}>
-                  <TextInput
-                    value={caption}
-                    onChangeText={setCaption}
-                    placeholder="Añadir texto..."
-                    placeholderTextColor="rgba(255,255,255,0.6)"
-                    multiline
-                    maxLength={200}
-                    style={{
-                      fontSize: 16,
-                      color: '#fff',
-                      minHeight: 40,
-                      maxHeight: 100,
-                      textAlignVertical: 'top'
-                    }}
-                  />
-                </View>
-              </>
-            ) : (
-              <View style={{
-                flex: 1,
+        <KeyboardAvoidingView 
+          style={{ flex: 1 }} 
+          behavior={Platform.OS === 'ios' ? 'padding' : undefined}
+        >
+          <View style={{ flex: 1, padding: 16, gap: 20 }}>
+            
+            {/* Media Selector */}
+            <TouchableOpacity 
+              onPress={handlePickMedia}
+              disabled={isUploading}
+              style={{
+                height: 300,
+                backgroundColor: colors.bg.secondary,
+                borderRadius: 16,
+                overflow: 'hidden',
                 justifyContent: 'center',
                 alignItems: 'center',
-                gap: 12
-              }}>
-                <Ionicons name="image-outline" size={64} color={colors.text.secondary} />
-                <Text style={{
-                  fontSize: 16,
-                  color: colors.text.secondary
-                }}>
-                  Selecciona una foto o video
-                </Text>
-              </View>
-            )}
-          </View>
-
-          {/* Gallery Grid - Bottom Half */}
-          <View style={{ flex: 1, backgroundColor: colors.bg.primary }}>
-            {/* Album Picker Header */}
-            <TouchableOpacity
-              onPress={() => setShowAlbumPicker(true)}
-              activeOpacity={0.6}
-              style={{
-                flexDirection: 'row',
-                alignItems: 'center',
-                justifyContent: 'space-between',
-                padding: 12,
-                paddingHorizontal: 16,
-                borderBottomWidth: 1,
-                borderBottomColor: colors.border.light
+                borderWidth: 1,
+                borderColor: colors.border.light,
+                borderStyle: selectedAsset ? 'solid' : 'dashed'
               }}
             >
-              <View style={{
-                flexDirection: 'row',
-                alignItems: 'center',
-                gap: 8
-              }}>
-                <Text style={{
-                  fontSize: 16,
-                  fontWeight: '600',
-                  color: colors.text.primary
+              {selectedAsset ? (
+                isVideo ? (
+                  <VideoView
+                    player={player}
+                    style={{ width: '100%', height: '100%' }}
+                    contentFit="cover"
+                    nativeControls={false}
+                  />
+                ) : (
+                  <Image
+                    source={{ uri: selectedAsset.uri }}
+                    style={{ width: '100%', height: '100%' }}
+                    resizeMode="cover"
+                  />
+                )
+              ) : (
+                <View style={{ alignItems: 'center', gap: 12 }}>
+                  <Ionicons name="cloud-upload-outline" size={48} color={colors.text.secondary} />
+                  <Text style={{ fontSize: 16, color: colors.text.secondary }}>
+                    Toca para seleccionar imagen o vídeo
+                  </Text>
+                  <Text style={{ fontSize: 13, color: colors.text.tertiary, textAlign: 'center', paddingHorizontal: 20 }}>
+                    Videos hasta 30 segundos. Usarás el explorador nativo.
+                  </Text>
+                </View>
+              )}
+              
+              {selectedAsset && !isUploading && (
+                <View style={{
+                  position: 'absolute',
+                  top: 10,
+                  right: 10,
+                  backgroundColor: 'rgba(0,0,0,0.6)',
+                  borderRadius: 20,
+                  padding: 8
                 }}>
-                  {selectedAlbum?.title || 'Recientes'}
-                </Text>
-                <Ionicons
-                  name="chevron-down"
-                  size={18}
-                  color={colors.text.primary}
-                />
-              </View>
-              <Text style={{
-                fontSize: 14,
-                color: colors.text.secondary
-              }}>
-                {selectedAlbum?.assetCount || 0}
-              </Text>
+                  <Ionicons name="pencil" size={20} color="#fff" />
+                </View>
+              )}
             </TouchableOpacity>
 
-            {!hasPermission ? (
-              <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center', padding: 24 }}>
-                <Ionicons name="images-outline" size={48} color={colors.text.secondary} />
-                <Text style={{
-                  marginTop: 16,
-                  fontSize: 16,
-                  fontWeight: '600',
-                  color: colors.text.primary,
-                  textAlign: 'center'
-                }}>
-                  Permiso necesario
-                </Text>
-                <Text style={{
-                  marginTop: 8,
-                  fontSize: 14,
-                  color: colors.text.secondary,
-                  textAlign: 'center'
-                }}>
-                  Necesitamos acceso a tus fotos para crear historias
-                </Text>
-              </View>
-            ) : (
-              <FlatList
-                data={galleryPhotos}
-                numColumns={4}
-                keyExtractor={(item) => item.id}
-                showsVerticalScrollIndicator={false}
-                onEndReached={() => {
-                  if (hasMore) {
-                    loadGalleryPhotos(false);
-                  }
-                }}
-                onEndReachedThreshold={0.5}
-                renderItem={({ item }) => {
-                  const isSelected = selectedMedia?.id === item.id;
-                  const itemWidth = width / 4;
-
-                  return (
-                    <TouchableOpacity
-                      onPress={() => setSelectedMedia(item)}
-                      activeOpacity={0.9}
-                      style={{
-                        width: itemWidth,
-                        height: itemWidth,
-                        padding: 1
-                      }}
-                    >
-                      <View style={{
-                        width: '100%',
-                        height: '100%',
-                        backgroundColor: colors.bg.secondary,
-                        position: 'relative'
-                      }}>
-                        <Image
-                          source={{ uri: item.uri }}
-                          style={{ width: '100%', height: '100%' }}
-                          resizeMode="cover"
-                        />
-
-                        {/* Video indicator */}
-                        {item.mediaType === 'video' && (
-                          <View style={{
-                            position: 'absolute',
-                            top: 4,
-                            right: 4,
-                            backgroundColor: 'rgba(0,0,0,0.6)',
-                            borderRadius: 4,
-                            paddingHorizontal: 4,
-                            paddingVertical: 2
-                          }}>
-                            <Ionicons name="videocam" size={12} color="#fff" />
-                          </View>
-                        )}
-
-                        {/* Selection overlay */}
-                        {isSelected && (
-                          <View style={{
-                            position: 'absolute',
-                            top: 0,
-                            left: 0,
-                            right: 0,
-                            bottom: 0,
-                            backgroundColor: 'rgba(0,0,0,0.3)',
-                            borderWidth: 2,
-                            borderColor: colors.primary[500]
-                          }} />
-                        )}
-                      </View>
-                    </TouchableOpacity>
-                  );
-                }}
-              />
-            )}
-          </View>
-        </View>
-
-        {/* Album Picker Modal */}
-        <Modal
-          visible={showAlbumPicker}
-          animationType="slide"
-          presentationStyle="pageSheet"
-          onRequestClose={() => setShowAlbumPicker(false)}
-        >
-          <SafeAreaView style={{ flex: 1, backgroundColor: colors.bg.primary }} edges={['top', 'bottom']}>
-            {/* Modal Header */}
-            <View style={{
-              flexDirection: 'row',
-              alignItems: 'center',
-              justifyContent: 'space-between',
-              paddingHorizontal: 16,
-              paddingVertical: 16,
-              borderBottomWidth: 1,
-              borderBottomColor: colors.border.light
-            }}>
-              <TouchableOpacity
-                onPress={() => setShowAlbumPicker(false)}
-                activeOpacity={0.6}
-              >
-                <Text style={{
-                  fontSize: 16,
-                  color: colors.text.primary
-                }}>
-                  Cancel
-                </Text>
-              </TouchableOpacity>
-              <Text style={{
-                fontSize: 16,
-                fontWeight: '700',
-                color: colors.text.primary
-              }}>
-                Select album
+            {/* Duration Selector */}
+            <View>
+              <Text style={{ fontSize: 14, fontWeight: '600', color: colors.text.primary, marginBottom: 8 }}>
+                Duración de la historia
               </Text>
-              <View style={{ width: 60 }} />
+              <View style={{ flexDirection: 'row', gap: 8 }}>
+                {[6, 12, 24, 48].map((hours) => (
+                  <TouchableOpacity
+                    key={hours}
+                    onPress={() => setDuration(hours)}
+                    disabled={isUploading}
+                    style={{
+                      flex: 1,
+                      paddingVertical: 10,
+                      backgroundColor: duration === hours ? colors.primary[500] : colors.bg.secondary,
+                      borderRadius: 8,
+                      alignItems: 'center',
+                      borderWidth: 1,
+                      borderColor: duration === hours ? colors.primary[500] : colors.border.light
+                    }}
+                  >
+                    <Text style={{
+                      fontSize: 14,
+                      fontWeight: duration === hours ? '700' : '500',
+                      color: duration === hours ? colors.text.inverse : colors.text.primary
+                    }}>
+                      {hours}h
+                    </Text>
+                  </TouchableOpacity>
+                ))}
+              </View>
             </View>
 
-            <ScrollView style={{ flex: 1 }}>
-              {/* Albums Section Header */}
-              <View style={{
-                flexDirection: 'row',
-                justifyContent: 'space-between',
-                alignItems: 'center',
-                paddingHorizontal: 16,
-                paddingVertical: 12,
-                paddingTop: 20
-              }}>
-                <Text style={{
+            {/* Tags Input */}
+            <View>
+              <Text style={{ fontSize: 14, fontWeight: '600', color: colors.text.primary, marginBottom: 8 }}>
+                Etiquetas (opcional)
+              </Text>
+              <TextInput
+                value={tags}
+                onChangeText={setTags}
+                editable={!isUploading}
+                placeholder="Ej. oferta, hamburguesas, nuevo"
+                placeholderTextColor={colors.text.secondary}
+                style={{
+                  backgroundColor: colors.bg.secondary,
+                  borderRadius: 12,
+                  padding: 16,
                   fontSize: 15,
-                  fontWeight: '600',
-                  color: colors.text.secondary
-                }}>
-                  Albums
-                </Text>
-              </View>
+                  color: colors.text.primary,
+                  borderWidth: 1,
+                  borderColor: colors.border.light
+                }}
+              />
+              <Text style={{ fontSize: 12, color: colors.text.secondary, marginTop: 6 }}>
+                Separa las palabras clave por comas.
+              </Text>
+            </View>
 
-              {/* Albums Grid */}
-              <View style={{
-                flexDirection: 'row',
-                flexWrap: 'wrap',
-                paddingHorizontal: 16,
-                gap: 12
-              }}>
-                {albums.map((album) => {
-                  const albumWidth = (width - 32 - 24) / 3;
-                  return (
-                    <TouchableOpacity
-                      key={album.id}
-                      onPress={() => {
-                        setSelectedAlbum(album);
-                        setShowAlbumPicker(false);
-                      }}
-                      activeOpacity={0.7}
-                      style={{
-                        width: albumWidth,
-                        marginBottom: 16
-                      }}
-                    >
-                      <View style={{
-                        width: albumWidth,
-                        height: albumWidth,
-                        borderRadius: 8,
-                        backgroundColor: colors.bg.secondary,
-                        overflow: 'hidden',
-                        marginBottom: 8
-                      }}>
-                        {albumThumbnails[album.id] ? (
-                          <Image
-                            source={{ uri: albumThumbnails[album.id] }}
-                            style={{ width: '100%', height: '100%' }}
-                            resizeMode="cover"
-                          />
-                        ) : (
-                          <View style={{
-                            width: '100%',
-                            height: '100%',
-                            justifyContent: 'center',
-                            alignItems: 'center'
-                          }}>
-                            <Ionicons
-                              name="images"
-                              size={32}
-                              color={colors.text.secondary}
-                            />
-                          </View>
-                        )}
-                      </View>
-                      <Text
-                        style={{
-                          fontSize: 13,
-                          fontWeight: '600',
-                          color: colors.text.primary,
-                          marginBottom: 2
-                        }}
-                        numberOfLines={1}
-                      >
-                        {album.title}
-                      </Text>
-                      <Text style={{
-                        fontSize: 12,
-                        color: colors.text.secondary
-                      }}>
-                        {album.assetCount}
-                      </Text>
-                    </TouchableOpacity>
-                  );
-                })}
-              </View>
-            </ScrollView>
-          </SafeAreaView>
-        </Modal>
+          </View>
+        </KeyboardAvoidingView>
       </SafeAreaView>
     </Modal>
   );

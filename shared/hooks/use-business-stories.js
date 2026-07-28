@@ -36,9 +36,7 @@ export const useBusinessStories = () => {
       if (!businessId) {
         return [];
       }
-      return apiClient.get('/stories', {
-        params: { businessId }
-      }).then(res => res.data || []);
+      return apiClient.get(`/stories/business/${businessId}`).then(res => res.data || []);
     },
     enabled: !!businessId,
     staleTime: 1 * 60 * 1000, // 1 minute (stories are time-sensitive)
@@ -73,11 +71,10 @@ export const useCreateStory = () => {
         throw new Error('No business context available. Please switch to a business first.');
       }
 
-      return apiClient.post('/stories', storyData, {
-        params: {
-          businessId,
-          userId: user.id
-        }
+      return apiClient.post('/stories', {
+        ...storyData,
+        businessId,
+        userId: user.id
       }).then(res => res.data);
     },
     onSuccess: () => {

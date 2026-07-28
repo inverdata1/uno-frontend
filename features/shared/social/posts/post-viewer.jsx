@@ -10,7 +10,8 @@ import {
   ScrollView,
   TouchableOpacity,
   View,
-  ActivityIndicator
+  ActivityIndicator,
+  Share
 } from 'react-native';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import { SafeAreaView } from 'react-native-safe-area-context';
@@ -18,6 +19,7 @@ import { Text } from '../../../../shared/components/ui';
 import { useCurrentUserType } from '../../../../shared/hooks/use-user-type';
 import { colors } from '../../../../shared/utils/colors';
 import { useDeletePost, useLikePost, useSavePost } from '../hooks/use-posts';
+import { useProducts } from '../../products/hooks/use-products';
 
 const { width: SCREEN_WIDTH } = Dimensions.get('window');
 
@@ -175,10 +177,12 @@ export default function PostViewer({
   const deletePostMutation = useDeletePost();
   const likeMutation = useLikePost();
   const saveMutation = useSavePost();
+  const { data: allProducts = [] } = useProducts({ businessId: post?.businessId });
 
   if (!post) return null;
 
   const {
+    title,
     type,
     media = [],
     caption,
@@ -244,9 +248,6 @@ export default function PostViewer({
     setMenuVisible(false);
     if (onEdit) {
       onEdit(post);
-    } else {
-      // TODO: Navigate to edit screen
-      console.log('Edit post:', post.id);
     }
   };
 
@@ -258,9 +259,26 @@ export default function PostViewer({
     saveMutation.mutate({ postId: post.id, isSaved });
   };
 
-  const handleShare = () => {
-    // TODO: Implement share
-    console.log('Share post');
+  const handleShare = async () => {
+    try {
+      const shareUrl = typeof post.media?.[0] === 'string' ? post.media[0] : (post.media?.[0]?.url || 'https://uno-delivery.com');
+      const result = await Share.share({
+        message: `¡Mira esta publicación de ${businessData?.name || 'este negocio'}!\n\n${caption || ''}\n\n${shareUrl}`,
+        url: shareUrl,
+        title: `Publicación de ${businessData?.name || 'este negocio'}`
+      });
+      if (result.action === Share.sharedAction) {
+        if (result.activityType) {
+          // shared with activity type of result.activityType
+        } else {
+          // shared
+        }
+      } else if (result.action === Share.dismissedAction) {
+        // dismissed
+      }
+    } catch (error) {
+      console.error('Error sharing post:', error);
+    }
   };
 
   return (
@@ -373,22 +391,24 @@ export default function PostViewer({
                     onScroll={handleScroll}
                     scrollEventThrottle={16}
                   >
-                    {media.map((item, index) => (
-                      item.type === 'video' ? (
+                    {media.map((item, index) => {
+                      const itemUrl = typeof item === 'string' ? item : item.url;
+                      const itemType = typeof item === 'string' ? (item.endsWith('.mp4') ? 'video' : 'image') : item.type;
+                      return itemType === 'video' ? (
                         <VideoMediaItem
                           key={index}
-                          uri={item.url}
+                          uri={itemUrl}
                           style={{ width: SCREEN_WIDTH, aspectRatio: 1, backgroundColor: '#000000' }}
                         />
                       ) : (
                         <Image
                           key={index}
-                          source={{ uri: item.url }}
+                          source={{ uri: itemUrl }}
                           style={{ width: SCREEN_WIDTH, aspectRatio: 1, backgroundColor: '#000000' }}
                           resizeMode="cover"
                         />
-                      )
-                    ))}
+                      );
+                    })}
                   </ScrollView>
                   {/* Carousel Indicator */}
                   <View style={{
@@ -406,19 +426,25 @@ export default function PostViewer({
                   </View>
                 </>
               ) : (
-                media[0]?.type === 'video' ? (
-                  <VideoMediaItem
-                    uri={media[0].url}
-                    
-                    style={{ width: SCREEN_WIDTH, aspectRatio: 1, backgroundColor: '#000000' }}
-                  />
-                ) : (
-                  <Image
-                    source={{ uri: media[0]?.url }}
-                    style={{ width: SCREEN_WIDTH, aspectRatio: 1, backgroundColor: '#000000' }}
-                    resizeMode="cover"
-                  />
-                )
+                (() => {
+                  const firstMedia = media[0];
+                  if (!firstMedia) return null;
+                  const itemUrl = typeof firstMedia === 'string' ? firstMedia : firstMedia.url;
+                  const itemType = typeof firstMedia === 'string' ? (itemUrl?.endsWith('.mp4') ? 'video' : 'image') : firstMedia.type;
+                  
+                  return itemType === 'video' ? (
+                    <VideoMediaItem
+                      uri={itemUrl}
+                      style={{ width: SCREEN_WIDTH, aspectRatio: 1, backgroundColor: '#000000' }}
+                    />
+                  ) : (
+                    <Image
+                      source={{ uri: itemUrl }}
+                      style={{ width: SCREEN_WIDTH, aspectRatio: 1, backgroundColor: '#000000' }}
+                      resizeMode="cover"
+                    />
+                  );
+                })()
               )}
             </View>
 
@@ -477,17 +503,28 @@ export default function PostViewer({
               </TouchableOpacity>
             </View>
 
-            {/* Caption */}
-            {caption && (
+            {/* Title and Caption */}
+            {(title || caption) && (
               <View style={{
                 paddingHorizontal: 16,
                 paddingVertical: 12,
                 backgroundColor: '#ffffff'
               }}>
-                <Text style={{ fontSize: 14, lineHeight: 20, color: colors.text.primary }}>
-                  <Text style={{ fontWeight: '600' }}>{businessData?.name} </Text>
-                  {caption}
-                </Text>
+                {title && (
+                  <Text style={{
+                    fontSize: 16,
+                    fontWeight: '700',
+                    color: colors.text.primary,
+                    marginBottom: caption ? 4 : 0
+                  }}>
+                    {title}
+                  </Text>
+                )}
+                {caption && (
+                  <Text style={{ fontSize: 14, lineHeight: 20, color: colors.text.primary }}>
+                    {caption}
+                  </Text>
+                )}
               </View>
             )}
 
@@ -511,15 +548,20 @@ export default function PostViewer({
                 </Text>
                 {taggedProducts.map((tag, index) => {
                   const product = tag.product || tag;
+                  const realProduct = allProducts.find(p => p.id === product.productId || p.id === product.id);
+                  const isAvailable = realProduct ? realProduct.isAvailable : true; // default true if not loaded yet
+
                   return (
                     <TouchableOpacity
                       key={index}
+                      disabled={!isAvailable}
                       onPress={() => onProductPress?.(product)}
                       style={{
                         flexDirection: 'row',
                         alignItems: 'center',
                         paddingVertical: 8,
-                        gap: 12
+                        gap: 12,
+                        opacity: isAvailable ? 1 : 0.6
                       }}
                     >
                       <View style={{
@@ -545,21 +587,36 @@ export default function PostViewer({
                         <Text style={{
                           fontSize: 14,
                           fontWeight: '600',
-                          color: colors.text.primary
+                          color: colors.text.primary,
+                          textDecorationLine: !isAvailable ? 'line-through' : 'none'
                         }} numberOfLines={1}>
-                          {product.name}
+                          {product.name || product.productName || 'Producto'}
                         </Text>
-                        {product.price && (
-                          <Text style={{
-                            fontSize: 14,
-                            color: colors.text.secondary,
-                            marginTop: 2
-                          }}>
-                            ${product.price}
-                          </Text>
-                        )}
+                        <View style={{ flexDirection: 'row', alignItems: 'center', marginTop: 2, gap: 8 }}>
+                          {product.price && (
+                            <Text style={{
+                              fontSize: 14,
+                              color: colors.text.secondary,
+                              textDecorationLine: !isAvailable ? 'line-through' : 'none'
+                            }}>
+                              ${product.price}
+                            </Text>
+                          )}
+                          {!isAvailable && (
+                            <View style={{
+                              backgroundColor: '#FEE2E2',
+                              paddingHorizontal: 6,
+                              paddingVertical: 2,
+                              borderRadius: 4
+                            }}>
+                              <Text style={{ fontSize: 10, fontWeight: '700', color: '#DC2626' }}>AGOTADO</Text>
+                            </View>
+                          )}
+                        </View>
                       </View>
-                      <Ionicons name="chevron-forward" size={20} color={colors.text.secondary} />
+                      {isAvailable && (
+                        <Ionicons name="chevron-forward" size={20} color={colors.text.secondary} />
+                      )}
                     </TouchableOpacity>
                   );
                 })}

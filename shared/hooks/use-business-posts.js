@@ -36,9 +36,7 @@ export const useBusinessPosts = () => {
       if (!businessId) {
         return [];
       }
-      return apiClient.get('/posts', {
-        params: { businessId }
-      }).then(res => res.data || []);
+      return apiClient.get(`/posts/business/${businessId}`).then(res => res.data || []);
     },
     enabled: !!businessId,
     staleTime: 2 * 60 * 1000, // 2 minutes
@@ -59,18 +57,17 @@ export const useCreatePost = () => {
         throw new Error('No business context available. Please switch to a business first.');
       }
 
-      return apiClient.post('/posts', postData, {
-        params: {
-          businessId,
-          userId: user.id
-        }
+      return apiClient.post('/posts', {
+        ...postData,
+        businessId,
+        userId: user.id
       }).then(res => res.data);
     },
     onSuccess: () => {
       // Invalidate business posts query
-      queryClient.invalidateQueries(['business-posts', businessId]);
+      queryClient.invalidateQueries({ queryKey: ['business-posts', businessId] });
       // Also invalidate feed
-      queryClient.invalidateQueries(['posts']);
+      queryClient.invalidateQueries({ queryKey: ['posts'] });
     },
   });
 };
@@ -93,8 +90,8 @@ export const useUpdatePost = () => {
       }).then(res => res.data);
     },
     onSuccess: () => {
-      queryClient.invalidateQueries(['business-posts', businessId]);
-      queryClient.invalidateQueries(['posts']);
+      queryClient.invalidateQueries({ queryKey: ['business-posts', businessId] });
+      queryClient.invalidateQueries({ queryKey: ['posts'] });
     },
   });
 };
@@ -116,8 +113,8 @@ export const useDeletePost = () => {
         throw new Error('No business context available');
       }
 
-      return apiClient.delete(`/posts/id`, {
-        params: { id: postId, businessId }
+      return apiClient.delete(`/posts/${postId}`, {
+        params: { businessId }
       }).then(res => res.data);
     },
     onSuccess: (data, input) => {
@@ -136,8 +133,8 @@ export const useDeletePost = () => {
       });
 
       // Invalidate to refetch fresh data
-      queryClient.invalidateQueries(['business-posts', businessId]);
-      queryClient.invalidateQueries(['posts']);
+      queryClient.invalidateQueries({ queryKey: ['business-posts', businessId] });
+      queryClient.invalidateQueries({ queryKey: ['posts'] });
     },
   });
 };
@@ -160,7 +157,7 @@ export const useTogglePostPin = () => {
       }).then(res => res.data);
     },
     onSuccess: () => {
-      queryClient.invalidateQueries(['business-posts', businessId]);
+      queryClient.invalidateQueries({ queryKey: ['business-posts', businessId] });
     },
   });
 };

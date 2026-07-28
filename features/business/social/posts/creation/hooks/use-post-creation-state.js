@@ -1,23 +1,51 @@
-import { useState, useCallback } from 'react';
+import React, { useState, useCallback } from 'react';
 
 /**
  * Shared state management for multi-step post creation flow
  * Inspired by Instagram/TikTok post creation UX
  */
-export function usePostCreationState() {
+export function usePostCreationState(initialPost = null) {
   // Current step (0-based index)
-  const [currentStep, setCurrentStep] = useState(0);
+  const [currentStep, setCurrentStep] = useState(initialPost ? 1 : 0);
 
   // Post data
   const [postType, setPostType] = useState('image'); // 'image', 'video', 'carousel'
   const [selectedMedia, setSelectedMedia] = useState([]); // Array of { uri, type, duration? }
   const [taggedProducts, setTaggedProducts] = useState([]); // Array of { productId, position: { x, y }, mediaIndex }
+  const [title, setTitle] = useState('');
   const [caption, setCaption] = useState('');
   const [keywords, setKeywords] = useState([]); // Array of strings (max 5)
   const [location, setLocation] = useState(null);
 
   // UI state
   const [isUploading, setIsUploading] = useState(false);
+
+  // Initialize with initialPost
+  React.useEffect(() => {
+    if (initialPost) {
+      setPostType(initialPost.type || 'image');
+      setTitle(initialPost.title || '');
+      setCaption(initialPost.caption || '');
+      setKeywords(initialPost.keywords || []);
+      
+      if (initialPost.media && initialPost.media.length > 0) {
+        setSelectedMedia(initialPost.media.map((m, i) => ({
+          uri: typeof m === 'string' ? m : m.url,
+          type: typeof m === 'string' ? (m.endsWith('.mp4') ? 'video' : 'image') : m.type,
+          existing: true, // flag to indicate it's already uploaded
+        })));
+      }
+      
+      if (initialPost.taggedProducts && initialPost.taggedProducts.length > 0) {
+        setTaggedProducts(initialPost.taggedProducts.map(t => ({
+          ...t,
+          productImage: t.thumbnailUrl,
+          productName: t.name,
+          productPrice: t.price
+        })));
+      }
+    }
+  }, [initialPost]);
 
   // Step navigation
   const goToNextStep = useCallback(() => {
@@ -106,6 +134,7 @@ export function usePostCreationState() {
     setPostType('image');
     setSelectedMedia([]);
     setTaggedProducts([]);
+    setTitle('');
     setCaption('');
     setKeywords([]);
     setLocation(null);
@@ -138,12 +167,14 @@ export function usePostCreationState() {
     postType,
     selectedMedia,
     taggedProducts,
+    title,
     caption,
     keywords,
     location,
     isUploading,
 
     // Setters
+    setTitle,
     setCaption,
     setKeywords,
     setLocation,

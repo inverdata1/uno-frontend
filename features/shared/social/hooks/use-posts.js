@@ -114,7 +114,7 @@ export const useDeletePost = () => {
 
   return useMutation({
     mutationFn: async ({ postId, businessId }) => {
-      return apiClient.delete(`/posts/id`, { params: { id: postId, businessId } }).then(res => res.data);
+      return apiClient.delete(`/posts/${postId}`, { params: { businessId } }).then(res => res.data);
     },
     onSuccess: (data, { postId, businessId }) => {
       // Optimistically remove from cache immediately
@@ -125,6 +125,7 @@ export const useDeletePost = () => {
 
       // Invalidate all post queries
       queryClient.invalidateQueries({ queryKey: ['posts'] });
+      queryClient.invalidateQueries({ queryKey: ['business-posts'] });
     },
   });
 };

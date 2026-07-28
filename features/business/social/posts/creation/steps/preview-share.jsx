@@ -12,10 +12,12 @@ const { width } = Dimensions.get('window');
  */
 export function PreviewShareStep({
   selectedMedia,
-  taggedProducts,
+  taggedProducts = [],
+  title,
   caption,
   postType,
   isUploading,
+  isEditing,
   onPublish,
   onBack
 }) {
@@ -62,7 +64,7 @@ export function PreviewShareStep({
               fontWeight: '700',
               color: colors.text.inverse
             }}>
-              Publicar
+              {isEditing ? 'Guardar' : 'Publicar'}
             </Text>
           )}
         </TouchableOpacity>
@@ -172,17 +174,28 @@ export function PreviewShareStep({
             <Ionicons name="paper-plane-outline" size={24} color={colors.text.primary} />
           </View>
 
-          {/* Caption */}
-          {caption && (
+          {/* Title & Caption */}
+          {(title || caption) && (
             <View style={{ paddingHorizontal: 12, paddingBottom: 12 }}>
-              <Text style={{
-                fontSize: 14,
-                color: colors.text.primary,
-                lineHeight: 18
-              }}>
-                <Text style={{ fontWeight: '600' }}>Tu Negocio </Text>
-                {caption}
-              </Text>
+              {title && (
+                <Text style={{
+                  fontSize: 15,
+                  fontWeight: '700',
+                  color: colors.text.primary,
+                  marginBottom: 4
+                }}>
+                  {title}
+                </Text>
+              )}
+              {caption && (
+                <Text style={{
+                  fontSize: 14,
+                  color: colors.text.primary,
+                  lineHeight: 18
+                }}>
+                  {caption}
+                </Text>
+              )}
             </View>
           )}
 
@@ -273,13 +286,13 @@ export function PreviewShareStep({
                   color: colors.primary[700],
                   marginBottom: 2
                 }}>
-                  Publicando...
+                  {isEditing ? 'Guardando...' : 'Publicando...'}
                 </Text>
                 <Text style={{
                   fontSize: 13,
                   color: colors.primary[600]
                 }}>
-                  Subiendo medias y procesando productos
+                  {isEditing ? 'Guardando cambios en tu publicación' : 'Subiendo medias y procesando productos'}
                 </Text>
               </View>
             </View>

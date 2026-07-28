@@ -5,11 +5,14 @@ import { Text } from '../../../../../shared/components/ui';
 import { useBusinessPosts, useDeletePost } from '../../../../../shared/hooks/use-business-posts';
 import { colors } from '../../../../../shared/utils/colors';
 import PostViewer from '../../../../shared/social/posts/post-viewer';
+import { PostCreationFlow } from '../creation';
 
 export const PostsGrid = ({ onCreatePost }) => {
   const [activeTab, setActiveTab] = useState('grid'); // grid, videos, promotions
   const [selectedPost, setSelectedPost] = useState(null);
   const [postViewerVisible, setPostViewerVisible] = useState(false);
+  const [editPostVisible, setEditPostVisible] = useState(false);
+  const [postToEdit, setPostToEdit] = useState(null);
   const { data: posts = [], isLoading } = useBusinessPosts();
 
   const tabs = [
@@ -21,7 +24,7 @@ export const PostsGrid = ({ onCreatePost }) => {
   const filteredPosts = posts.filter(post => {
     if (activeTab === 'videos') return post.type === 'video';
     if (activeTab === 'promotions') return post.isPromotion;
-    return true; // grid shows all
+    return post.type !== 'video'; // grid shows non-videos
   });
 
   const handlePostPress = (post) => {
@@ -32,6 +35,11 @@ export const PostsGrid = ({ onCreatePost }) => {
   const handleCloseViewer = () => {
     setPostViewerVisible(false);
     setSelectedPost(null);
+  };
+
+  const handleEditPost = (post) => {
+    setPostToEdit(post);
+    setEditPostVisible(true);
   };
 
   return (
@@ -83,10 +91,24 @@ export const PostsGrid = ({ onCreatePost }) => {
           visible={postViewerVisible}
           post={selectedPost}
           businessData={{
-            name: selectedPost.businessName,
-            logo: selectedPost.logoUrl
+            name: selectedPost.business?.businessName,
+            logo: selectedPost.business?.logoUrl
           }}
           onClose={handleCloseViewer}
+          onEdit={handleEditPost}
+        />
+      )}
+
+      {/* Edit Post Flow */}
+      {postToEdit && (
+        <PostCreationFlow
+          visible={editPostVisible}
+          initialPost={postToEdit}
+          allowedMediaTypes={postToEdit.type === 'video' ? ['video'] : ['image']}
+          onClose={() => {
+            setEditPostVisible(false);
+            setTimeout(() => setPostToEdit(null), 300); // wait for animation
+          }}
         />
       )}
     </View>
@@ -111,7 +133,7 @@ const PhotoGrid = ({ posts, onPostPress }) => {
           }}
         >
           <Image
-            source={{ uri: post.thumbnailUrl || post.media?.[0]?.url || post.mediaUrl || post.images?.[0] }}
+            source={{ uri: post.thumbnailUrl || (typeof post.media?.[0] === 'string' ? post.media[0] : post.media?.[0]?.url) || post.mediaUrl || post.images?.[0] }}
             style={{
               width: '100%',
               height: '100%',

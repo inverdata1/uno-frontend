@@ -8,7 +8,7 @@ import { colors } from '../../../../../../shared/utils/colors';
  * Step 3: Caption & Details
  * Add caption, location, and keywords
  */
-export function CaptionDetailsStep({ selectedMedia, caption, keywords = [], onCaptionChange, onKeywordsChange, onNext, onBack }) {
+export function CaptionDetailsStep({ selectedMedia, title, caption, keywords = [], onTitleChange, onCaptionChange, onKeywordsChange, onNext, onBack }) {
   const firstMedia = selectedMedia[0];
   const [keywordInput, setKeywordInput] = useState('');
 
@@ -95,8 +95,39 @@ export function CaptionDetailsStep({ selectedMedia, caption, keywords = [], onCa
 
           {/* Caption Input */}
           <View style={{ flex: 1 }}>
+            <Text style={{
+              fontSize: 14,
+              fontWeight: '600',
+              color: colors.text.primary,
+              marginBottom: 8
+            }}>
+              Título de la publicación
+            </Text>
             <TextInput
-              placeholder="Escribe una descripción..."
+              placeholder="Escribe el título de tu publicación..."
+              placeholderTextColor={colors.text.secondary}
+              value={title}
+              onChangeText={onTitleChange}
+              style={{
+                fontSize: 15,
+                color: colors.text.primary,
+                backgroundColor: colors.bg.secondary,
+                borderRadius: 8,
+                padding: 12,
+                marginBottom: 12,
+              }}
+            />
+
+            <Text style={{
+              fontSize: 14,
+              fontWeight: '600',
+              color: colors.text.primary,
+              marginBottom: 8
+            }}>
+              Descripción (Opcional)
+            </Text>
+            <TextInput
+              placeholder="Escribe la descripción de tu publicación..."
               placeholderTextColor={colors.text.secondary}
               value={caption}
               onChangeText={onCaptionChange}
@@ -104,8 +135,12 @@ export function CaptionDetailsStep({ selectedMedia, caption, keywords = [], onCa
               numberOfLines={4}
               style={{
                 flex: 1,
+                minHeight: 80,
                 fontSize: 15,
                 color: colors.text.primary,
+                backgroundColor: colors.bg.secondary,
+                borderRadius: 8,
+                padding: 12,
                 textAlignVertical: 'top'
               }}
             />
@@ -224,39 +259,6 @@ export function CaptionDetailsStep({ selectedMedia, caption, keywords = [], onCa
           </View>
         </View>
 
-        {/* Additional Options */}
-        <View style={{ padding: 16, gap: 12 }}>
-          {/* Location (Not integrated yet) */}
-          <TouchableOpacity
-            disabled
-            style={{
-              flexDirection: 'row',
-              alignItems: 'center',
-              gap: 12,
-              padding: 16,
-              backgroundColor: colors.bg.secondary,
-              borderRadius: 12
-            }}
-          >
-            <Ionicons name="location" size={24} color={colors.text.secondary} />
-            <View style={{ flex: 1 }}>
-              <Text style={{
-                fontSize: 15,
-                fontWeight: '500',
-                color: colors.text.primary
-              }}>
-                Agregar ubicación
-              </Text>
-              <Text style={{
-                fontSize: 13,
-                color: colors.text.secondary
-              }}>
-                Próximamente
-              </Text>
-            </View>
-            <Ionicons name="chevron-forward" size={20} color={colors.text.secondary} />
-          </TouchableOpacity>
-        </View>
       </ScrollView>
     </KeyboardAvoidingView>
   );

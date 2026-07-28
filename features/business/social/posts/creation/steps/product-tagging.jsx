@@ -38,6 +38,9 @@ export function ProductTaggingStep({ selectedMedia, taggedProducts, onAddTag, on
 
   // Filter out already tagged products and apply search
   const filteredProducts = allProducts.filter(product => {
+    // Only show available products
+    if (product.isAvailable === false) return false;
+    
     const isAlreadyTagged = currentTags.some(tag => tag.productId === product.id);
     const matchesSearch = product.name.toLowerCase().includes(searchQuery.toLowerCase());
     return !isAlreadyTagged && matchesSearch;
@@ -52,7 +55,8 @@ export function ProductTaggingStep({ selectedMedia, taggedProducts, onAddTag, on
     onAddTag({
       productId: product.id,
       productName: product.name,
-      productImage: product.images?.[0],
+      productImage: product.thumbnailUrl || product.images?.[0],
+      productPrice: product.price,
       mediaIndex: currentMediaIndex,
     });
 

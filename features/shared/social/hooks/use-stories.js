@@ -77,7 +77,7 @@ export const useDeleteStory = () => {
 
   return useMutation({
     mutationFn: async ({ storyId, businessId }) => {
-      return apiClient.delete(`/stories/id`, { params: { id: storyId, businessId } }).then(res => res.data);
+      return apiClient.delete(`/stories/${storyId}`, { params: { businessId } }).then(res => res.data);
     },
     onSuccess: (data, { storyId, businessId }) => {
       // Optimistically remove from all caches immediately

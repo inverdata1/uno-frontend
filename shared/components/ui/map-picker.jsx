@@ -11,7 +11,8 @@ export const MapPicker = ({
   onLocationSelect,
   initialLocation = null,
   className = "",
-  height = 300
+  height = 300,
+  instructionText = "Toca en el mapa para seleccionar la ubicación exacta de entrega"
 }) => {
   const [currentLocation, setCurrentLocation] = useState(null);
   const [selectedLocation, setSelectedLocation] = useState(initialLocation);
@@ -99,13 +100,38 @@ export const MapPicker = ({
     }
   };
 
-  const handleMapPress = (event) => {
+  const handleMapPress = async (event) => {
     const { coordinate } = event.nativeEvent;
+    let address = null;
+    
+    // Attempt reverse geocoding
+    try {
+      const geoResults = await Location.reverseGeocodeAsync({
+        latitude: coordinate.latitude,
+        longitude: coordinate.longitude,
+      });
+      
+      if (geoResults && geoResults.length > 0) {
+        const place = geoResults[0];
+        // e.g. "Av. Principal, Caracas, Miranda"
+        const parts = [];
+        if (place.street) parts.push(place.street);
+        if (place.city) parts.push(place.city);
+        if (place.region) parts.push(place.region);
+        if (parts.length > 0) {
+          address = parts.join(', ');
+        }
+      }
+    } catch (error) {
+      console.log('Error in reverse geocoding:', error);
+    }
+
     const newLocation = {
       latitude: coordinate.latitude,
       longitude: coordinate.longitude,
       latitudeDelta: 0.005,
       longitudeDelta: 0.005,
+      address,
     };
 
     setSelectedLocation(newLocation);
@@ -152,7 +178,7 @@ export const MapPicker = ({
                 <Marker
                   coordinate={selectedLocation}
                   title="Ubicación Seleccionada"
-                  description="Dirección de entrega"
+                  description={instructionText}
                   pinColor="#DC2626"
                 />
               )}
@@ -201,7 +227,7 @@ export const MapPicker = ({
         <View className="flex-row items-center">
           <Ionicons name="information-circle-outline" size={16} color="#6B7280" />
           <Text className="text-sm text-gray-600 ml-2 flex-1">
-            Toca en el mapa para seleccionar la ubicación exacta de entrega
+            {instructionText}
           </Text>
         </View>
 

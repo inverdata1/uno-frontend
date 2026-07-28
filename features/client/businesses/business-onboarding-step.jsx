@@ -178,8 +178,13 @@ export default function BusinessOnboardingStep({
         <MapPicker
           height={250}
           initialLocation={businessData.coordinates}
-          onLocationSelect={(location) => updateField('coordinates', location)}
-          onAddressDetected={(address) => updateField('address', address)}
+          onLocationSelect={(location) => {
+            updateField('coordinates', location);
+            if (location.address) {
+              updateField('address', location.address);
+            }
+          }}
+          instructionText="Toca en el mapa para seleccionar la ubicación exacta de tu negocio"
           className="border border-gray-400 rounded-xl"
         />
       </View>

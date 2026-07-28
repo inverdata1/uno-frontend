@@ -24,8 +24,9 @@ export default function BusinessTabsLayout() {
 
   const businessRoutes = [
     { label: 'Dashboard', path: '/business', icon: 'stats-chart' },
-    { label: 'Crear', path: '/business/social', icon: 'add-circle' },
     { label: 'Tienda', path: '/business/store', icon: 'storefront' },
+    { label: 'Crear', path: '/business/social', icon: 'add-circle' },
+    { label: 'Pedidos', path: '/business/orders', icon: 'receipt' },
     { label: 'Perfil', path: '/business/profile', icon: 'person' },
   ];
 
@@ -58,6 +59,15 @@ export default function BusinessTabsLayout() {
             }}
           />
 
+          {/* Store Tab */}
+          <Tabs.Screen
+            name="store"
+            options={{
+              title: 'Tienda',
+              tabBarIcon: ({ focused }) => getTabIcon('storefront', focused),
+            }}
+          />
+
           {/* Create Post Tab */}
           <Tabs.Screen
             name="social"
@@ -67,12 +77,12 @@ export default function BusinessTabsLayout() {
             }}
           />
 
-          {/* Store Tab */}
+          {/* Orders Tab */}
           <Tabs.Screen
-            name="store"
+            name="orders"
             options={{
-              title: 'Tienda',
-              tabBarIcon: ({ focused }) => getTabIcon('storefront', focused),
+              title: 'Pedidos',
+              tabBarIcon: ({ focused }) => getTabIcon('receipt', focused),
             }}
           />
 

@@ -1,5 +1,6 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { apiClient } from '../config/api-client';
+import { useAuthStore } from '../../core/auth/stores/auth-store';
 
 /**
  * User Type Hooks - Single Source of Truth
@@ -20,8 +21,11 @@ import { apiClient } from '../config/api-client';
  * This is the main hook - use this in most components
  */
 export const useUserType = () => {
+  const isAuthenticated = useAuthStore(state => state.isAuthenticated);
+  
   return useQuery({
     queryKey: ['user-types'],
+    enabled: isAuthenticated,
     queryFn: async () => {
       const res = await apiClient.get('/users/user-types');
 
@@ -87,8 +91,11 @@ export const useHasUserType = (userType) => {
  * Get user profile with type information
  */
 export const useUserProfile = () => {
+  const isAuthenticated = useAuthStore(state => state.isAuthenticated);
+
   return useQuery({
     queryKey: ['users', 'profile'],
+    enabled: isAuthenticated,
     queryFn: () => apiClient.get('/users/profile').then(res => res.data),
     staleTime: 5 * 60 * 1000,
   });
@@ -98,8 +105,11 @@ export const useUserProfile = () => {
  * Get user's businesses (for business type)
  */
 export const useUserBusinesses = () => {
+  const isAuthenticated = useAuthStore(state => state.isAuthenticated);
+
   return useQuery({
     queryKey: ['businesses'],
+    enabled: isAuthenticated,
     queryFn: () => apiClient.get('/businesses').then(res => res.data),
     staleTime: 10 * 60 * 1000,
   });

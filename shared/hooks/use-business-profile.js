@@ -53,6 +53,33 @@ export const useBusinessProfile = () => {
 };
 
 /**
+ * Update business profile data (address, phone, hours, description, etc)
+ */
+export const useUpdateBusinessProfile = () => {
+  const queryClient = useQueryClient();
+  const businessContexts = useBusinessContexts();
+  const currentBusiness = businessContexts[0] || null;
+  const businessId = currentBusiness?.businessId;
+
+  return useMutation({
+    mutationFn: async (profileData) => {
+      if (!businessId) {
+        throw new Error('No business context available');
+      }
+
+      return apiClient.patch('/businesses/profile', profileData, {
+        params: { businessId }
+      }).then(res => res.data);
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['business-profile', businessId] });
+      queryClient.invalidateQueries({ queryKey: ['businesses', businessId] });
+      queryClient.invalidateQueries({ queryKey: ['businesses'] });
+    },
+  });
+};
+
+/**
  * Update business logo
  */
 export const useUpdateBusinessLogo = () => {
@@ -67,8 +94,8 @@ export const useUpdateBusinessLogo = () => {
         throw new Error('No business context available');
       }
 
-      return apiClient.put('/businesses/id/logo', { logoUrl }, {
-        params: { businessId, id: businessId }
+      return apiClient.patch('/businesses/profile', { logoUrl }, {
+        params: { businessId }
       }).then(res => res.data);
     },
     onSuccess: () => {
@@ -94,8 +121,8 @@ export const useUpdateBusinessBanner = () => {
         throw new Error('No business context available');
       }
 
-      return apiClient.put('/businesses/id/banner', { bannerUrl }, {
-        params: { businessId, id: businessId }
+      return apiClient.patch('/businesses/profile', { bannerUrl }, {
+        params: { businessId }
       }).then(res => res.data);
     },
     onSuccess: () => {

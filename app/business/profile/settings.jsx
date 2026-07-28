@@ -1,6 +1,6 @@
 import { Ionicons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
-import { useCallback } from 'react';
+import { useCallback, useState } from 'react';
 import { Alert, ScrollView, TouchableOpacity, View, Platform } from 'react-native';
 import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useAuthStore } from '../../../core/auth/stores/auth-store';
@@ -8,7 +8,9 @@ import { SettingsItem } from '../../../shared/components/profile';
 import { Text, ConfirmationModal } from '../../../shared/components/ui';
 import { getUserTypeConfig } from '../../../shared/config/user-types';
 import { useCurrentUserType } from '../../../shared/hooks/use-user-type';
+import { useUserProfile, useUpdateUserProfile } from '../../../shared/hooks/use-user-profile';
 import { colors } from '../../../shared/utils/colors';
+import { EditPersonalInfoModal } from '../../../features/business/profile/components/edit-personal-info-modal';
 
 export default function BusinessSettingsScreen() {
   const router = useRouter();
@@ -16,9 +18,24 @@ export default function BusinessSettingsScreen() {
   const { user, signOut } = useAuthStore();
   const { currentUserType, availableUserTypes = [] } = useCurrentUserType();
   const [logoutModalVisible, setLogoutModalVisible] = useState(false);
+  const [personalInfoModalVisible, setPersonalInfoModalVisible] = useState(false);
   const [isLoggingOut, setIsLoggingOut] = useState(false);
 
+  const { data: userData } = useUserProfile();
+  const updateProfileMutation = useUpdateUserProfile();
+
   const userTypeInfo = getUserTypeConfig(currentUserType);
+
+  const handleSavePersonalInfo = async (data) => {
+    try {
+      await updateProfileMutation.mutateAsync(data);
+      setPersonalInfoModalVisible(false);
+      Alert.alert('Éxito', 'Información personal actualizada');
+    } catch (error) {
+      console.error('Error updating personal info:', error);
+      Alert.alert('Error', 'No se pudo actualizar la información');
+    }
+  };
 
   const handleLogout = useCallback(() => {
     setLogoutModalVisible(true);
@@ -119,20 +136,6 @@ export default function BusinessSettingsScreen() {
               elevation: 2
             }}>
               <SettingsItem
-                icon="storefront-outline"
-                title="Información del Negocio"
-                subtitle="Nombre, categoría, descripción"
-                onPress={() => Alert.alert('Próximamente', 'Función en desarrollo')}
-                showBorder={true}
-              />
-              <SettingsItem
-                icon="time-outline"
-                title="Horarios de Atención"
-                subtitle="Configura tu horario"
-                onPress={() => Alert.alert('Próximamente', 'Función en desarrollo')}
-                showBorder={true}
-              />
-              <SettingsItem
                 icon="git-branch-outline"
                 title="Sucursales"
                 subtitle="Gestiona tus sucursales"
@@ -170,7 +173,7 @@ export default function BusinessSettingsScreen() {
                 icon="person-outline"
                 title="Información Personal"
                 subtitle="Nombre, correo, teléfono"
-                onPress={() => Alert.alert('Próximamente', 'Función en desarrollo')}
+                onPress={() => setPersonalInfoModalVisible(true)}
                 showBorder={true}
               />
               <SettingsItem
@@ -309,6 +312,14 @@ export default function BusinessSettingsScreen() {
         isLoading={isLoggingOut}
         onConfirm={confirmLogout}
         onCancel={() => setLogoutModalVisible(false)}
+      />
+      
+      <EditPersonalInfoModal
+        visible={personalInfoModalVisible}
+        onClose={() => setPersonalInfoModalVisible(false)}
+        userData={userData}
+        onSave={handleSavePersonalInfo}
+        isSaving={updateProfileMutation.isPending}
       />
     </SafeAreaView>
   );

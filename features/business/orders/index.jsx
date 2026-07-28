@@ -1,21 +1,18 @@
 import React, { useState } from 'react';
-import { View, TouchableOpacity } from 'react-native';
+import { View, TouchableOpacity, Animated } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { Text } from '../../../shared/components/ui';
 import { colors } from '../../../shared/utils/colors';
-import { ProductsGrid } from '../products/components/products-grid';
-import { CategoriesList } from './components/categories-list';
 
 const TABS = [
-  { id: 'products', label: 'Catálogo' },
-  { id: 'categories', label: 'Categorías' }
+  { id: 'in_progress', label: 'En proceso' },
+  { id: 'completed', label: 'Completados' },
+  { id: 'cancelled', label: 'Cancelados' }
 ];
 
-export default function BusinessStoreScreen() {
-  const [activeTab, setActiveTab] = useState('products');
-  const [createProductModalVisible, setCreateProductModalVisible] = useState(false);
-  const [createCategoryModalVisible, setCreateCategoryModalVisible] = useState(false);
+export default function BusinessOrdersScreen() {
+  const [activeTab, setActiveTab] = useState('in_progress');
 
   return (
     <SafeAreaView style={{ flex: 1, backgroundColor: colors.bg.secondary }} edges={['top']}>
@@ -36,7 +33,7 @@ export default function BusinessStoreScreen() {
           color: colors.text.primary,
           letterSpacing: 0.3
         }}>
-          Mi Tienda
+          Pedidos
         </Text>
       </View>
 
@@ -84,47 +81,36 @@ export default function BusinessStoreScreen() {
       </View>
 
       {/* Content */}
-      <View style={{ flex: 1, position: 'relative', backgroundColor: colors.bg.secondary }}>
-          {activeTab === 'products' ? (
-            <ProductsGrid
-              createModalVisible={createProductModalVisible}
-              setCreateModalVisible={setCreateProductModalVisible}
-            />
-          ) : (
-            <CategoriesList 
-              createModalVisible={createCategoryModalVisible}
-              setCreateModalVisible={setCreateCategoryModalVisible}
-            />
-          )}
-          {/* Floating Add Button - Fixed to bottom right */}
-          <TouchableOpacity
-            onPress={() => {
-              if (activeTab === 'products') {
-                setCreateProductModalVisible(true);
-              } else {
-                setCreateCategoryModalVisible(true);
-              }
-            }}
-            style={{
-              position: 'absolute',
-              bottom: 24,
-              right: 20,
-              width: 56,
-              height: 56,
-              borderRadius: 28,
-              backgroundColor: colors.primary[500],
-              alignItems: 'center',
-              justifyContent: 'center',
-              shadowColor: '#000',
-              shadowOffset: { width: 0, height: 4 },
-              shadowOpacity: 0.3,
-              shadowRadius: 12,
-              elevation: 8
-            }}
-          >
-            <Ionicons name="add" size={28} color={colors.text.inverse} />
-          </TouchableOpacity>
+      <View style={{ flex: 1, backgroundColor: colors.bg.secondary, alignItems: 'center', justifyContent: 'center', padding: 40 }}>
+        <View style={{
+          width: 64,
+          height: 64,
+          borderRadius: 32,
+          borderWidth: 2,
+          borderColor: colors.border.light,
+          alignItems: 'center',
+          justifyContent: 'center',
+          marginBottom: 16
+        }}>
+          <Ionicons name="receipt-outline" size={32} color={colors.text.secondary} />
         </View>
+        <Text style={{
+          fontSize: 16,
+          fontWeight: '600',
+          color: colors.text.primary,
+          marginBottom: 8,
+          textAlign: 'center'
+        }}>
+          No hay pedidos aún
+        </Text>
+        <Text style={{
+          fontSize: 14,
+          color: colors.text.secondary,
+          textAlign: 'center'
+        }}>
+          Cuando recibas pedidos en estado "{TABS.find(t => t.id === activeTab)?.label}" aparecerán aquí
+        </Text>
+      </View>
     </SafeAreaView>
   );
 }

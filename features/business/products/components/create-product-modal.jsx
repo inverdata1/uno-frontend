@@ -1,57 +1,127 @@
 import React, { useState, useRef } from 'react';
-import { View, TouchableOpacity, TextInput, Alert, ScrollView, ActivityIndicator, Image, Modal, StatusBar } from 'react-native';
+import { View, TouchableOpacity, TextInput, Alert, ScrollView, ActivityIndicator, Image, Modal, StatusBar, Switch } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
-import * as ImagePicker from 'expo-image-picker';
+import * as DocumentPicker from 'expo-document-picker';
 import { Text } from '../../../../shared/components/ui';
 import { colors } from '../../../../shared/utils/colors';
-import { useCreateProduct } from '../../../../features/shared/products/hooks/use-products';
-import { useBusinessContexts } from '../../../../shared/hooks/use-user-type';
+import { useCreateProduct, useUpdateProduct } from '../../../../features/shared/products/hooks/use-products';
+import { useCategories } from '../../../../features/shared/categories/hooks/use-categories';
+import { useCurrentUserType } from '../../../../shared/hooks/use-user-type';
+import { apiClient } from '../../../../shared/config/api-client';
 
-export const CreateProductModal = ({ visible, onClose }) => {
+import { ref, uploadBytes, getDownloadURL } from 'firebase/storage';
+import { storage } from '../../../../shared/config/firebase';
+
+export const CreateProductModal = ({ visible, onClose, editingProduct }) => {
   const [name, setName] = useState('');
   const [description, setDescription] = useState('');
   const [price, setPrice] = useState('');
-  const [compareAtPrice, setCompareAtPrice] = useState('');
-  const [stock, setStock] = useState('');
+  const [discountPrice, setDiscountPrice] = useState('');
+  const [categoryId, setCategoryId] = useState('');
+  const [isAvailable, setIsAvailable] = useState(true);
   const [selectedImages, setSelectedImages] = useState([]);
   const [isUploading, setIsUploading] = useState(false);
 
-  const businessContexts = useBusinessContexts();
-  const currentBusiness = businessContexts[0] || null;
-  const businessId = currentBusiness?.businessId;
+  const { currentContext } = useCurrentUserType();
+  const businessId = currentContext?.businessId;
 
   const createProductMutation = useCreateProduct();
+  const updateProductMutation = useUpdateProduct();
+  const { data: categories = [] } = useCategories({ businessId });
 
   // Create refs for focus management
   const nameRef = useRef(null);
   const descriptionRef = useRef(null);
   const priceRef = useRef(null);
-  const compareAtPriceRef = useRef(null);
-  const stockRef = useRef(null);
+  const discountPriceRef = useRef(null);
+
+  React.useEffect(() => {
+    if (editingProduct && visible) {
+      setName(editingProduct.name || '');
+      setDescription(editingProduct.description || '');
+      setPrice(editingProduct.price ? String(editingProduct.price) : '');
+      setDiscountPrice(editingProduct.discountPrice ? String(editingProduct.discountPrice) : '');
+      setCategoryId(editingProduct.categoryId || '');
+      setIsAvailable(editingProduct.isAvailable !== false);
+      setSelectedImages(editingProduct.images || []);
+    } else if (!visible) {
+      setName('');
+      setDescription('');
+      setPrice('');
+      setDiscountPrice('');
+      setCategoryId('');
+      setIsAvailable(true);
+      setSelectedImages([]);
+    }
+  }, [editingProduct, visible]);
 
   const pickImages = async () => {
-    const permissionResult = await ImagePicker.requestMediaLibraryPermissionsAsync();
+    try {
+      const result = await DocumentPicker.getDocumentAsync({
+        type: 'image/*',
+        multiple: true,
+        copyToCacheDirectory: true,
+      });
 
-    if (permissionResult.granted === false) {
-      Alert.alert('Permiso requerido', 'Necesitamos acceso a tus fotos');
-      return;
-    }
-
-    const result = await ImagePicker.launchImageLibraryAsync({
-      mediaTypes: ['images'],
-      allowsMultipleSelection: true,
-      quality: 0.8,
-      aspect: [1, 1],
-    });
-
-    if (!result.canceled) {
-      setSelectedImages([...selectedImages, ...result.assets.map(asset => asset.uri)]);
+      if (!result.canceled && result.assets) {
+        setSelectedImages([...selectedImages, ...result.assets.map(asset => asset.uri)]);
+      }
+    } catch (error) {
+      console.error('Error al seleccionar documento:', error);
+      Alert.alert('Error', 'Hubo un problema al abrir el explorador de archivos');
     }
   };
 
   const removeImage = (index) => {
     setSelectedImages(selectedImages.filter((_, i) => i !== index));
+  };
+
+  const uploadImagesToFirebase = async (uris) => {
+    const uploadedUrls = [];
+    for (let i = 0; i < uris.length; i++) {
+      const uri = uris[i];
+      if (uri.startsWith('http')) {
+        uploadedUrls.push(uri);
+        continue;
+      }
+      try {
+        const response = await fetch(uri);
+        const blob = await response.blob();
+        const filename = `products/${businessId}/${Date.now()}-${Math.random().toString(36).substring(7)}`;
+        const storageRef = ref(storage, filename);
+        await uploadBytes(storageRef, blob);
+        const downloadUrl = await getDownloadURL(storageRef);
+        uploadedUrls.push(downloadUrl);
+      } catch (err) {
+        console.warn('Firebase upload failed, attempting local backend fallback...', err);
+        
+        const formData = new FormData();
+        const ext = uri.split('.').pop() || 'jpg';
+        formData.append('image', {
+          uri: uri,
+          name: `img_${Date.now()}.${ext}`,
+          type: `image/${ext === 'png' ? 'png' : 'jpeg'}`
+        });
+        formData.append('productName', name);
+        formData.append('businessId', businessId);
+
+        try {
+          const res = await apiClient.post('/upload/image', formData, {
+            headers: {
+              'Content-Type': 'multipart/form-data',
+            }
+          });
+          
+          const backendUrl = process.env.EXPO_PUBLIC_API_URL?.replace(/\/api$/, '') || 'http://localhost:3000';
+          uploadedUrls.push(`${backendUrl}${res.data.url}`);
+        } catch (fallbackErr) {
+          console.error('Fallback upload failed', fallbackErr);
+          throw fallbackErr;
+        }
+      }
+    }
+    return uploadedUrls;
   };
 
   const handleCreate = async () => {
@@ -65,9 +135,28 @@ export const CreateProductModal = ({ visible, onClose }) => {
       return;
     }
 
-    if (!price || parseFloat(price) <= 0) {
+    if (!categoryId) {
+      Alert.alert('Error', 'Debes seleccionar una categoría');
+      return;
+    }
+
+    const parsedPrice = parseFloat(price);
+    if (!price || isNaN(parsedPrice) || parsedPrice <= 0) {
       Alert.alert('Error', 'Ingresa un precio válido');
       return;
+    }
+
+    let parsedDiscount = null;
+    if (discountPrice) {
+      parsedDiscount = parseFloat(discountPrice);
+      if (isNaN(parsedDiscount) || parsedDiscount <= 0) {
+        Alert.alert('Error', 'Ingresa un precio de descuento válido');
+        return;
+      }
+      if (parsedDiscount >= parsedPrice) {
+        Alert.alert('Error', 'El precio de descuento no puede ser mayor o igual al precio normal');
+        return;
+      }
     }
 
     if (selectedImages.length === 0) {
@@ -83,37 +172,43 @@ export const CreateProductModal = ({ visible, onClose }) => {
     setIsUploading(true);
 
     try {
-      // Send local image URIs to API - it will handle upload to Firebase Storage
-      await createProductMutation.mutateAsync({
-        productData: {
-          name: name.trim(),
-          description: description.trim(),
-          price: parseFloat(price),
-          compareAtPrice: compareAtPrice ? parseFloat(compareAtPrice) : null,
-          stock: stock ? parseInt(stock) : 0,
-          imageFiles: selectedImages, // Local URIs
-          categoryId: 'default', // TODO: Add category selection
-          trackInventory: true,
-          isActive: true,
-          isAvailable: true,
-        },
-        businessId
-      });
+      // 1. Upload images to Firebase Storage
+      const imageUrls = await uploadImagesToFirebase(selectedImages);
 
-      // Reset form
-      setName('');
-      setDescription('');
-      setPrice('');
-      setCompareAtPrice('');
-      setStock('');
-      setSelectedImages([]);
+      // 2. Send public URLs to the backend
+      const productData = {
+        name: name.trim(),
+        description: description.trim(),
+        price: parsedPrice,
+        discountPrice: parsedDiscount,
+        isDiscountActive: parsedDiscount ? true : false,
+        images: imageUrls,
+        thumbnailUrl: imageUrls[0], 
+        categoryId: categoryId,
+        isActive: true,
+        isAvailable: isAvailable,
+      };
+
+      if (editingProduct) {
+        await updateProductMutation.mutateAsync({
+          productId: editingProduct.id,
+          productData
+        });
+      } else {
+        await createProductMutation.mutateAsync({
+          productData,
+          businessId
+        });
+      }
+
+      // Reset form handled by useEffect when visible becomes false
       setIsUploading(false);
       onClose();
-      Alert.alert('¡Listo!', 'Producto creado exitosamente');
+      Alert.alert('¡Listo!', editingProduct ? 'Producto actualizado exitosamente' : 'Producto creado exitosamente');
     } catch (error) {
-      console.error('Error creating product:', error);
+      console.error('Error saving product:', error);
       setIsUploading(false);
-      Alert.alert('Error', 'No se pudo crear el producto. Intenta de nuevo.');
+      Alert.alert('Error', 'No se pudo guardar el producto. Intenta de nuevo.');
     }
   };
 
@@ -144,7 +239,7 @@ export const CreateProductModal = ({ visible, onClose }) => {
             fontWeight: '700',
             color: colors.text.primary
           }}>
-            Nuevo Producto
+            {editingProduct ? 'Editar Producto' : 'Nuevo Producto'}
           </Text>
           <TouchableOpacity
             onPress={handleCreate}
@@ -160,7 +255,7 @@ export const CreateProductModal = ({ visible, onClose }) => {
                   ? colors.text.secondary
                   : colors.primary[500]
               }}>
-                Publicar
+                {editingProduct ? 'Guardar' : 'Publicar'}
               </Text>
             )}
           </TouchableOpacity>
@@ -173,68 +268,33 @@ export const CreateProductModal = ({ visible, onClose }) => {
         >
           {/* Images */}
           <View style={{ padding: 16, paddingBottom: 8 }}>
-            <Text style={{
-              fontSize: 14,
-              fontWeight: '600',
-              color: colors.text.primary,
-              marginBottom: 12
-            }}>
+            <Text style={{ fontSize: 14, fontWeight: '600', color: colors.text.primary, marginBottom: 12 }}>
               Imágenes del producto
             </Text>
-
             <ScrollView horizontal showsHorizontalScrollIndicator={false}>
               <TouchableOpacity
                 onPress={pickImages}
                 disabled={isUploading}
                 activeOpacity={0.7}
                 style={{
-                  width: 120,
-                  height: 120,
-                  borderRadius: 12,
-                  borderWidth: 2,
-                  borderStyle: 'dashed',
-                  borderColor: colors.border.light,
-                  backgroundColor: colors.bg.secondary,
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  marginRight: 12
+                  width: 120, height: 120, borderRadius: 12, borderWidth: 2,
+                  borderStyle: 'dashed', borderColor: colors.border.light,
+                  backgroundColor: colors.bg.secondary, alignItems: 'center',
+                  justifyContent: 'center', marginRight: 12
                 }}
               >
                 <Ionicons name="camera" size={32} color={colors.text.secondary} />
-                <Text style={{
-                  fontSize: 12,
-                  color: colors.text.secondary,
-                  marginTop: 8
-                }}>
-                  Agregar
-                </Text>
+                <Text style={{ fontSize: 12, color: colors.text.secondary, marginTop: 8 }}>Agregar</Text>
               </TouchableOpacity>
-
               {selectedImages.map((uri, index) => (
                 <View key={index} style={{ marginRight: 12 }}>
-                  <Image
-                    source={{ uri }}
-                    style={{
-                      width: 120,
-                      height: 120,
-                      borderRadius: 12,
-                      backgroundColor: colors.bg.secondary
-                    }}
-                    resizeMode="cover"
-                  />
+                  <Image source={{ uri }} style={{ width: 120, height: 120, borderRadius: 12, backgroundColor: colors.bg.secondary }} resizeMode="cover" />
                   <TouchableOpacity
                     onPress={() => removeImage(index)}
                     activeOpacity={0.7}
                     style={{
-                      position: 'absolute',
-                      top: 6,
-                      right: 6,
-                      backgroundColor: 'rgba(0, 0, 0, 0.7)',
-                      borderRadius: 12,
-                      width: 24,
-                      height: 24,
-                      alignItems: 'center',
-                      justifyContent: 'center'
+                      position: 'absolute', top: 6, right: 6, backgroundColor: 'rgba(0, 0, 0, 0.7)',
+                      borderRadius: 12, width: 24, height: 24, alignItems: 'center', justifyContent: 'center'
                     }}
                   >
                     <Ionicons name="close" size={16} color="#fff" />
@@ -246,14 +306,7 @@ export const CreateProductModal = ({ visible, onClose }) => {
 
           {/* Product Name */}
           <View style={{ paddingHorizontal: 16, marginBottom: 16 }}>
-            <Text style={{
-              fontSize: 14,
-              fontWeight: '600',
-              color: colors.text.primary,
-              marginBottom: 8
-            }}>
-              Nombre del producto
-            </Text>
+            <Text style={{ fontSize: 14, fontWeight: '600', color: colors.text.primary, marginBottom: 8 }}>Nombre del producto</Text>
             <TextInput
               ref={nameRef}
               value={name}
@@ -263,26 +316,45 @@ export const CreateProductModal = ({ visible, onClose }) => {
               editable={!isUploading}
               returnKeyType="next"
               onSubmitEditing={() => descriptionRef.current?.focus()}
-              style={{
-                backgroundColor: colors.bg.secondary,
-                borderRadius: 12,
-                padding: 16,
-                fontSize: 15,
-                color: colors.text.primary
-              }}
+              style={{ backgroundColor: colors.bg.secondary, borderRadius: 12, padding: 16, fontSize: 15, color: colors.text.primary }}
             />
+          </View>
+
+          {/* Category */}
+          <View style={{ paddingHorizontal: 16, marginBottom: 16 }}>
+            <Text style={{ fontSize: 14, fontWeight: '600', color: colors.text.primary, marginBottom: 8 }}>Categoría</Text>
+            {categories.length === 0 ? (
+              <Text style={{ color: colors.error, fontSize: 14 }}>Debes crear categorías primero en la pestaña de Tienda.</Text>
+            ) : (
+              <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 8 }}>
+                {categories.map((cat) => (
+                  <TouchableOpacity
+                    key={cat.id}
+                    onPress={() => setCategoryId(cat.id)}
+                    style={{
+                      paddingHorizontal: 16,
+                      paddingVertical: 10,
+                      borderRadius: 20,
+                      backgroundColor: categoryId === cat.id ? colors.primary[500] : colors.bg.secondary,
+                      borderWidth: 1,
+                      borderColor: categoryId === cat.id ? colors.primary[500] : colors.border.light
+                    }}
+                  >
+                    <Text style={{ 
+                      color: categoryId === cat.id ? '#fff' : colors.text.primary,
+                      fontWeight: categoryId === cat.id ? '700' : '500'
+                    }}>
+                      {cat.name}
+                    </Text>
+                  </TouchableOpacity>
+                ))}
+              </View>
+            )}
           </View>
 
           {/* Description */}
           <View style={{ paddingHorizontal: 16, marginBottom: 16 }}>
-            <Text style={{
-              fontSize: 14,
-              fontWeight: '600',
-              color: colors.text.primary,
-              marginBottom: 8
-            }}>
-              Descripción
-            </Text>
+            <Text style={{ fontSize: 14, fontWeight: '600', color: colors.text.primary, marginBottom: 8 }}>Descripción</Text>
             <TextInput
               ref={descriptionRef}
               value={description}
@@ -295,42 +367,15 @@ export const CreateProductModal = ({ visible, onClose }) => {
               editable={!isUploading}
               returnKeyType="next"
               onSubmitEditing={() => priceRef.current?.focus()}
-              style={{
-                backgroundColor: colors.bg.secondary,
-                borderRadius: 12,
-                padding: 16,
-                fontSize: 15,
-                color: colors.text.primary,
-                minHeight: 100
-              }}
+              style={{ backgroundColor: colors.bg.secondary, borderRadius: 12, padding: 16, fontSize: 15, color: colors.text.primary, minHeight: 100 }}
             />
           </View>
 
           {/* Price */}
           <View style={{ paddingHorizontal: 16, marginBottom: 16 }}>
-            <Text style={{
-              fontSize: 14,
-              fontWeight: '600',
-              color: colors.text.primary,
-              marginBottom: 8
-            }}>
-              Precio
-            </Text>
-            <View style={{
-              flexDirection: 'row',
-              alignItems: 'center',
-              backgroundColor: colors.bg.secondary,
-              borderRadius: 12,
-              paddingLeft: 16
-            }}>
-              <Text style={{
-                fontSize: 18,
-                fontWeight: '600',
-                color: colors.text.secondary,
-                marginRight: 4
-              }}>
-                $
-              </Text>
+            <Text style={{ fontSize: 14, fontWeight: '600', color: colors.text.primary, marginBottom: 8 }}>Precio Normal (USD)</Text>
+            <View style={{ flexDirection: 'row', alignItems: 'center', backgroundColor: colors.bg.secondary, borderRadius: 12, paddingLeft: 16 }}>
+              <Text style={{ fontSize: 18, fontWeight: '600', color: colors.text.secondary, marginRight: 4 }}>$</Text>
               <TextInput
                 ref={priceRef}
                 value={price}
@@ -340,100 +385,52 @@ export const CreateProductModal = ({ visible, onClose }) => {
                 keyboardType="decimal-pad"
                 editable={!isUploading}
                 returnKeyType="next"
-                onSubmitEditing={() => compareAtPriceRef.current?.focus()}
-                style={{
-                  flex: 1,
-                  padding: 16,
-                  paddingLeft: 0,
-                  fontSize: 15,
-                  color: colors.text.primary
-                }}
+                onSubmitEditing={() => discountPriceRef.current?.focus()}
+                style={{ flex: 1, padding: 16, paddingLeft: 0, fontSize: 15, color: colors.text.primary }}
               />
             </View>
           </View>
 
-          {/* Compare At Price (Optional) */}
-          <View style={{ paddingHorizontal: 16, marginBottom: 16 }}>
-            <Text style={{
-              fontSize: 14,
-              fontWeight: '600',
-              color: colors.text.primary,
-              marginBottom: 8
-            }}>
-              Precio anterior (opcional)
-            </Text>
-            <View style={{
-              flexDirection: 'row',
-              alignItems: 'center',
-              backgroundColor: colors.bg.secondary,
-              borderRadius: 12,
-              paddingLeft: 16
-            }}>
-              <Text style={{
-                fontSize: 18,
-                fontWeight: '600',
-                color: colors.text.secondary,
-                marginRight: 4
-              }}>
-                $
-              </Text>
+          {/* Discount Price */}
+          <View style={{ paddingHorizontal: 16, marginBottom: 24 }}>
+            <Text style={{ fontSize: 14, fontWeight: '600', color: colors.text.primary, marginBottom: 8 }}>Precio Descuento (opcional)</Text>
+            <View style={{ flexDirection: 'row', alignItems: 'center', backgroundColor: colors.bg.secondary, borderRadius: 12, paddingLeft: 16 }}>
+              <Text style={{ fontSize: 18, fontWeight: '600', color: colors.text.secondary, marginRight: 4 }}>$</Text>
               <TextInput
-                ref={compareAtPriceRef}
-                value={compareAtPrice}
-                onChangeText={setCompareAtPrice}
+                ref={discountPriceRef}
+                value={discountPrice}
+                onChangeText={setDiscountPrice}
                 placeholder="0.00"
                 placeholderTextColor={colors.text.secondary}
                 keyboardType="decimal-pad"
                 editable={!isUploading}
-                returnKeyType="next"
-                onSubmitEditing={() => stockRef.current?.focus()}
-                style={{
-                  flex: 1,
-                  padding: 16,
-                  paddingLeft: 0,
-                  fontSize: 15,
-                  color: colors.text.primary
-                }}
+                returnKeyType="done"
+                style={{ flex: 1, padding: 16, paddingLeft: 0, fontSize: 15, color: colors.text.primary }}
               />
             </View>
-            <Text style={{
-              fontSize: 12,
-              color: colors.text.secondary,
-              marginTop: 4
-            }}>
-              Se mostrará tachado si es mayor al precio actual
-            </Text>
+            <Text style={{ fontSize: 12, color: colors.text.secondary, marginTop: 4 }}>Debe ser menor al precio normal.</Text>
           </View>
 
-          {/* Stock */}
-          <View style={{ paddingHorizontal: 16, marginBottom: 32 }}>
-            <Text style={{
-              fontSize: 14,
-              fontWeight: '600',
-              color: colors.text.primary,
-              marginBottom: 8
-            }}>
-              Stock disponible
-            </Text>
-            <TextInput
-              ref={stockRef}
-              value={stock}
-              onChangeText={setStock}
-              placeholder="0"
-              placeholderTextColor={colors.text.secondary}
-              keyboardType="number-pad"
-              editable={!isUploading}
-              returnKeyType="done"
-              onSubmitEditing={handleCreate}
-              style={{
-                backgroundColor: colors.bg.secondary,
-                borderRadius: 12,
-                padding: 16,
-                fontSize: 15,
-                color: colors.text.primary
-              }}
+          {/* Availability */}
+          <View style={{ 
+            paddingHorizontal: 16, 
+            marginBottom: 32, 
+            flexDirection: 'row', 
+            justifyContent: 'space-between',
+            alignItems: 'center'
+          }}>
+            <View>
+              <Text style={{ fontSize: 16, fontWeight: '600', color: colors.text.primary, marginBottom: 4 }}>Disponible</Text>
+              <Text style={{ fontSize: 13, color: colors.text.secondary }}>Los clientes podrán hacer pedidos de este producto</Text>
+            </View>
+            <Switch
+              value={isAvailable}
+              onValueChange={setIsAvailable}
+              trackColor={{ false: colors.border.light, true: colors.primary[500] }}
+              thumbColor="#fff"
             />
           </View>
+
         </ScrollView>
       </SafeAreaView>
     </Modal>

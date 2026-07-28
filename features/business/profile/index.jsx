@@ -1,17 +1,22 @@
 import React, { useState } from 'react';
-import { View, ScrollView, TouchableOpacity, Image, ActivityIndicator, Alert } from 'react-native';
+import { View, ScrollView, TouchableOpacity, Image, ActivityIndicator, Alert, Share } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useRouter } from 'expo-router';
 import * as ImagePicker from 'expo-image-picker';
+import * as DocumentPicker from 'expo-document-picker';
+import { ref, uploadBytes, getDownloadURL } from 'firebase/storage';
+import { storage } from '../../../shared/config/firebase';
 import { Text } from '../../../shared/components/ui';
+import { apiClient } from '../../../shared/config/api-client';
 import { useCurrentUserType } from '../../../shared/hooks/use-user-type';
-import { useBusinessProfile, useUpdateBusinessLogo, useUpdateBusinessBanner } from '../../../shared/hooks/use-business-profile';
+import { useBusinessProfile, useUpdateBusinessLogo, useUpdateBusinessBanner, useUpdateBusinessProfile } from '../../../shared/hooks/use-business-profile';
 import { useAppStore } from '../../../shared/stores/app-store';
 import { colors } from '../../../shared/utils/colors';
 import { getModeColors } from '../../../shared/utils/colors';
 import { ProductsGrid } from '../products/components/products-grid';
+import { EditProfileModal } from './components/edit-profile-modal';
 
 export default function BusinessProfileScreen() {
   const router = useRouter();
@@ -20,12 +25,37 @@ export default function BusinessProfileScreen() {
   const [activeTab, setActiveTab] = useState('posts');
   const [uploadingLogo, setUploadingLogo] = useState(false);
   const [uploadingBanner, setUploadingBanner] = useState(false);
+  const [editModalVisible, setEditModalVisible] = useState(false);
   const businessColors = getModeColors('business');
 
   // Get real business data
   const { business, businessData, stats, isLoading } = useBusinessProfile();
   const updateLogo = useUpdateBusinessLogo();
   const updateBanner = useUpdateBusinessBanner();
+  const updateProfile = useUpdateBusinessProfile();
+
+  const handleSaveProfile = async (data) => {
+    try {
+      await updateProfile.mutateAsync(data);
+      setEditModalVisible(false);
+      Alert.alert('Éxito', 'Perfil actualizado correctamente');
+    } catch (error) {
+      console.error('Error updating profile:', error);
+      Alert.alert('Error', 'No se pudo actualizar el perfil');
+    }
+  };
+
+  const handleShare = async () => {
+    try {
+      const bName = businessData?.businessName || businessData?.name || business?.businessName || business?.name || 'este negocio';
+      await Share.share({
+        message: `¡Mira ${bName} en UNO Delivery! Te invito a visitar su perfil y descubrir todo lo que ofrecen.`,
+        title: `Visita ${bName} en UNO`
+      });
+    } catch (error) {
+      console.error('Error sharing profile:', error);
+    }
+  };
 
   // Debug logging
   React.useEffect(() => {
@@ -36,57 +66,89 @@ export default function BusinessProfileScreen() {
     });
   }, [business, businessData, stats]);
 
-  const handlePickLogo = async () => {
+  const uploadImageWithFallback = async (asset, imageType) => {
+    const imageUri = asset.uri;
     try {
-      const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync();
-      if (status !== 'granted') {
-        Alert.alert('Permiso requerido', 'Necesitamos acceso a tus fotos para cambiar el logo');
-        return;
+      // 1. Try Firebase first
+      const response = await fetch(imageUri);
+      const blob = await response.blob();
+      const ext = asset.name?.split('.').pop() || 'jpg';
+      const filename = `businesses/${business?.businessId || business?.id || 'unknown'}/${imageType}_${Date.now()}.${ext}`;
+      const storageRef = ref(storage, filename);
+      await uploadBytes(storageRef, blob);
+      return await getDownloadURL(storageRef);
+    } catch (err) {
+      console.warn('Firebase upload failed, attempting local backend fallback...', err);
+      
+      // 2. Fallback to local backend
+      const formData = new FormData();
+      formData.append('image', {
+        uri: imageUri,
+        name: asset.name || `image_${Date.now()}.jpg`,
+        type: asset.mimeType || 'image/jpeg'
+      });
+      formData.append('productName', imageType);
+      if (business?.businessId || business?.id) {
+        formData.append('businessId', business?.businessId || business?.id);
       }
 
-      const result = await ImagePicker.launchImageLibraryAsync({
-        mediaTypes: ['images'],
-        allowsEditing: true,
-        aspect: [1, 1],
-        quality: 0.8,
+      const uploadRes = await apiClient.post('/upload/image', formData, {
+        headers: {
+          Accept: 'application/json',
+          'Content-Type': 'multipart/form-data',
+        }
       });
 
-      if (!result.canceled && result.assets[0]) {
+      if (uploadRes.data?.url) {
+        const backendUrl = process.env.EXPO_PUBLIC_API_URL?.replace(/\/api$/, '') || 'http://localhost:3000';
+        return `${backendUrl}${uploadRes.data.url}`;
+      } else {
+        throw new Error('No URL returned from upload');
+      }
+    }
+  };
+
+  const handlePickLogo = async () => {
+    try {
+      const result = await DocumentPicker.getDocumentAsync({
+        type: 'image/*',
+        multiple: false,
+        copyToCacheDirectory: true,
+      });
+
+      if (!result.canceled && result.assets && result.assets[0]) {
         setUploadingLogo(true);
-        await updateLogo.mutateAsync(result.assets[0].uri);
-        setUploadingLogo(false);
+        const asset = result.assets[0];
+        const uploadedUrl = await uploadImageWithFallback(asset, 'logo');
+        await updateLogo.mutateAsync(uploadedUrl);
       }
     } catch (error) {
       console.error('Error picking logo:', error);
-      setUploadingLogo(false);
       Alert.alert('Error', 'No se pudo actualizar el logo');
+    } finally {
+      setUploadingLogo(false);
     }
   };
 
   const handlePickBanner = async () => {
     try {
-      const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync();
-      if (status !== 'granted') {
-        Alert.alert('Permiso requerido', 'Necesitamos acceso a tus fotos para cambiar el banner');
-        return;
-      }
-
-      const result = await ImagePicker.launchImageLibraryAsync({
-        mediaTypes: ['images'],
-        allowsEditing: true,
-        aspect: [16, 9],
-        quality: 0.8,
+      const result = await DocumentPicker.getDocumentAsync({
+        type: 'image/*',
+        multiple: false,
+        copyToCacheDirectory: true,
       });
 
-      if (!result.canceled && result.assets[0]) {
+      if (!result.canceled && result.assets && result.assets[0]) {
         setUploadingBanner(true);
-        await updateBanner.mutateAsync(result.assets[0].uri);
-        setUploadingBanner(false);
+        const asset = result.assets[0];
+        const uploadedUrl = await uploadImageWithFallback(asset, 'banner');
+        await updateBanner.mutateAsync(uploadedUrl);
       }
     } catch (error) {
       console.error('Error picking banner:', error);
-      setUploadingBanner(false);
       Alert.alert('Error', 'No se pudo actualizar el banner');
+    } finally {
+      setUploadingBanner(false);
     }
   };
 
@@ -141,35 +203,6 @@ export default function BusinessProfileScreen() {
               <Ionicons name="camera" size={20} color="#fff" />
             )}
           </TouchableOpacity>
-
-          {/* Mode Switcher Button - Top Left */}
-          {availableUserTypes.length > 1 && (
-            <TouchableOpacity
-              onPress={openUserTypeSwitcher}
-              style={{
-                position: 'absolute',
-                top: 16,
-                left: 16,
-                paddingHorizontal: 16,
-                paddingVertical: 10,
-                borderRadius: 12,
-                backgroundColor: 'rgba(0, 0, 0, 0.6)',
-                flexDirection: 'row',
-                alignItems: 'center',
-                gap: 8
-              }}
-            >
-              <Ionicons name="briefcase" size={18} color="#fff" />
-              <Text style={{
-                fontSize: 13,
-                fontWeight: '600',
-                color: '#fff'
-              }}>
-                Negocio
-              </Text>
-              <Ionicons name="chevron-down" size={16} color="#fff" />
-            </TouchableOpacity>
-          )}
 
           {/* Settings Button - Top Right */}
           <TouchableOpacity
@@ -388,6 +421,7 @@ export default function BusinessProfileScreen() {
             marginBottom: 24
           }}>
             <TouchableOpacity
+              onPress={() => setEditModalVisible(true)}
               style={{
                 flex: 1,
                 backgroundColor: businessColors.primary,
@@ -415,6 +449,7 @@ export default function BusinessProfileScreen() {
             </TouchableOpacity>
 
             <TouchableOpacity
+              onPress={handleShare}
               style={{
                 flex: 1,
                 backgroundColor: colors.bg.secondary,
@@ -680,6 +715,13 @@ export default function BusinessProfileScreen() {
         </View>
       </ScrollView>
 
+      <EditProfileModal
+        visible={editModalVisible}
+        onClose={() => setEditModalVisible(false)}
+        businessData={businessData || business}
+        onSave={handleSaveProfile}
+        isSaving={updateProfile.isPending}
+      />
     </SafeAreaView>
   );
 }

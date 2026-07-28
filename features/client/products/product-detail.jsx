@@ -151,27 +151,7 @@ export default function ProductDetail({ product, onClose, onBusinessPress, onVid
               <View className="flex-row items-center" style={{ gap: 12 }}>
                 {isOwner && (
                   <>
-                    <TouchableOpacity
-                      onPress={() => setPreviewMode(!previewMode)}
-                      className="px-3 py-1.5 rounded-full"
-                      style={{ backgroundColor: previewMode ? colors.primary[500] : colors.bg.secondary }}
-                      activeOpacity={0.7}
-                    >
-                      <View className="flex-row items-center" style={{ gap: 4 }}>
-                        <Ionicons
-                          name={previewMode ? "eye" : "eye-outline"}
-                          size={16}
-                          color={previewMode ? "#ffffff" : colors.text.primary}
-                        />
-                        <Text style={{
-                          fontSize: 12,
-                          fontWeight: '600',
-                          color: previewMode ? "#ffffff" : colors.text.primary
-                        }}>
-                          {previewMode ? "Vista regular" : "Vista del cliente"}
-                        </Text>
-                      </View>
-                    </TouchableOpacity>
+
                     <TouchableOpacity
                       onPress={() => setMenuVisible(true)}
                       className="w-10 h-10 items-center justify-center"

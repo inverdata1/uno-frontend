@@ -77,8 +77,8 @@ export const useRegistration = ({ onComplete }) => {
       basicFields.acceptTerms === true
     );
 
-    // Check if passwords match
-    const passwordsMatch = basicFields.password === basicFields.confirmPassword;
+    // Check if passwords match (ignoring any accidental trailing spaces)
+    const passwordsMatch = basicFields.password?.trim() === basicFields.confirmPassword?.trim();
 
     // Basic email validation
     const emailValid = basicFields.email?.includes('@') && basicFields.email?.includes('.');
@@ -95,7 +95,10 @@ export const useRegistration = ({ onComplete }) => {
       emailValid,
       phoneValid,
       acceptTerms: basicFields.acceptTerms,
-      valid
+      valid,
+      pwdLength: basicFields.password?.length,
+      confirmPwdLength: basicFields.confirmPassword?.length,
+      areEqual: basicFields.password === basicFields.confirmPassword
     });
 
     return valid;

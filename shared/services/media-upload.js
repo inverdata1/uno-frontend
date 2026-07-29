@@ -1,6 +1,7 @@
 import { getStorage, ref, uploadBytesResumable, getDownloadURL, deleteObject } from 'firebase/storage';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { manipulateAsync, SaveFormat } from 'expo-image-manipulator';
+import { apiClient } from '../config/api-client';
 
 /**
  * Media Upload Service
@@ -223,9 +224,46 @@ export const uploadMedia = async (uri, uploadType, options = {}, onProgress = nu
             onProgress(progress);
           }
         },
-        (error) => {
-          console.error('Upload error:', error);
-          reject(error);
+        async (error) => {
+          console.warn('Firebase upload error, attempting fallback to backend...', error);
+          
+          try {
+            // Fallback to local backend
+            const formData = new FormData();
+            formData.append('image', {
+              uri: uri,
+              name: options.filename || `file_${Date.now()}.${extensionForName}`,
+              type: mimeType
+            });
+            formData.append('productName', uploadType);
+            
+            if (options.metadata?.businessId) {
+              formData.append('businessId', options.metadata.businessId);
+            }
+
+            const uploadRes = await apiClient.post('/upload/image', formData, {
+              headers: {
+                Accept: 'application/json',
+                'Content-Type': 'multipart/form-data',
+              }
+            });
+
+            if (uploadRes.data?.url) {
+              const backendUrl = process.env.EXPO_PUBLIC_API_URL?.replace(/\/api$/, '') || 'http://localhost:3000';
+              resolve({
+                url: `${backendUrl}${uploadRes.data.url}`,
+                path: uploadRes.data.url,
+                filename,
+                size: blob?.size || 0,
+                mimeType
+              });
+            } else {
+              reject(new Error('No URL returned from fallback upload'));
+            }
+          } catch (fallbackError) {
+            console.error('Fallback upload error:', fallbackError);
+            reject(fallbackError);
+          }
         },
         async () => {
           // Upload completed successfully
@@ -242,7 +280,46 @@ export const uploadMedia = async (uri, uploadType, options = {}, onProgress = nu
       );
     });
   } catch (error) {
-    console.error('Media upload failed:', error);
+    console.error('Media upload initialization failed, attempting direct fallback...', error);
+    
+    try {
+      // Direct fallback if Firebase initialization completely fails (e.g., unauthorized or unconfigured)
+      let mimeType = options.mimeType || 'image/jpeg';
+      const extensionForName = mimeType.split('/')[1] || 'bin';
+      
+      const formData = new FormData();
+      formData.append('image', {
+        uri: uri,
+        name: options.filename || `file_${Date.now()}.${extensionForName}`,
+        type: mimeType
+      });
+      formData.append('productName', uploadType);
+      
+      if (options.metadata?.businessId) {
+        formData.append('businessId', options.metadata.businessId);
+      }
+
+      const uploadRes = await apiClient.post('/upload/image', formData, {
+        headers: {
+          Accept: 'application/json',
+          'Content-Type': 'multipart/form-data',
+        }
+      });
+
+      if (uploadRes.data?.url) {
+        const backendUrl = process.env.EXPO_PUBLIC_API_URL?.replace(/\/api$/, '') || 'http://localhost:3000';
+        return {
+          url: `${backendUrl}${uploadRes.data.url}`,
+          path: uploadRes.data.url,
+          filename: options.filename || 'unknown',
+          size: 0,
+          mimeType
+        };
+      }
+    } catch (fallbackError) {
+      console.error('Direct fallback upload error:', fallbackError);
+    }
+    
     throw error;
   }
 };

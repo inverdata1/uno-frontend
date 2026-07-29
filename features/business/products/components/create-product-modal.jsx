@@ -1,6 +1,6 @@
 import React, { useState, useRef } from 'react';
-import { View, TouchableOpacity, TextInput, Alert, ScrollView, ActivityIndicator, Image, Modal, StatusBar, Switch } from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
+import { View, TouchableOpacity, TextInput, Alert, ScrollView, ActivityIndicator, Image, Modal, StatusBar, Switch, Platform } from 'react-native';
+import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import * as DocumentPicker from 'expo-document-picker';
 import { Text } from '../../../../shared/components/ui';
@@ -14,6 +14,7 @@ import { ref, uploadBytes, getDownloadURL } from 'firebase/storage';
 import { storage } from '../../../../shared/config/firebase';
 
 export const CreateProductModal = ({ visible, onClose, editingProduct }) => {
+  const insets = useSafeAreaInsets();
   const [name, setName] = useState('');
   const [description, setDescription] = useState('');
   const [price, setPrice] = useState('');
@@ -220,7 +221,7 @@ export const CreateProductModal = ({ visible, onClose, editingProduct }) => {
       presentationStyle="fullScreen"
       onRequestClose={onClose}
     >
-      <SafeAreaView style={{ flex: 1, backgroundColor: colors.bg.primary }} edges={['top', 'bottom']}>
+      <View style={{ flex: 1, backgroundColor: colors.bg.primary, paddingTop: Platform.OS === 'ios' ? insets.top : 0, paddingBottom: insets.bottom }}>
         <StatusBar barStyle="dark-content" backgroundColor={colors.bg.primary} />
 
         {/* Header */}
@@ -431,9 +432,8 @@ export const CreateProductModal = ({ visible, onClose, editingProduct }) => {
               thumbColor="#fff"
             />
           </View>
-
         </ScrollView>
-      </SafeAreaView>
+      </View>
     </Modal>
   );
 };

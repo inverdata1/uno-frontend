@@ -5,15 +5,14 @@ import { Ionicons } from '@expo/vector-icons';
 import { Text } from '../../../../shared/components/ui';
 import { colors } from '../../../../shared/utils/colors';
 import { useCreateCategory, useUpdateCategory } from '../../../../features/shared/categories/hooks/use-categories';
-import { useCurrentUserType, useBusinessContexts } from '../../../../shared/hooks/use-user-type';
+import { useCurrentUserType } from '../../../../shared/hooks/use-user-type';
 
 export const CreateCategoryModal = ({ visible, onClose, editingCategory }) => {
   const [name, setName] = useState('');
   const [isSaving, setIsSaving] = useState(false);
 
   const { currentContext } = useCurrentUserType();
-  const businessContexts = useBusinessContexts();
-  const businessId = currentContext?.businessId || businessContexts[0]?.businessId || businessContexts[0]?.id;
+  const businessId = currentContext?.businessId;
 
   const createCategory = useCreateCategory();
   const updateCategory = useUpdateCategory();
@@ -81,22 +80,22 @@ export const CreateCategoryModal = ({ visible, onClose, editingCategory }) => {
           <TouchableOpacity onPress={onClose} disabled={isSaving}>
             <Text style={{ fontSize: 16, color: colors.text.secondary }}>Cancelar</Text>
           </TouchableOpacity>
-          
+
           <Text style={{ fontSize: 17, fontWeight: '700', color: colors.text.primary }}>
             {editingCategory ? 'Editar Categoría' : 'Nueva Categoría'}
           </Text>
-          
-          <TouchableOpacity 
-            onPress={handleSave} 
+
+          <TouchableOpacity
+            onPress={handleSave}
             disabled={isSaving || !name.trim()}
           >
             {isSaving ? (
               <ActivityIndicator size="small" color={colors.primary[500]} />
             ) : (
-              <Text style={{ 
-                fontSize: 16, 
-                fontWeight: '600', 
-                color: name.trim() ? colors.primary[500] : colors.text.secondary 
+              <Text style={{
+                fontSize: 16,
+                fontWeight: '600',
+                color: name.trim() ? colors.primary[500] : colors.text.secondary
               }}>
                 Guardar
               </Text>

@@ -7,7 +7,7 @@ import { Text } from '../../../../shared/components/ui';
 import { colors } from '../../../../shared/utils/colors';
 import { useCreateProduct, useUpdateProduct } from '../../../../features/shared/products/hooks/use-products';
 import { useCategories } from '../../../../features/shared/categories/hooks/use-categories';
-import { useCurrentUserType, useBusinessContexts } from '../../../../shared/hooks/use-user-type';
+import { useCurrentUserType } from '../../../../shared/hooks/use-user-type';
 import { apiClient } from '../../../../shared/config/api-client';
 
 import { ref, uploadBytes, getDownloadURL } from 'firebase/storage';
@@ -24,8 +24,7 @@ export const CreateProductModal = ({ visible, onClose, editingProduct }) => {
   const [isUploading, setIsUploading] = useState(false);
 
   const { currentContext } = useCurrentUserType();
-  const businessContexts = useBusinessContexts();
-  const businessId = currentContext?.businessId || businessContexts[0]?.businessId || businessContexts[0]?.id;
+  const businessId = currentContext?.businessId;
 
   const createProductMutation = useCreateProduct();
   const updateProductMutation = useUpdateProduct();
@@ -96,7 +95,7 @@ export const CreateProductModal = ({ visible, onClose, editingProduct }) => {
         uploadedUrls.push(downloadUrl);
       } catch (err) {
         console.warn('Firebase upload failed, attempting local backend fallback...', err);
-        
+
         const formData = new FormData();
         const ext = uri.split('.').pop() || 'jpg';
         formData.append('image', {
@@ -113,7 +112,7 @@ export const CreateProductModal = ({ visible, onClose, editingProduct }) => {
               'Content-Type': 'multipart/form-data',
             }
           });
-          
+
           const backendUrl = process.env.EXPO_PUBLIC_API_URL?.replace(/\/api$/, '') || 'http://localhost:3000';
           uploadedUrls.push(`${backendUrl}${res.data.url}`);
         } catch (fallbackErr) {
@@ -184,7 +183,7 @@ export const CreateProductModal = ({ visible, onClose, editingProduct }) => {
         discountPrice: parsedDiscount,
         isDiscountActive: parsedDiscount ? true : false,
         images: imageUrls,
-        thumbnailUrl: imageUrls[0], 
+        thumbnailUrl: imageUrls[0],
         categoryId: categoryId,
         isActive: true,
         isAvailable: isAvailable,
@@ -341,7 +340,7 @@ export const CreateProductModal = ({ visible, onClose, editingProduct }) => {
                       borderColor: categoryId === cat.id ? colors.primary[500] : colors.border.light
                     }}
                   >
-                    <Text style={{ 
+                    <Text style={{
                       color: categoryId === cat.id ? '#fff' : colors.text.primary,
                       fontWeight: categoryId === cat.id ? '700' : '500'
                     }}>
@@ -413,10 +412,10 @@ export const CreateProductModal = ({ visible, onClose, editingProduct }) => {
           </View>
 
           {/* Availability */}
-          <View style={{ 
-            paddingHorizontal: 16, 
-            marginBottom: 32, 
-            flexDirection: 'row', 
+          <View style={{
+            paddingHorizontal: 16,
+            marginBottom: 32,
+            flexDirection: 'row',
             justifyContent: 'space-between',
             alignItems: 'center'
           }}>

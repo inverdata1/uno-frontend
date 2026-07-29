@@ -14,6 +14,7 @@ export const EditProfileModal = ({ visible, onClose, businessData, onSave, isSav
   const [name, setName] = useState('');
   const [description, setDescription] = useState('');
   const [category, setCategory] = useState('');
+  const [businessType, setBusinessType] = useState('');
   const [phone, setPhone] = useState('');
   
   // Tab 2: Location
@@ -43,6 +44,7 @@ export const EditProfileModal = ({ visible, onClose, businessData, onSave, isSav
       setName(businessData.businessName || businessData.name || '');
       setDescription(businessData.description || '');
       setCategory(businessData.category || '');
+      setBusinessType(businessData.businessType || '');
       setPhone(businessData.phone || '');
       setAddress(businessData.address || '');
       setCoordinates(businessData.coordinates || null);
@@ -74,6 +76,7 @@ export const EditProfileModal = ({ visible, onClose, businessData, onSave, isSav
       businessName: name.trim(),
       description: description.trim(),
       category: category.trim(),
+      businessType: businessType.trim(),
       phone: phone.trim(),
       address: address.trim(),
       businessHours: `${openTime.toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})} - ${closeTime.toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}`,
@@ -144,6 +147,17 @@ export const EditProfileModal = ({ visible, onClose, businessData, onSave, isSav
                     value={name}
                     onChangeText={setName}
                     placeholder="Ej. El Buen Sabor"
+                    placeholderTextColor={colors.text.tertiary}
+                  />
+                </View>
+
+                <View style={styles.inputGroup}>
+                  <Text style={styles.label}>Tipo de Negocio</Text>
+                  <TextInput
+                    style={styles.input}
+                    value={businessType}
+                    onChangeText={setBusinessType}
+                    placeholder="Ej. Venta minorista, Servicios"
                     placeholderTextColor={colors.text.tertiary}
                   />
                 </View>

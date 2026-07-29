@@ -17,6 +17,8 @@ export default function BusinessOnboardingStep({
 }) {
   const [formData, setFormData] = useState({
     businessName: businessData.businessName || '',
+    businessType: businessData.businessType || '',
+    businessHours: businessData.businessHours || '',
     category: businessData.category || '',
     description: businessData.description || '',
     address: businessData.address || '',
@@ -111,6 +113,14 @@ export default function BusinessOnboardingStep({
         autoCapitalize="words"
       />
 
+      {/* Business Type */}
+      <Input
+        value={formData.businessType}
+        onChangeText={(value) => updateField('businessType', value)}
+        placeholder="Tipo de negocio (ej. Venta minorista, Servicios)"
+        autoCapitalize="words"
+      />
+
       {/* Category Selection */}
       <View className="mb-3">
         <View className="flex-row items-center justify-between mb-2">
@@ -166,6 +176,14 @@ export default function BusinessOnboardingStep({
         numberOfLines={3}
         textAlignVertical="top"
         style={{ minHeight: 80 }}
+      />
+
+      {/* Business Hours */}
+      <Input
+        value={formData.businessHours}
+        onChangeText={(value) => updateField('businessHours', value)}
+        placeholder="Horario (ej. Lun a Vie de 8am a 5pm)"
+        autoCapitalize="sentences"
       />
 
       {/* Address */}
@@ -266,7 +284,9 @@ export const isBusinessDataValid = (businessData) => {
 
   const requiredFields = [
     'businessName',
+    'businessType',
     'category',
+    'businessHours',
     'address',
     'phone'
   ];

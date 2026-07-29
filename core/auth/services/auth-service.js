@@ -19,8 +19,8 @@ export const authService = {
         };
       }
 
-      // 2. Call our NestJS Auth endpoint
-      const registerResponse = await apiClient.post('/auth/register', {
+      // 2. Prepare register payload
+      let registerPayload = {
         email,
         password,
         firstName,
@@ -38,35 +38,28 @@ export const authService = {
             email: true
           }
         }
-      });
-      
-      const { user, access_token } = registerResponse.data;
+      };
 
-      // 3. Store tokens in AsyncStorage so future requests are authenticated
-      await AsyncStorage.setItem('userToken', access_token);
-      await AsyncStorage.setItem('userId', user.id);
-
-      // 4. Create business profile if requested
-      let businessId = null;
       if (selectedUserType === 'business' && businessData) {
-        console.log('📊 Creating business profile during registration...');
+        console.log('📊 Uploading business media for registration...');
 
         let logoUrl = null;
         let bannerUrl = null;
 
         if (businessData.logoUri) {
           console.log('📤 Uploading business logo...');
-          const logoResult = await uploadMedia(businessData.logoUri, 'BUSINESS_LOGO', { mimeType: businessData.logoMimeType }, null, { uid: user.id });
+          // Using uid: temp since user is not yet created, fallback will be used
+          const logoResult = await uploadMedia(businessData.logoUri, 'BUSINESS_LOGO', { mimeType: businessData.logoMimeType }, null, { uid: 'temp' });
           logoUrl = logoResult.url;
         }
 
         if (businessData.bannerUri) {
           console.log('📤 Uploading business banner...');
-          const bannerResult = await uploadMedia(businessData.bannerUri, 'BUSINESS_BANNER', { mimeType: businessData.bannerMimeType }, null, { uid: user.id });
+          const bannerResult = await uploadMedia(businessData.bannerUri, 'BUSINESS_BANNER', { mimeType: businessData.bannerMimeType }, null, { uid: 'temp' });
           bannerUrl = bannerResult.url;
         }
 
-        const business = await apiClient.post('/businesses', {
+        registerPayload.businessData = {
           businessName: businessData.businessName,
           category: businessData.category,
           description: businessData.description || '',
@@ -75,20 +68,22 @@ export const authService = {
           phone: businessData.phone,
           logoUrl: logoUrl,
           bannerUrl: bannerUrl,
-        }, { params: { userId: user.id } });
-
-        businessId = business.data.id;
-        console.log('✅ Business profile created:', businessId);
-
-        // Update the user with their newly created currentBusinessId
-        await apiClient.put(`/users/profile`, { currentBusinessId: businessId }, { params: { userId: user.id } });
+        };
       }
+      
+      const registerResponse = await apiClient.post('/auth/register', registerPayload);
+      
+      const { user, access_token } = registerResponse.data;
+
+      // 3. Store tokens in AsyncStorage so future requests are authenticated
+      await AsyncStorage.setItem('userToken', access_token);
+      await AsyncStorage.setItem('userId', user.id);
 
       return {
         user: {
           uid: user.id, // Using 'uid' for backwards compatibility in frontend state
           email: user.email,
-          currentBusinessId: businessId,
+          currentBusinessId: user.currentBusinessId,
           ...user
         }
       };

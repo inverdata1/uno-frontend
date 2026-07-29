@@ -75,7 +75,7 @@ export const authService = {
           phone: businessData.phone,
           logoUrl: logoUrl,
           bannerUrl: bannerUrl,
-        });
+        }, { params: { userId: user.id } });
 
         businessId = business.data.id;
         console.log('✅ Business profile created:', businessId);

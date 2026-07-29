@@ -16,15 +16,12 @@ import { useBusinessProfile, useUpdateBusinessLogo, useUpdateBusinessBanner, use
 import { useAppStore } from '../../../shared/stores/app-store';
 import { colors } from '../../../shared/utils/colors';
 import { getModeColors } from '../../../shared/utils/colors';
-import { ProductsGrid } from '../products/components/products-grid';
-import { PostsGrid } from '../social/posts/components/posts-grid';
 import { EditProfileModal } from './components/edit-profile-modal';
 
 export default function BusinessProfileScreen() {
   const router = useRouter();
   const { availableUserTypes = [] } = useCurrentUserType();
   const { openUserTypeSwitcher } = useAppStore();
-  const [activeTab, setActiveTab] = useState('posts');
   const [uploadingLogo, setUploadingLogo] = useState(false);
   const [uploadingBanner, setUploadingBanner] = useState(false);
   const [editModalVisible, setEditModalVisible] = useState(false);
@@ -350,25 +347,6 @@ export default function BusinessProfileScreen() {
             gap: 12
           }}>
             <View style={{ flex: 1, alignItems: 'center' }}>
-              <Text style={{
-                fontSize: 20,
-                fontWeight: '700',
-                color: colors.text.primary,
-                marginBottom: 2
-              }}>
-                {stats.followers}
-              </Text>
-              <Text style={{
-                fontSize: 12,
-                color: colors.text.secondary
-              }}>
-                Seguidores
-              </Text>
-            </View>
-
-            <View style={{ width: 1, backgroundColor: colors.border.light }} />
-
-            <View style={{ flex: 1, alignItems: 'center' }}>
               <View style={{
                 flexDirection: 'row',
                 alignItems: 'center',
@@ -389,6 +367,25 @@ export default function BusinessProfileScreen() {
                 color: colors.text.secondary
               }}>
                 {stats.reviews} reseñas
+              </Text>
+            </View>
+
+            <View style={{ width: 1, backgroundColor: colors.border.light }} />
+
+            <View style={{ flex: 1, alignItems: 'center' }}>
+              <Text style={{
+                fontSize: 20,
+                fontWeight: '700',
+                color: colors.text.primary,
+                marginBottom: 2
+              }}>
+                {stats.followers}
+              </Text>
+              <Text style={{
+                fontSize: 12,
+                color: colors.text.secondary
+              }}>
+                Seguidores
               </Text>
             </View>
 
@@ -572,110 +569,42 @@ export default function BusinessProfileScreen() {
             </View>
           </View>
 
-          {/* Content Tabs */}
-          <View style={{
-            flexDirection: 'row',
-            backgroundColor: colors.bg.secondary,
-            borderRadius: 12,
-            padding: 4,
-            marginBottom: 20
-          }}>
-            <TouchableOpacity
-              onPress={() => setActiveTab('posts')}
-              style={{
-                flex: 1,
-                paddingVertical: 8,
-                borderRadius: 8,
-                backgroundColor: activeTab === 'posts' ? colors.bg.primary : 'transparent',
-                alignItems: 'center'
-              }}
-            >
-              <Ionicons
-                name={activeTab === 'posts' ? 'grid' : 'grid-outline'}
-                size={20}
-                color={activeTab === 'posts' ? colors.text.primary : colors.text.secondary}
-              />
-            </TouchableOpacity>
-            <TouchableOpacity
-              onPress={() => setActiveTab('products')}
-              style={{
-                flex: 1,
-                paddingVertical: 8,
-                borderRadius: 8,
-                backgroundColor: activeTab === 'products' ? colors.bg.primary : 'transparent',
-                alignItems: 'center'
-              }}
-            >
-              <Ionicons
-                name={activeTab === 'products' ? 'cube' : 'cube-outline'}
-                size={20}
-                color={activeTab === 'products' ? colors.text.primary : colors.text.secondary}
-              />
-            </TouchableOpacity>
-            <TouchableOpacity
-              onPress={() => setActiveTab('reviews')}
-              style={{
-                flex: 1,
-                paddingVertical: 8,
-                borderRadius: 8,
-                backgroundColor: activeTab === 'reviews' ? colors.bg.primary : 'transparent',
-                alignItems: 'center'
-              }}
-            >
-              <Ionicons
-                name={activeTab === 'reviews' ? 'star' : 'star-outline'}
-                size={20}
-                color={activeTab === 'reviews' ? colors.text.primary : colors.text.secondary}
-              />
-            </TouchableOpacity>
-          </View>
-
-          {/* Content Area */}
+          {/* Content Area - Reviews Only */}
           <View style={{ paddingBottom: 32 }}>
-            {activeTab === 'posts' && (
-              <PostsGrid onCreatePost={() => router.push('/business/social')} />
-            )}
-
-            {activeTab === 'products' && (
-              <ProductsGrid />
-            )}
-
-            {activeTab === 'reviews' && (
+            <View style={{
+              backgroundColor: colors.bg.secondary,
+              borderRadius: 16,
+              padding: 40,
+              alignItems: 'center'
+            }}>
               <View style={{
-                backgroundColor: colors.bg.secondary,
-                borderRadius: 16,
-                padding: 40,
-                alignItems: 'center'
+                width: 80,
+                height: 80,
+                borderRadius: 40,
+                backgroundColor: colors.bg.primary,
+                alignItems: 'center',
+                justifyContent: 'center',
+                marginBottom: 16
               }}>
-                <View style={{
-                  width: 80,
-                  height: 80,
-                  borderRadius: 40,
-                  backgroundColor: colors.bg.primary,
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  marginBottom: 16
-                }}>
-                  <Ionicons name="star-outline" size={40} color={colors.text.secondary} />
-                </View>
-                <Text style={{
-                  fontSize: 18,
-                  fontWeight: '700',
-                  color: colors.text.primary,
-                  marginBottom: 8,
-                  textAlign: 'center'
-                }}>
-                  Sin reseñas
-                </Text>
-                <Text style={{
-                  fontSize: 14,
-                  color: colors.text.secondary,
-                  textAlign: 'center'
-                }}>
-                  Las reseñas de tus clientes aparecerán aquí
-                </Text>
+                <Ionicons name="star-outline" size={40} color={colors.text.secondary} />
               </View>
-            )}
+              <Text style={{
+                fontSize: 18,
+                fontWeight: '700',
+                color: colors.text.primary,
+                marginBottom: 8,
+                textAlign: 'center'
+              }}>
+                Sin reseñas
+              </Text>
+              <Text style={{
+                fontSize: 14,
+                color: colors.text.secondary,
+                textAlign: 'center'
+              }}>
+                Las reseñas de tus clientes aparecerán aquí
+              </Text>
+            </View>
           </View>
         </View>
       </ScrollView>

@@ -54,16 +54,44 @@ export const authService = {
         let logoUrl = null;
         let bannerUrl = null;
 
+        const uploadToBackend = async (uri, mimeType, type) => {
+          try {
+            const formData = new FormData();
+            formData.append('image', {
+              uri: uri,
+              name: `image_${Date.now()}.jpg`,
+              type: mimeType || 'image/jpeg'
+            });
+            formData.append('productName', type);
+            // No businessId yet since it hasn't been created
+
+            const uploadRes = await apiClient.post('/upload/image', formData, {
+              headers: {
+                Accept: 'application/json',
+                'Content-Type': 'multipart/form-data',
+              }
+            });
+
+            if (uploadRes.data?.url) {
+              const backendUrl = process.env.EXPO_PUBLIC_API_URL?.replace(/\/api$/, '') || 'http://localhost:3000';
+              return `${backendUrl}${uploadRes.data.url}`;
+            }
+          } catch (err) {
+            console.error(`Error uploading ${type}:`, err);
+          }
+          return null;
+        };
+
         if (businessData.logoUri) {
           console.log('📤 Uploading business logo...');
-          const logoResult = await uploadMedia(businessData.logoUri, 'BUSINESS_LOGO', { mimeType: businessData.logoMimeType }, null, { uid: user.id });
-          logoUrl = logoResult.url;
+          logoUrl = await uploadToBackend(businessData.logoUri, businessData.logoMimeType, 'logo');
+          console.log('Logo uploaded:', logoUrl);
         }
 
         if (businessData.bannerUri) {
           console.log('📤 Uploading business banner...');
-          const bannerResult = await uploadMedia(businessData.bannerUri, 'BUSINESS_BANNER', { mimeType: businessData.bannerMimeType }, null, { uid: user.id });
-          bannerUrl = bannerResult.url;
+          bannerUrl = await uploadToBackend(businessData.bannerUri, businessData.bannerMimeType, 'banner');
+          console.log('Banner uploaded:', bannerUrl);
         }
 
         const business = await apiClient.post('/businesses', {

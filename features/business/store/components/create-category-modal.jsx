@@ -5,14 +5,15 @@ import { Ionicons } from '@expo/vector-icons';
 import { Text } from '../../../../shared/components/ui';
 import { colors } from '../../../../shared/utils/colors';
 import { useCreateCategory, useUpdateCategory } from '../../../../features/shared/categories/hooks/use-categories';
-import { useCurrentUserType } from '../../../../shared/hooks/use-user-type';
+import { useCurrentUserType, useBusinessContexts } from '../../../../shared/hooks/use-user-type';
 
 export const CreateCategoryModal = ({ visible, onClose, editingCategory }) => {
   const [name, setName] = useState('');
   const [isSaving, setIsSaving] = useState(false);
 
   const { currentContext } = useCurrentUserType();
-  const businessId = currentContext?.businessId;
+  const businessContexts = useBusinessContexts();
+  const businessId = currentContext?.businessId || businessContexts[0]?.businessId || businessContexts[0]?.id;
 
   const createCategory = useCreateCategory();
   const updateCategory = useUpdateCategory();

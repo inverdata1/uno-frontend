@@ -7,7 +7,7 @@ import { Text } from '../../../../shared/components/ui';
 import { colors } from '../../../../shared/utils/colors';
 import { useCreateProduct, useUpdateProduct } from '../../../../features/shared/products/hooks/use-products';
 import { useCategories } from '../../../../features/shared/categories/hooks/use-categories';
-import { useCurrentUserType } from '../../../../shared/hooks/use-user-type';
+import { useCurrentUserType, useBusinessContexts } from '../../../../shared/hooks/use-user-type';
 import { apiClient } from '../../../../shared/config/api-client';
 
 import { ref, uploadBytes, getDownloadURL } from 'firebase/storage';
@@ -24,7 +24,8 @@ export const CreateProductModal = ({ visible, onClose, editingProduct }) => {
   const [isUploading, setIsUploading] = useState(false);
 
   const { currentContext } = useCurrentUserType();
-  const businessId = currentContext?.businessId;
+  const businessContexts = useBusinessContexts();
+  const businessId = currentContext?.businessId || businessContexts[0]?.businessId || businessContexts[0]?.id;
 
   const createProductMutation = useCreateProduct();
   const updateProductMutation = useUpdateProduct();

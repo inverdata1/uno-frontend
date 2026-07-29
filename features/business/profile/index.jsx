@@ -8,6 +8,7 @@ import * as ImagePicker from 'expo-image-picker';
 import * as DocumentPicker from 'expo-document-picker';
 import { ref, uploadBytes, getDownloadURL } from 'firebase/storage';
 import { storage } from '../../../shared/config/firebase';
+import { uploadMedia } from '../../../shared/services/media-upload';
 import { Text } from '../../../shared/components/ui';
 import { apiClient } from '../../../shared/config/api-client';
 import { useCurrentUserType } from '../../../shared/hooks/use-user-type';
@@ -67,47 +68,7 @@ export default function BusinessProfileScreen() {
     });
   }, [business, businessData, stats]);
 
-  const uploadImageWithFallback = async (asset, imageType) => {
-    const imageUri = asset.uri;
-    try {
-      // 1. Try Firebase first
-      const response = await fetch(imageUri);
-      const blob = await response.blob();
-      const ext = asset.name?.split('.').pop() || 'jpg';
-      const filename = `businesses/${business?.businessId || business?.id || 'unknown'}/${imageType}_${Date.now()}.${ext}`;
-      const storageRef = ref(storage, filename);
-      await uploadBytes(storageRef, blob);
-      return await getDownloadURL(storageRef);
-    } catch (err) {
-      console.warn('Firebase upload failed, attempting local backend fallback...', err);
-      
-      // 2. Fallback to local backend
-      const formData = new FormData();
-      formData.append('image', {
-        uri: imageUri,
-        name: asset.name || `image_${Date.now()}.jpg`,
-        type: asset.mimeType || 'image/jpeg'
-      });
-      formData.append('productName', imageType);
-      if (business?.businessId || business?.id) {
-        formData.append('businessId', business?.businessId || business?.id);
-      }
 
-      const uploadRes = await apiClient.post('/upload/image', formData, {
-        headers: {
-          Accept: 'application/json',
-          'Content-Type': 'multipart/form-data',
-        }
-      });
-
-      if (uploadRes.data?.url) {
-        const backendUrl = process.env.EXPO_PUBLIC_API_URL?.replace(/\/api$/, '') || 'http://localhost:3000';
-        return `${backendUrl}${uploadRes.data.url}`;
-      } else {
-        throw new Error('No URL returned from upload');
-      }
-    }
-  };
 
   const handlePickLogo = async () => {
     try {
@@ -127,8 +88,19 @@ export default function BusinessProfileScreen() {
       if (!result.canceled && result.assets && result.assets[0]) {
         setUploadingLogo(true);
         const asset = result.assets[0];
-        const uploadedUrl = await uploadImageWithFallback(asset, 'logo');
-        await updateLogo.mutateAsync(uploadedUrl);
+        
+        const uploadResult = await uploadMedia(
+          asset.uri,
+          'BUSINESS_LOGO',
+          {
+            mimeType: asset.mimeType || asset.type,
+            metadata: { businessId: business?.businessId || business?.id }
+          },
+          null, // onProgress
+          { uid: business?.ownerId || 'unknown' } // pass context
+        );
+
+        await updateLogo.mutateAsync(uploadResult.url);
       }
     } catch (error) {
       console.error('Error picking logo:', error);
@@ -156,8 +128,19 @@ export default function BusinessProfileScreen() {
       if (!result.canceled && result.assets && result.assets[0]) {
         setUploadingBanner(true);
         const asset = result.assets[0];
-        const uploadedUrl = await uploadImageWithFallback(asset, 'banner');
-        await updateBanner.mutateAsync(uploadedUrl);
+        
+        const uploadResult = await uploadMedia(
+          asset.uri,
+          'BUSINESS_BANNER',
+          {
+            mimeType: asset.mimeType || asset.type,
+            metadata: { businessId: business?.businessId || business?.id }
+          },
+          null, // onProgress
+          { uid: business?.ownerId || 'unknown' } // pass context
+        );
+
+        await updateBanner.mutateAsync(uploadResult.url);
       }
     } catch (error) {
       console.error('Error picking banner:', error);

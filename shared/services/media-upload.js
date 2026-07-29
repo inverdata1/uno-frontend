@@ -230,16 +230,18 @@ export const uploadMedia = async (uri, uploadType, options = {}, onProgress = nu
           try {
             // Fallback to local backend
             const formData = new FormData();
+            
+            // Append metadata FIRST so backend multer can read it before the file stream
+            formData.append('productName', uploadType);
+            if (options.metadata?.businessId) {
+              formData.append('businessId', options.metadata.businessId);
+            }
+
             formData.append('image', {
               uri: uri,
               name: options.filename || `file_${Date.now()}.${extensionForName}`,
               type: mimeType
             });
-            formData.append('productName', uploadType);
-            
-            if (options.metadata?.businessId) {
-              formData.append('businessId', options.metadata.businessId);
-            }
 
             const uploadRes = await apiClient.post('/upload/image', formData, {
               headers: {
@@ -249,7 +251,7 @@ export const uploadMedia = async (uri, uploadType, options = {}, onProgress = nu
             });
 
             if (uploadRes.data?.url) {
-              const backendUrl = process.env.EXPO_PUBLIC_API_URL?.replace(/\/api$/, '') || 'http://localhost:3000';
+              const backendUrl = process.env.EXPO_PUBLIC_API_URL || 'http://localhost:3000';
               resolve({
                 url: `${backendUrl}${uploadRes.data.url}`,
                 path: uploadRes.data.url,

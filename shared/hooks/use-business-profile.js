@@ -10,7 +10,7 @@ import { useBusinessStories } from './use-business-stories';
 export const useBusinessProfile = () => {
   const businessContexts = useBusinessContexts();
   const currentBusiness = businessContexts[0] || null;
-  const businessId = currentBusiness?.businessId;
+  const businessId = currentBusiness?.businessId || currentBusiness?.id;
 
   // Get posts count
   const { data: posts = [] } = useBusinessPosts();
@@ -59,7 +59,7 @@ export const useUpdateBusinessProfile = () => {
   const queryClient = useQueryClient();
   const businessContexts = useBusinessContexts();
   const currentBusiness = businessContexts[0] || null;
-  const businessId = currentBusiness?.businessId;
+  const businessId = currentBusiness?.businessId || currentBusiness?.id;
 
   return useMutation({
     mutationFn: async (profileData) => {
@@ -86,7 +86,7 @@ export const useUpdateBusinessLogo = () => {
   const queryClient = useQueryClient();
   const businessContexts = useBusinessContexts();
   const currentBusiness = businessContexts[0] || null;
-  const businessId = currentBusiness?.businessId;
+  const businessId = currentBusiness?.businessId || currentBusiness?.id;
 
   return useMutation({
     mutationFn: async (logoUrl) => {
@@ -113,7 +113,7 @@ export const useUpdateBusinessBanner = () => {
   const queryClient = useQueryClient();
   const businessContexts = useBusinessContexts();
   const currentBusiness = businessContexts[0] || null;
-  const businessId = currentBusiness?.businessId;
+  const businessId = currentBusiness?.businessId || currentBusiness?.id;
 
   return useMutation({
     mutationFn: async (bannerUrl) => {

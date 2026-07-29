@@ -74,9 +74,20 @@ export const useCurrentUserType = () => {
     };
   }
 
+  let currentContext = userTypeData.currentContext || { businessId: null, branchId: null };
+  const businessContexts = userTypeData.businessContexts || [];
+  
+  // Global fallback: if no businessId is set but user has businesses, auto-assign the first one
+  if (!currentContext.businessId && businessContexts.length > 0) {
+    currentContext = {
+      ...currentContext,
+      businessId: businessContexts[0].businessId || businessContexts[0].id
+    };
+  }
+
   return {
     currentUserType: userTypeData.currentUserType,
-    currentContext: userTypeData.currentContext,
+    currentContext,
     availableUserTypes: userTypeData.availableUserTypes,
     isLoading: false
   };
@@ -123,7 +134,11 @@ export const useUserBusinesses = () => {
  */
 export const useBusinessContexts = () => {
   const { data: userTypeData } = useUserType();
-  return userTypeData?.businessContexts || [];
+  const contexts = userTypeData?.businessContexts || [];
+  return contexts.map(c => ({
+    ...c,
+    businessId: c.businessId || c.id
+  }));
 };
 
 // ========================================

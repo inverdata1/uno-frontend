@@ -47,8 +47,18 @@ export default function ProductDetail({ product, onClose, onBusinessPress, onVid
     productVideosCount: productVideos.length
   });
 
-  // Images and variants
-  const images = product?.images || [product?.thumbnailUrl || 'https://via.placeholder.com/400'];
+  // Images and variants safely parsed
+  let parsedImages = [];
+  try {
+    if (Array.isArray(product?.images)) {
+      parsedImages = product.images;
+    } else if (typeof product?.images === 'string') {
+      parsedImages = JSON.parse(product.images);
+    }
+  } catch (e) {
+    console.warn('Failed to parse product images:', e);
+  }
+  const images = parsedImages.length > 0 ? parsedImages : [product?.thumbnailUrl || 'https://via.placeholder.com/400'];
   const variants = product?.variants || [];
 
   const handleAddToCart = () => {
@@ -183,7 +193,7 @@ export default function ProductDetail({ product, onClose, onBusinessPress, onVid
             }}
           >
             {images.map((imageUrl, index) => (
-              <View key={index} style={{ width, height: width * 1.1, backgroundColor: '#f3f4f6' }}>
+              <View key={index} style={{ width, height: width * 0.65, backgroundColor: '#f3f4f6' }}>
                 <Image
                   source={{ uri: imageUrl }}
                   style={{ width: '100%', height: '100%' }}
@@ -238,10 +248,15 @@ export default function ProductDetail({ product, onClose, onBusinessPress, onVid
         {/* Product Info Section with Favorite Button */}
         <View className="px-4 pt-4">
           <View className="flex-row items-center justify-between">
-            {/* Left Side: Price, Name, Rating */}
+            {/* Left Side: Name, Price, Rating */}
             <View className="flex-1 pr-3">
+              {/* Title */}
+              <Text className="text-xl font-bold text-gray-900 mb-2 leading-7">
+                {product?.name || 'Product Name'}
+              </Text>
+
               {/* Price */}
-              <View className="flex-row items-center mb-2">
+              <View className="flex-row items-center mb-3">
                 <Text className="text-3xl font-bold text-gray-900">
                   ${product?.price || '0.00'}
                 </Text>
@@ -258,11 +273,6 @@ export default function ProductDetail({ product, onClose, onBusinessPress, onVid
                   </>
                 )}
               </View>
-
-              {/* Title */}
-              <Text className="text-xl font-bold text-gray-900 mb-3 leading-7">
-                {product?.name || 'Product Name'}
-              </Text>
 
               {/* Rating & Sales */}
               <View className="flex-row items-center mb-4">

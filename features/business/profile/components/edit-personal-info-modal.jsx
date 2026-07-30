@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { View, Modal, TouchableOpacity, TextInput, ActivityIndicator, KeyboardAvoidingView, Platform, ScrollView } from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
+import { SafeAreaProvider, SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { Text } from '../../../../shared/components/ui';
 import { colors } from '../../../../shared/utils/colors';
@@ -33,7 +33,8 @@ export const EditPersonalInfoModal = ({ visible, onClose, userData, onSave, isSa
       presentationStyle="pageSheet"
       onRequestClose={onClose}
     >
-      <SafeAreaView style={{ flex: 1, backgroundColor: colors.bg.primary }} edges={['top']}>
+      <SafeAreaProvider>
+        <SafeAreaView style={{ flex: 1, backgroundColor: colors.bg.primary }} edges={['top']}>
         {/* Header */}
         <View style={{
           flexDirection: 'row',
@@ -151,7 +152,8 @@ export const EditPersonalInfoModal = ({ visible, onClose, userData, onSave, isSa
             </View>
           </ScrollView>
         </KeyboardAvoidingView>
-      </SafeAreaView>
+        </SafeAreaView>
+      </SafeAreaProvider>
     </Modal>
   );
 };

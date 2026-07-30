@@ -2,7 +2,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
 import { useState } from 'react';
 import { Alert, Modal, ScrollView, StatusBar, TouchableOpacity, View } from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
+import { SafeAreaProvider, SafeAreaView } from 'react-native-safe-area-context';
 import { useAuthStore } from '../../../core/auth/stores/auth-store';
 import { Button, Text } from '../../../shared/components/ui';
 import { apiClient } from '../../../shared/config/api-client';
@@ -123,129 +123,131 @@ export default function BusinessUpgradeModal({ visible, onClose, onSuccess }) {
       statusBarTranslucent={false}
       transparent={false}
     >
-      <View style={{ flex: 1, backgroundColor: colors.bg.primary }}>
-        <StatusBar barStyle="dark-content" backgroundColor={colors.bg.primary} translucent={false} />
-        <SafeAreaView style={{ flex: 1 }} edges={['top', 'bottom']}>
-          {/* Header */}
-        <View style={{
-          flexDirection: 'row',
-          alignItems: 'center',
-          justifyContent: 'space-between',
-          padding: 16,
-          backgroundColor: colors.primary[500]
-        }}>
-          <TouchableOpacity onPress={handleClose} disabled={isLoading}>
-            <Ionicons name="close" size={24} color="#fff" />
-          </TouchableOpacity>
-          <Text style={{
-            fontSize: 18,
-            fontWeight: '700',
-            color: '#fff'
-          }}>
-            Vende con UNO
-          </Text>
-          <View style={{ width: 24 }} />
-        </View>
-
-        {/* Progress Indicator */}
-        <View style={{
-          flexDirection: 'row',
-          alignItems: 'center',
-          justifyContent: 'center',
-          paddingVertical: 12,
-          paddingHorizontal: 16,
-          backgroundColor: colors.bg.secondary
-        }}>
-          <Text style={{
-            fontSize: 13,
-            color: colors.text.secondary,
-            fontWeight: '600'
-          }}>
-            Paso {step} de 2
-          </Text>
-        </View>
-
-        {/* Content */}
-        <ScrollView
-          style={{ flex: 1 }}
-          contentContainerStyle={{ padding: 24 }}
-          keyboardShouldPersistTaps="handled"
-        >
-          {step === 1 && (
-            <BusinessOnboardingStep
-              businessData={businessData}
-              onBusinessDataChange={setBusinessData}
-            />
-          )}
-
-          {step === 2 && (
-            <View>
-              <Text className="text-lg font-bold text-gray-900 mb-2">
-                Confirmar Información
+      <SafeAreaProvider>
+        <View style={{ flex: 1, backgroundColor: colors.bg.primary }}>
+          <StatusBar barStyle="dark-content" backgroundColor={colors.bg.primary} translucent={false} />
+          <SafeAreaView style={{ flex: 1 }} edges={['top', 'bottom']}>
+            {/* Header */}
+            <View style={{
+              flexDirection: 'row',
+              alignItems: 'center',
+              justifyContent: 'space-between',
+              padding: 16,
+              backgroundColor: colors.primary[500]
+            }}>
+              <TouchableOpacity onPress={handleClose} disabled={isLoading}>
+                <Ionicons name="close" size={24} color="#fff" />
+              </TouchableOpacity>
+              <Text style={{
+                fontSize: 18,
+                fontWeight: '700',
+                color: '#fff'
+              }}>
+                Vende con UNO
               </Text>
-              <Text className="text-sm text-gray-600 mb-6">
-                Verifica que todos los datos sean correctos
-              </Text>
-
-              {/* Business Info Summary */}
-              <View className="bg-gray-50 rounded-xl p-4 mb-4">
-                <InfoRow icon="storefront" label="Nombre" value={businessData.businessName} />
-                <InfoRow icon="pricetag" label="Categoría" value={getCategoryLabel(businessData.category)} />
-                {businessData.description && (
-                  <InfoRow icon="document-text" label="Descripción" value={businessData.description} />
-                )}
-                <InfoRow icon="location" label="Dirección" value={businessData.address} />
-                <InfoRow icon="call" label="Teléfono" value={businessData.phone} showBorder={false} />
-              </View>
-
-              {/* Info Note */}
-              <View className="bg-blue-50 rounded-xl p-4 flex-row">
-                <Ionicons name="information-circle" size={20} color="#3b82f6" style={{ marginTop: 2 }} />
-                <View className="flex-1 ml-3">
-                  <Text className="text-sm text-blue-900 font-semibold mb-1">
-                    Tu cuenta de cliente seguirá activa
-                  </Text>
-                  <Text className="text-xs text-blue-700">
-                    Podrás cambiar entre modo cliente y modo negocio desde tu perfil en cualquier momento.
-                  </Text>
-                </View>
-              </View>
+              <View style={{ width: 24 }} />
             </View>
-          )}
-        </ScrollView>
 
-        {/* Footer Buttons */}
-        <View className="border-t border-gray-200 px-6 py-4">
-          <Button
-            variant="primary"
-            size="md"
-            className="w-full"
-            onPress={() => {
-              if (step === 1) {
-                setStep(2);
-              } else {
-                handleSubmit();
-              }
-            }}
-            disabled={!canProceed() || isLoading}
-          >
-            {isLoading ? 'Creando cuenta...' : step === 1 ? 'Continuar' : 'Crear Cuenta'}
-          </Button>
+            {/* Progress Indicator */}
+            <View style={{
+              flexDirection: 'row',
+              alignItems: 'center',
+              justifyContent: 'center',
+              paddingVertical: 12,
+              paddingHorizontal: 16,
+              backgroundColor: colors.bg.secondary
+            }}>
+              <Text style={{
+                fontSize: 13,
+                color: colors.text.secondary,
+                fontWeight: '600'
+              }}>
+                Paso {step} de 2
+              </Text>
+            </View>
 
-          {step > 1 && (
-            <Button
-              variant="outline"
-              size="md"
-              className="w-full mt-3"
-              onPress={() => setStep(step - 1)}
-              disabled={isLoading}
+            {/* Content */}
+            <ScrollView
+              style={{ flex: 1 }}
+              contentContainerStyle={{ padding: 24 }}
+              keyboardShouldPersistTaps="handled"
             >
-              Atrás
-            </Button>
-          )}
+              {step === 1 && (
+                <BusinessOnboardingStep
+                  businessData={businessData}
+                  onBusinessDataChange={setBusinessData}
+                />
+              )}
+
+              {step === 2 && (
+                <View>
+                  <Text className="text-lg font-bold text-gray-900 mb-2">
+                    Confirmar Información
+                  </Text>
+                  <Text className="text-sm text-gray-600 mb-6">
+                    Verifica que todos los datos sean correctos
+                  </Text>
+
+                  {/* Business Info Summary */}
+                  <View className="bg-gray-50 rounded-xl p-4 mb-4">
+                    <InfoRow icon="storefront" label="Nombre" value={businessData.businessName} />
+                    <InfoRow icon="pricetag" label="Categoría" value={getCategoryLabel(businessData.category)} />
+                    {businessData.description && (
+                      <InfoRow icon="document-text" label="Descripción" value={businessData.description} />
+                    )}
+                    <InfoRow icon="location" label="Dirección" value={businessData.address} />
+                    <InfoRow icon="call" label="Teléfono" value={businessData.phone} showBorder={false} />
+                  </View>
+
+                  {/* Info Note */}
+                  <View className="bg-blue-50 rounded-xl p-4 flex-row">
+                    <Ionicons name="information-circle" size={20} color="#3b82f6" style={{ marginTop: 2 }} />
+                    <View className="flex-1 ml-3">
+                      <Text className="text-sm text-blue-900 font-semibold mb-1">
+                        Tu cuenta de cliente seguirá activa
+                      </Text>
+                      <Text className="text-xs text-blue-700">
+                        Podrás cambiar entre modo cliente y modo negocio desde tu perfil en cualquier momento.
+                      </Text>
+                    </View>
+                  </View>
+                </View>
+              )}
+            </ScrollView>
+
+            {/* Footer Buttons */}
+            <View className="border-t border-gray-200 px-6 py-4">
+              <Button
+                variant="primary"
+                size="md"
+                className="w-full"
+                onPress={() => {
+                  if (step === 1) {
+                    setStep(2);
+                  } else {
+                    handleSubmit();
+                  }
+                }}
+                disabled={!canProceed() || isLoading}
+              >
+                {isLoading ? 'Creando cuenta...' : step === 1 ? 'Continuar' : 'Crear Cuenta'}
+              </Button>
+
+              {step > 1 && (
+                <Button
+                  variant="outline"
+                  size="md"
+                  className="w-full mt-3"
+                  onPress={() => setStep(step - 1)}
+                  disabled={isLoading}
+                >
+                  Atrás
+                </Button>
+              )}
+            </View>
+          </SafeAreaView>
         </View>
-        </SafeAreaView>
-      </View>
+      </SafeAreaProvider>
     </Modal>
   );
 }

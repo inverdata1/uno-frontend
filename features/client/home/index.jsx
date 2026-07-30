@@ -3,7 +3,7 @@ import { LinearGradient } from 'expo-linear-gradient';
 import { useRouter } from 'expo-router';
 import { useState } from 'react';
 import { Dimensions, Image, Modal, ScrollView, TouchableOpacity, View } from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
+import { SafeAreaProvider, SafeAreaView } from 'react-native-safe-area-context';
 import { useProducts } from '../../../features/shared/products/hooks/use-products';
 import { useBusinesses } from '../../../features/shared/social/hooks/use-businesses';
 import { useCategories } from '../../../features/shared/social/hooks/use-categories';
@@ -508,27 +508,29 @@ export default function ClientHomeScreen() {
         presentationStyle="fullScreen"
         onRequestClose={() => setProductDetailVisible(false)}
       >
-        {selectedProduct && (
-          <ProductDetail
-            product={selectedProduct}
-            onClose={() => setProductDetailVisible(false)}
-            onBusinessPress={(businessId) => {
-              setProductDetailVisible(false);
-              // Wait for modal animation to complete before navigating
+        <SafeAreaProvider>
+          {selectedProduct && (
+            <ProductDetail
+              product={selectedProduct}
+              onClose={() => setProductDetailVisible(false)}
+              onBusinessPress={(businessId) => {
+                setProductDetailVisible(false);
+                // Wait for modal animation to complete before navigating
                 router.replace(`/client/business/${businessId}`);
-            }}
-            onVideoPress={(video, allVideos) => {
-              // Close product detail
-              setProductDetailVisible(false);
-              // Find the index of the selected video in the array
-              const videoIndex = allVideos.findIndex(v => v.id === video.id);
-              // Open video viewer with all product videos
-              setVideoViewerVideos(allVideos);
-              setSelectedVideoIndex(videoIndex >= 0 ? videoIndex : 0);
-              setVideoViewerVisible(true);
-            }}
-          />
-        )}
+              }}
+              onVideoPress={(video, allVideos) => {
+                // Close product detail
+                setProductDetailVisible(false);
+                // Find the index of the selected video in the array
+                const videoIndex = allVideos.findIndex(v => v.id === video.id);
+                // Open video viewer with all product videos
+                setVideoViewerVideos(allVideos);
+                setSelectedVideoIndex(videoIndex >= 0 ? videoIndex : 0);
+                setVideoViewerVisible(true);
+              }}
+            />
+          )}
+        </SafeAreaProvider>
       </Modal>
     </ScrollView>
   </SafeAreaView>

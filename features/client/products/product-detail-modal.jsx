@@ -1,7 +1,7 @@
 import { useState, useRef, useEffect } from 'react';
 import { useRouter } from 'expo-router';
 import { ActivityIndicator, Modal, TouchableOpacity } from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
+import { SafeAreaProvider, SafeAreaView } from 'react-native-safe-area-context';
 import { Text } from '../../../shared/components/ui';
 import { useProduct } from '../../shared/products/hooks/use-products';
 import ProductDetail from './product-detail';
@@ -84,49 +84,51 @@ export default function ProductDetailModal({
       presentationStyle="fullScreen"
       onRequestClose={onClose}
     >
-      {isLoading ? (
-        <SafeAreaView className="flex-1 bg-white items-center justify-center">
-          <ActivityIndicator size="large" color="#ef4444" />
-          <Text className="text-gray-500 text-sm mt-4">Cargando producto...</Text>
-        </SafeAreaView>
-      ) : product ? (
-        <>
-          <ProductDetail
-            product={product}
-            onClose={onClose}
-            onBusinessPress={handleBusinessPress}
-            onVideoPress={handleVideoPress}
-          />
+      <SafeAreaProvider>
+        {isLoading ? (
+          <SafeAreaView className="flex-1 bg-white items-center justify-center">
+            <ActivityIndicator size="large" color="#ef4444" />
+            <Text className="text-gray-500 text-sm mt-4">Cargando producto...</Text>
+          </SafeAreaView>
+        ) : product ? (
+          <>
+            <ProductDetail
+              product={product}
+              onClose={onClose}
+              onBusinessPress={handleBusinessPress}
+              onVideoPress={handleVideoPress}
+            />
 
-          {/* Video Viewer Modal */}
-          <VideoViewer
-            visible={videoViewerVisible}
-            videos={videoViewerVideos}
-            initialIndex={selectedVideoIndex}
-            onClose={() => setVideoViewerVisible(false)}
-            onProductPress={(product) => {
-              // Product is already showing, just close video viewer
-              setVideoViewerVisible(false);
-            }}
-            onBusinessPress={(businessId) => {
-              setVideoViewerVisible(false);
-              handleBusinessPress(businessId);
-            }}
-          />
-        </>
-      ) : (
-        <SafeAreaView className="flex-1 bg-white items-center justify-center px-6">
-          <Text className="text-gray-900 text-lg font-semibold mb-2">
-            Producto no encontrado
-          </Text>
-          <TouchableOpacity
-            onPress={onClose}
-            className="mt-4 px-6 py-3 bg-red-500 rounded-xl"
-          >
-            <Text className="text-white font-semibold">Cerrar</Text>
-          </TouchableOpacity>
-        </SafeAreaView>
-      )}
+            {/* Video Viewer Modal */}
+            <VideoViewer
+              visible={videoViewerVisible}
+              videos={videoViewerVideos}
+              initialIndex={selectedVideoIndex}
+              onClose={() => setVideoViewerVisible(false)}
+              onProductPress={(product) => {
+                // Product is already showing, just close video viewer
+                setVideoViewerVisible(false);
+              }}
+              onBusinessPress={(businessId) => {
+                setVideoViewerVisible(false);
+                handleBusinessPress(businessId);
+              }}
+            />
+          </>
+        ) : (
+          <SafeAreaView className="flex-1 bg-white items-center justify-center px-6">
+            <Text className="text-gray-900 text-lg font-semibold mb-2">
+              Producto no encontrado
+            </Text>
+            <TouchableOpacity
+              onPress={onClose}
+              className="mt-4 px-6 py-3 bg-red-500 rounded-xl"
+            >
+              <Text className="text-white font-semibold">Cerrar</Text>
+            </TouchableOpacity>
+          </SafeAreaView>
+        )}
+      </SafeAreaProvider>
     </Modal>
   );
 }

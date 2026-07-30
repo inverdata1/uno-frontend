@@ -14,7 +14,7 @@ import {
   Share
 } from 'react-native';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
-import { SafeAreaView } from 'react-native-safe-area-context';
+import { SafeAreaProvider, SafeAreaView } from 'react-native-safe-area-context';
 import { Text } from '../../../../shared/components/ui';
 import { useCurrentUserType } from '../../../../shared/hooks/use-user-type';
 import { colors } from '../../../../shared/utils/colors';
@@ -288,6 +288,7 @@ export default function PostViewer({
       presentationStyle="fullScreen"
       onRequestClose={onClose}
     >
+      <SafeAreaProvider>
       <GestureHandlerRootView style={{ flex: 1 }}>
         <SafeAreaView style={{ flex: 1, backgroundColor: colors.bg.primary }} edges={['top']}>
           {/* Header */}
@@ -625,6 +626,7 @@ export default function PostViewer({
           </ScrollView>
         </SafeAreaView>
       </GestureHandlerRootView>
+      </SafeAreaProvider>
 
       {/* Custom Menu Modal */}
       <Modal

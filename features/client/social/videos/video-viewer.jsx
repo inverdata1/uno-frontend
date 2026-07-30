@@ -4,7 +4,7 @@ import { VideoView, useVideoPlayer } from 'expo-video';
 import { useEffect, useRef, useState } from 'react';
 import { Dimensions, FlatList, Image, Modal, Pressable, StatusBar, TouchableOpacity, View } from 'react-native';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
-import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
+import { SafeAreaProvider, SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Text } from '../../../../shared/components/ui';
 import ProductsBottomSheet from './products-bottom-sheet';
 
@@ -378,6 +378,7 @@ export default function VideoViewer({
         statusBarTranslucent
         presentationStyle="overFullScreen"
       >
+        <SafeAreaProvider>
         <GestureHandlerRootView style={{ flex: 1 }}>
           <BottomSheetModalProvider>
             <StatusBar barStyle="light-content" translucent backgroundColor="transparent" />
@@ -432,6 +433,7 @@ export default function VideoViewer({
             />
           </BottomSheetModalProvider>
         </GestureHandlerRootView>
+        </SafeAreaProvider>
       </Modal>
     </>
   );

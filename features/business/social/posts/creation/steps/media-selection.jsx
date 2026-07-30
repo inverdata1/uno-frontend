@@ -21,12 +21,23 @@ export function MediaSelectionStep({ selectedMedia, onMediaChange, onNext, allow
   const [permissionResponse, requestPermission] = MediaLibrary.usePermissions();
 
   useEffect(() => {
-    if (permissionResponse?.status === 'granted') {
-      loadGalleryAssets();
-    } else if (permissionResponse && !permissionResponse.granted && permissionResponse.canAskAgain) {
-      requestPermission();
-    }
-  }, [permissionResponse]);
+    const checkPerms = async () => {
+      if (!permissionResponse) return;
+      if (permissionResponse.granted) {
+        loadGalleryAssets();
+      } else if (permissionResponse.canAskAgain) {
+        try {
+          const result = await requestPermission();
+          if (result.granted) {
+            loadGalleryAssets();
+          }
+        } catch (e) {
+          console.error('Permission error:', e);
+        }
+      }
+    };
+    checkPerms();
+  }, [permissionResponse?.status]);
 
   const loadGalleryAssets = async () => {
     try {
@@ -37,7 +48,7 @@ export function MediaSelectionStep({ selectedMedia, onMediaChange, onNext, allow
       const { assets } = await MediaLibrary.getAssetsAsync({
         mediaType,
         first: 60,
-        sortBy: [[MediaLibrary.SortBy.creationTime, false]],
+        sortBy: [MediaLibrary.SortBy.creationTime],
       });
       setGalleryAssets(assets);
     } catch (error) {
@@ -224,7 +235,9 @@ export function MediaSelectionStep({ selectedMedia, onMediaChange, onNext, allow
     );
   };
 
-  const data = [{ id: 'explorer' }, ...galleryAssets];
+  // Extraer las imágenes seleccionadas desde el explorador para mostrarlas en la cuadrícula
+  const explorerSelected = selectedMedia.filter(m => m.fromGallery === false);
+  const data = [{ id: 'explorer' }, ...explorerSelected, ...galleryAssets];
 
   return (
     <View style={{ flex: 1, backgroundColor: colors.bg.primary }}>

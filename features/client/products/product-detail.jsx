@@ -459,12 +459,7 @@ export default function ProductDetail({ product, onClose, onBusinessPress, onVid
                       <Ionicons name={post.type === 'video' ? 'play-circle' : 'image-outline'} size={40} color="#9ca3af" />
                     </View>
                   )}
-                  {/* Top Right Type Icon */}
-                  <View className="absolute top-2 right-2">
-                    <View className="bg-black/50 rounded-full w-6 h-6 items-center justify-center">
-                      <Ionicons name={post.type === 'video' ? 'play' : 'images'} size={14} color="#fff" />
-                    </View>
-                  </View>
+
                   {/* Play overlay with gradient (only if video or has views) */}
                   <View className="absolute inset-0 justify-end">
                     <View style={{
@@ -474,11 +469,26 @@ export default function ProductDetail({ product, onClose, onBusinessPress, onVid
                       paddingLeft: 8,
                       justifyContent: 'flex-end'
                     }}>
-                      <View className="flex-row items-center">
-                        <Ionicons name="eye" size={14} color="#fff" />
-                        <Text className="text-xs font-semibold text-white ml-1">
-                          {post.viewCount ? `${post.viewCount >= 1000 ? `${(post.viewCount / 1000).toFixed(1)}K` : post.viewCount}` : '0'}
-                        </Text>
+                      <View className="flex-row items-center justify-between w-full pr-2">
+                        <View className="flex-row items-center">
+                          <Ionicons name="eye" size={14} color="#fff" />
+                          <Text className="text-xs font-semibold text-white ml-1">
+                            {post.viewCount ? `${post.viewCount >= 1000 ? `${(post.viewCount / 1000).toFixed(1)}K` : post.viewCount}` : '0'}
+                          </Text>
+                        </View>
+                        {post.type === 'video' && (
+                          <View className="bg-black/60 px-1.5 py-0.5 rounded">
+                            <Text className="text-[10px] font-semibold text-white">
+                              {(() => {
+                                const m = post.media && Array.isArray(post.media) ? post.media : (typeof post.media === 'string' ? JSON.parse(post.media || '[]') : []);
+                                const duration = m[0]?.duration || 15;
+                                const mins = Math.floor(duration / 60);
+                                const secs = Math.floor(duration % 60);
+                                return `${mins}:${secs.toString().padStart(2, '0')}`;
+                              })()}
+                            </Text>
+                          </View>
+                        )}
                       </View>
                     </View>
                   </View>

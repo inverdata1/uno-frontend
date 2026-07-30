@@ -212,7 +212,7 @@ export default function ProductDetail({ product, onClose, onBusinessPress, onVid
                   <Image
                     source={{ uri: imageUrl }}
                     style={{ width: '100%', height: '100%' }}
-                    resizeMode="contain"
+                    resizeMode="cover"
                   onLoadStart={() => {
                     console.log('Image loading started:', imageUrl);
                     setImageLoadingStates(prev => ({ ...prev, [index]: true }));
@@ -504,7 +504,19 @@ export default function ProductDetail({ product, onClose, onBusinessPress, onVid
               ))}
             </ScrollView>
           </View>
-        ) : null}
+        ) : (
+          <View className="px-4 mb-6">
+            <Text className="text-lg font-bold text-gray-900 mb-3">
+              Contenido relacionado
+            </Text>
+            <View className="bg-gray-50 rounded-xl p-6 items-center justify-center border border-gray-100">
+              <Text className="text-4xl mb-3">📭</Text>
+              <Text className="text-sm text-gray-500 text-center">
+                Este producto actualmente no tiene contenido social relacionado
+              </Text>
+            </View>
+          </View>
+        )}
 
         {/* Variants - Shopify Style */}
         {variants.length > 0 && (

@@ -14,6 +14,7 @@ import { Text } from '../../../shared/components/ui';
 import StoryViewer from '../../shared/social/stories/story-viewer';
 import ProductDetail from '../products/product-detail';
 import VideoViewer from '../social/videos/video-viewer';
+import PostViewer from '../../shared/social/posts/post-viewer';
 import OffersBanner from './offers-banner';
 
 const { width } = Dimensions.get('window');
@@ -29,6 +30,8 @@ export default function ClientHomeScreen() {
   const [videoViewerVisible, setVideoViewerVisible] = useState(false);
   const [selectedVideoIndex, setSelectedVideoIndex] = useState(0);
   const [videoViewerVideos, setVideoViewerVideos] = useState([]);
+  const [postViewerVisible, setPostViewerVisible] = useState(false);
+  const [postViewerPost, setPostViewerPost] = useState(null);
   const [productDetailVisible, setProductDetailVisible] = useState(false);
   const [selectedProduct, setSelectedProduct] = useState(null);
   const [productsBottomSheetVisible, setProductsBottomSheetVisible] = useState(false);
@@ -501,6 +504,27 @@ export default function ClientHomeScreen() {
         }}
       />
 
+      {/* Post Viewer Modal */}
+      {postViewerPost && (
+        <PostViewer
+          visible={postViewerVisible}
+          post={postViewerPost}
+          onClose={() => {
+            setPostViewerVisible(false);
+            setProductDetailVisible(true);
+          }}
+          onBusinessPress={(businessId) => {
+            setPostViewerVisible(false);
+            router.push(`/client/business/${businessId}`);
+          }}
+          onProductPress={(product) => {
+            setPostViewerVisible(false);
+            setSelectedProduct(product);
+            setProductDetailVisible(true);
+          }}
+        />
+      )}
+
       {/* Product Detail Modal */}
       <Modal
         visible={productDetailVisible}
@@ -527,6 +551,11 @@ export default function ClientHomeScreen() {
                 setVideoViewerVideos(allVideos);
                 setSelectedVideoIndex(videoIndex >= 0 ? videoIndex : 0);
                 setVideoViewerVisible(true);
+              }}
+              onPostPress={(post) => {
+                setProductDetailVisible(false);
+                setPostViewerPost(post);
+                setPostViewerVisible(true);
               }}
             />
           )}

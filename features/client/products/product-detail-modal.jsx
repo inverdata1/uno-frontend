@@ -6,6 +6,7 @@ import { Text } from '../../../shared/components/ui';
 import { useProduct } from '../../shared/products/hooks/use-products';
 import ProductDetail from './product-detail';
 import VideoViewer from '../social/videos/video-viewer';
+import PostViewer from '../../shared/social/posts/post-viewer';
 
 /**
  * Reusable Product Detail Modal
@@ -32,6 +33,8 @@ export default function ProductDetailModal({
   const [videoViewerVisible, setVideoViewerVisible] = useState(false);
   const [videoViewerVideos, setVideoViewerVideos] = useState([]);
   const [selectedVideoIndex, setSelectedVideoIndex] = useState(0);
+  const [postViewerVisible, setPostViewerVisible] = useState(false);
+  const [postViewerPost, setPostViewerPost] = useState(null);
 
   // When modal closes, check if there's pending navigation
   useEffect(() => {
@@ -97,7 +100,24 @@ export default function ProductDetailModal({
               onClose={onClose}
               onBusinessPress={handleBusinessPress}
               onVideoPress={handleVideoPress}
+              onPostPress={(post) => {
+                setPostViewerPost(post);
+                setPostViewerVisible(true);
+              }}
             />
+
+            {/* Post Viewer Modal */}
+            {postViewerPost && (
+              <PostViewer
+                visible={postViewerVisible}
+                post={postViewerPost}
+                onClose={() => setPostViewerVisible(false)}
+                onBusinessPress={(businessId) => {
+                  setPostViewerVisible(false);
+                  handleBusinessPress(businessId);
+                }}
+              />
+            )}
 
             {/* Video Viewer Modal */}
             <VideoViewer

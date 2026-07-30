@@ -4,7 +4,7 @@ import { useState } from 'react';
 import { ActivityIndicator, Alert, Dimensions, Image, Modal, Pressable, ScrollView, StatusBar, TouchableOpacity, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Text } from '../../../shared/components/ui';
-import { useProductVideos } from '../../../shared/hooks/use-product-posts';
+import { useProductPosts } from '../../../shared/hooks/use-product-posts';
 import { useCurrentUserType } from '../../../shared/hooks/use-user-type';
 import { colors } from '../../../shared/utils/colors';
 import { useDeleteProduct } from '../../shared/products/hooks/use-products';
@@ -15,7 +15,7 @@ const { width } = Dimensions.get('window');
  * Product Detail Screen
  * Instagram/TikTok Shop inspired design with floating header and modern layout
  */
-export default function ProductDetail({ product, onClose, onBusinessPress, onVideoPress }) {
+export default function ProductDetail({ product, onClose, onBusinessPress, onVideoPress, onPostPress }) {
   const router = useRouter();
   const [selectedImageIndex, setSelectedImageIndex] = useState(0);
   const [quantity, setQuantity] = useState(1);
@@ -31,8 +31,8 @@ export default function ProductDetail({ product, onClose, onBusinessPress, onVid
   const { currentUserType, currentContext } = useCurrentUserType();
   const deleteProductMutation = useDeleteProduct();
 
-  // Fetch videos that have this product tagged
-  const { data: productVideos = [], isLoading: videosLoading } = useProductVideos(product?.id);
+  // Fetch related content (posts and videos) that have this product tagged
+  const { data: relatedPosts = [], isLoading: postsLoading } = useProductPosts(product?.id);
 
   // Check if current user is the owner of this product
   const isOwner = currentUserType === 'business' &&
@@ -46,7 +46,8 @@ export default function ProductDetail({ product, onClose, onBusinessPress, onVid
     name: product?.name,
     business: product?.business,
     businessId: product?.businessId,
-    productVideosCount: productVideos.length
+    productVideosCount: relatedPosts.filter(p => p.type === 'video').length,
+    productPostsCount: relatedPosts.filter(p => p.type === 'image').length
   });
 
   // Images and variants safely parsed
@@ -88,15 +89,20 @@ export default function ProductDetail({ product, onClose, onBusinessPress, onVid
     }
   };
 
-  const handleVideoPress = (video) => {
-    console.log('Open video:', video.id);
-    // If parent provides onVideoPress callback, use it
-    if (onVideoPress) {
-      onVideoPress(video, productVideos);
+  const handleContentPress = (post) => {
+    if (post.type === 'video') {
+      const allVideos = relatedPosts.filter(p => p.type === 'video');
+      if (onVideoPress) {
+        onVideoPress(post, allVideos);
+      } else {
+        console.warn('No onVideoPress callback provided');
+      }
     } else {
-      // Fallback: close modal (parent should handle video viewer)
-      console.warn('No onVideoPress callback provided');
-      onClose?.();
+      if (onPostPress) {
+        onPostPress(post);
+      } else {
+        console.warn('No onPostPress callback provided');
+      }
     }
   };
 
@@ -405,26 +411,26 @@ export default function ProductDetail({ product, onClose, onBusinessPress, onVid
           </Text>
         </View>
 
-        {/* Related Videos - TikTok Style */}
-        {videosLoading ? (
+        {/* Related Content - TikTok/Instagram Style */}
+        {postsLoading ? (
           <View className="px-4 mb-6">
             <Text className="text-lg font-bold text-gray-900 mb-3">
-              Videos con este producto
+              Contenido relacionado
             </Text>
             <View className="flex-row items-center justify-center py-8">
               <ActivityIndicator size="small" color="#ef4444" />
-              <Text className="text-sm text-gray-500 ml-2">Cargando videos...</Text>
+              <Text className="text-sm text-gray-500 ml-2">Cargando contenido...</Text>
             </View>
           </View>
-        ) : productVideos.length > 0 ? (
+        ) : relatedPosts.length > 0 ? (
           <View className="mb-6">
             <View className="px-4 mb-3 flex-row items-center justify-between">
               <View>
                 <Text className="text-lg font-bold text-gray-900">
-                  Videos con este producto
+                  Contenido relacionado
                 </Text>
                 <Text className="text-sm text-gray-500">
-                  {productVideos.length} {productVideos.length === 1 ? 'video' : 'videos'}
+                  {relatedPosts.length} {relatedPosts.length === 1 ? 'publicación' : 'publicaciones'}
                 </Text>
               </View>
             </View>
@@ -434,26 +440,32 @@ export default function ProductDetail({ product, onClose, onBusinessPress, onVid
               contentContainerStyle={{ paddingHorizontal: 16 }}
               className="gap-3"
             >
-              {productVideos.map((post, index) => (
+              {relatedPosts.map((post, index) => (
                 <TouchableOpacity
                   key={post.id}
                   activeOpacity={0.9}
-                  onPress={() => handleVideoPress(post)}
+                  onPress={() => handleContentPress(post)}
                   className="relative rounded-xl overflow-hidden bg-gray-100"
-                  style={{ width: 130, height: 200, marginRight: index < productVideos.length - 1 ? 12 : 0 }}
+                  style={{ width: 130, height: 200, marginRight: index < relatedPosts.length - 1 ? 12 : 0 }}
                 >
-                  {post.thumbnailUrl ? (
+                  {post.thumbnailUrl || (post.type === 'image' && post.images?.[0]) ? (
                     <Image
-                      source={{ uri: post.thumbnailUrl }}
+                      source={{ uri: post.thumbnailUrl || post.images?.[0] }}
                       className="w-full h-full"
                       resizeMode="cover"
                     />
                   ) : (
                     <View className="flex-1 justify-center items-center">
-                      <Ionicons name="play-circle" size={40} color="#9ca3af" />
+                      <Ionicons name={post.type === 'video' ? 'play-circle' : 'image-outline'} size={40} color="#9ca3af" />
                     </View>
                   )}
-                  {/* Play overlay with gradient */}
+                  {/* Top Right Type Icon */}
+                  <View className="absolute top-2 right-2">
+                    <View className="bg-black/50 rounded-full w-6 h-6 items-center justify-center">
+                      <Ionicons name={post.type === 'video' ? 'play' : 'images'} size={14} color="#fff" />
+                    </View>
+                  </View>
+                  {/* Play overlay with gradient (only if video or has views) */}
                   <View className="absolute inset-0 justify-end">
                     <View style={{
                       height: 80,
@@ -463,19 +475,21 @@ export default function ProductDetail({ product, onClose, onBusinessPress, onVid
                       justifyContent: 'flex-end'
                     }}>
                       <View className="flex-row items-center">
-                        <Ionicons name="play" size={14} color="#fff" />
+                        <Ionicons name="eye" size={14} color="#fff" />
                         <Text className="text-xs font-semibold text-white ml-1">
-                          {post.viewCount ? `${post.viewCount >= 1000 ? `${(post.viewCount / 1000).toFixed(1)}K` : post.viewCount}` : ''}
+                          {post.viewCount ? `${post.viewCount >= 1000 ? `${(post.viewCount / 1000).toFixed(1)}K` : post.viewCount}` : '0'}
                         </Text>
                       </View>
                     </View>
                   </View>
-                  {/* Play button icon in center */}
-                  <View className="absolute inset-0 justify-center items-center">
-                    <View className="w-12 h-12 rounded-full bg-black/30 items-center justify-center">
-                      <Ionicons name="play" size={24} color="#fff" />
+                  {/* Play button icon in center for video */}
+                  {post.type === 'video' && (
+                    <View className="absolute inset-0 justify-center items-center">
+                      <View className="w-12 h-12 rounded-full bg-black/30 items-center justify-center">
+                        <Ionicons name="play" size={24} color="#fff" />
+                      </View>
                     </View>
-                  </View>
+                  )}
                 </TouchableOpacity>
               ))}
             </ScrollView>

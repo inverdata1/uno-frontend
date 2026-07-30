@@ -1,6 +1,7 @@
 import { Ionicons } from '@expo/vector-icons';
-import { useState } from 'react';
-import { Alert, Image, ScrollView, TouchableOpacity, View } from 'react-native';
+import { useState, useEffect } from 'react';
+import { Alert, Image, ScrollView, TouchableOpacity, View, Platform } from 'react-native';
+import DateTimePicker from '@react-native-community/datetimepicker';
 import * as ImagePicker from 'expo-image-picker';
 import { Input, MapPicker, Text } from '../../../shared/components/ui';
 import { PhoneInput } from '../../../shared/components/ui/phone-input';
@@ -30,10 +31,43 @@ export default function BusinessOnboardingStep({
     bannerMimeType: businessData.bannerMimeType || null,
   });
 
+  // Time pickers state
+  const [openTime, setOpenTime] = useState(new Date(new Date().setHours(8, 0, 0, 0)));
+  const [closeTime, setCloseTime] = useState(new Date(new Date().setHours(17, 0, 0, 0)));
+  const [showOpenPicker, setShowOpenPicker] = useState(false);
+  const [showClosePicker, setShowClosePicker] = useState(false);
+
+  // Sync initial time if businessHours exists
+  useEffect(() => {
+    if (businessData.businessHours) {
+      try {
+        const parts = businessData.businessHours.split(' - ');
+        if (parts.length === 2) {
+          const parseTime = (timeStr) => {
+            const [time, period] = timeStr.split(' ');
+            let [hours, minutes] = time.split(':').map(Number);
+            if (period === 'PM' && hours !== 12) hours += 12;
+            if (period === 'AM' && hours === 12) hours = 0;
+            const date = new Date();
+            date.setHours(hours, minutes, 0, 0);
+            return date;
+          };
+          setOpenTime(parseTime(parts[0]));
+          setCloseTime(parseTime(parts[1]));
+        }
+      } catch(e) {}
+    }
+  }, []);
+
   const updateField = (field, value) => {
     const newData = { ...formData, [field]: value };
     setFormData(newData);
     onBusinessDataChange?.(newData);
+  };
+
+  const updateHours = (newOpen, newClose) => {
+    const hours = `${newOpen.toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})} - ${newClose.toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}`;
+    updateField('businessHours', hours);
   };
 
   const handlePickLogo = async () => {
@@ -99,6 +133,16 @@ export default function BusinessOnboardingStep({
     { id: 'other', label: 'Otro', icon: 'ellipsis-horizontal' },
   ];
 
+  const businessTypesByCategory = {
+    restaurant: ['Restaurante Elegante', 'Comida Rápida', 'Cafetería', 'Food Truck', 'Pizzería', 'Comida Tradicional', 'Otro'],
+    store: ['Ropa y Accesorios', 'Calzado', 'Hogar', 'Deportes', 'Belleza', 'Regalos', 'Otro'],
+    pharmacy: ['Farmacia General', 'Dermatología', 'Naturista', 'Otro'],
+    market: ['Supermercado', 'Mini Market', 'Bodega', 'Licorería', 'Carnicería', 'Frutería', 'Otro'],
+    bakery: ['Panadería Tradicional', 'Pastelería', 'Postres', 'Otro'],
+    technology: ['Celulares y Accesorios', 'Computación', 'Servicio Técnico', 'Videojuegos', 'Otro'],
+    other: ['Servicios Profesionales', 'Educación', 'Entretenimiento', 'Salud', 'Otro'],
+  };
+
   return (
     <View>
       <Text variant="subheading" className="mb-4 text-center">
@@ -113,13 +157,7 @@ export default function BusinessOnboardingStep({
         autoCapitalize="words"
       />
 
-      {/* Business Type */}
-      <Input
-        value={formData.businessType}
-        onChangeText={(value) => updateField('businessType', value)}
-        placeholder="Tipo de negocio (ej. Venta minorista, Servicios)"
-        autoCapitalize="words"
-      />
+
 
       {/* Category Selection */}
       <View className="mb-3">
@@ -167,6 +205,49 @@ export default function BusinessOnboardingStep({
         </ScrollView>
       </View>
 
+      {/* Business Type Selection (Only visible if category is selected) */}
+      {formData.category && businessTypesByCategory[formData.category] && (
+        <View className="mb-3">
+          <View className="flex-row items-center justify-between mb-2">
+            <Text variant="body" className="text-gray-500 font-medium">
+              Tipo de Negocio
+            </Text>
+            <View className="flex-row items-center">
+              <Text variant="caption" className="text-gray-400 mr-1">
+                Desliza
+              </Text>
+              <Ionicons name="chevron-forward" size={14} color="#9ca3af" />
+            </View>
+          </View>
+          <ScrollView
+            horizontal
+            showsHorizontalScrollIndicator={false}
+            contentContainerStyle={{ paddingRight: 16 }}
+          >
+            {businessTypesByCategory[formData.category].map((type) => (
+              <TouchableOpacity
+                key={type}
+                onPress={() => updateField('businessType', type)}
+                className="flex-row items-center rounded-full px-4 py-2.5 mr-2"
+                style={{
+                  backgroundColor: formData.businessType === type ? '#3b82f6' : '#f9fafb',
+                  borderWidth: 1,
+                  borderColor: formData.businessType === type ? '#3b82f6' : '#9ca3af',
+                }}
+                activeOpacity={0.7}
+              >
+                <Text
+                  className="text-sm font-medium"
+                  style={{ color: formData.businessType === type ? '#ffffff' : '#6b7280' }}
+                >
+                  {type}
+                </Text>
+              </TouchableOpacity>
+            ))}
+          </ScrollView>
+        </View>
+      )}
+
       {/* Description */}
       <Input
         value={formData.description}
@@ -179,12 +260,61 @@ export default function BusinessOnboardingStep({
       />
 
       {/* Business Hours */}
-      <Input
-        value={formData.businessHours}
-        onChangeText={(value) => updateField('businessHours', value)}
-        placeholder="Horario (ej. Lun a Vie de 8am a 5pm)"
-        autoCapitalize="sentences"
-      />
+      <View className="mb-3">
+        <Text variant="body" className="text-gray-500 font-medium mb-2">
+          Horario de Atención
+        </Text>
+        <View className="flex-row gap-3">
+          <TouchableOpacity
+            className="flex-1 bg-white border border-gray-400 rounded-xl p-3 items-center"
+            onPress={() => setShowOpenPicker(true)}
+          >
+            <Text variant="caption" className="text-gray-500">Abre:</Text>
+            <Text variant="body" className="font-semibold mt-1">
+              {openTime.toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}
+            </Text>
+          </TouchableOpacity>
+
+          <TouchableOpacity
+            className="flex-1 bg-white border border-gray-400 rounded-xl p-3 items-center"
+            onPress={() => setShowClosePicker(true)}
+          >
+            <Text variant="caption" className="text-gray-500">Cierra:</Text>
+            <Text variant="body" className="font-semibold mt-1">
+              {closeTime.toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}
+            </Text>
+          </TouchableOpacity>
+        </View>
+
+        {showOpenPicker && (
+          <DateTimePicker
+            value={openTime}
+            mode="time"
+            display="default"
+            onChange={(event, date) => {
+              setShowOpenPicker(Platform.OS === 'ios');
+              if (date) {
+                setOpenTime(date);
+                updateHours(date, closeTime);
+              }
+            }}
+          />
+        )}
+        {showClosePicker && (
+          <DateTimePicker
+            value={closeTime}
+            mode="time"
+            display="default"
+            onChange={(event, date) => {
+              setShowClosePicker(Platform.OS === 'ios');
+              if (date) {
+                setCloseTime(date);
+                updateHours(openTime, date);
+              }
+            }}
+          />
+        )}
+      </View>
 
       {/* Address */}
       <Input

@@ -48,7 +48,6 @@ export function MediaSelectionStep({ selectedMedia, onMediaChange, onNext, allow
       const { assets } = await MediaLibrary.getAssetsAsync({
         mediaType,
         first: 60,
-        sortBy: [MediaLibrary.SortBy.creationTime],
       });
       setGalleryAssets(assets);
     } catch (error) {

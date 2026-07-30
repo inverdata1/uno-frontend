@@ -14,7 +14,7 @@ import {
   Share
 } from 'react-native';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
-import { SafeAreaView } from 'react-native-safe-area-context';
+import { SafeAreaProvider, SafeAreaView } from 'react-native-safe-area-context';
 import { Text } from '../../../../shared/components/ui';
 import { useCurrentUserType } from '../../../../shared/hooks/use-user-type';
 import { colors } from '../../../../shared/utils/colors';
@@ -172,6 +172,7 @@ export default function PostViewer({
 }) {
   const [currentImageIndex, setCurrentImageIndex] = useState(0);
   const [menuVisible, setMenuVisible] = useState(false);
+  const [fullscreenVisible, setFullscreenVisible] = useState(false);
   const { currentUserType, currentContext } = useCurrentUserType();
 
   const deletePostMutation = useDeletePost();
@@ -288,6 +289,7 @@ export default function PostViewer({
       presentationStyle="fullScreen"
       onRequestClose={onClose}
     >
+      <SafeAreaProvider>
       <GestureHandlerRootView style={{ flex: 1 }}>
         <SafeAreaView style={{ flex: 1, backgroundColor: colors.bg.primary }} edges={['top']}>
           {/* Header */}
@@ -401,12 +403,17 @@ export default function PostViewer({
                           style={{ width: SCREEN_WIDTH, aspectRatio: 1, backgroundColor: '#000000' }}
                         />
                       ) : (
-                        <Image
+                        <TouchableOpacity
                           key={index}
-                          source={{ uri: itemUrl }}
-                          style={{ width: SCREEN_WIDTH, aspectRatio: 1, backgroundColor: '#000000' }}
-                          resizeMode="cover"
-                        />
+                          activeOpacity={0.9}
+                          onPress={() => setFullscreenVisible(true)}
+                        >
+                          <Image
+                            source={{ uri: itemUrl }}
+                            style={{ width: SCREEN_WIDTH, aspectRatio: 1, backgroundColor: '#000000' }}
+                            resizeMode="cover"
+                          />
+                        </TouchableOpacity>
                       );
                     })}
                   </ScrollView>
@@ -438,11 +445,16 @@ export default function PostViewer({
                       style={{ width: SCREEN_WIDTH, aspectRatio: 1, backgroundColor: '#000000' }}
                     />
                   ) : (
-                    <Image
-                      source={{ uri: itemUrl }}
-                      style={{ width: SCREEN_WIDTH, aspectRatio: 1, backgroundColor: '#000000' }}
-                      resizeMode="cover"
-                    />
+                    <TouchableOpacity
+                      activeOpacity={0.9}
+                      onPress={() => setFullscreenVisible(true)}
+                    >
+                      <Image
+                        source={{ uri: itemUrl }}
+                        style={{ width: SCREEN_WIDTH, aspectRatio: 1, backgroundColor: '#000000' }}
+                        resizeMode="cover"
+                      />
+                    </TouchableOpacity>
                   );
                 })()
               )}
@@ -555,7 +567,7 @@ export default function PostViewer({
                     <TouchableOpacity
                       key={index}
                       disabled={!isAvailable}
-                      onPress={() => onProductPress?.(product)}
+                      onPress={() => onProductPress?.(realProduct || { id: product.productId || product.id, ...product })}
                       style={{
                         flexDirection: 'row',
                         alignItems: 'center',
@@ -625,6 +637,89 @@ export default function PostViewer({
           </ScrollView>
         </SafeAreaView>
       </GestureHandlerRootView>
+      </SafeAreaProvider>
+
+      {/* Fullscreen Image Viewer Modal */}
+      <Modal
+        visible={fullscreenVisible}
+        transparent={true}
+        animationType="fade"
+        onRequestClose={() => setFullscreenVisible(false)}
+      >
+        <View style={{ flex: 1, backgroundColor: '#000' }}>
+          <SafeAreaView style={{ flex: 1 }}>
+            <View style={{
+              flexDirection: 'row',
+              justifyContent: 'flex-end',
+              padding: 16,
+              zIndex: 10
+            }}>
+              <TouchableOpacity
+                onPress={() => setFullscreenVisible(false)}
+                style={{
+                  width: 40,
+                  height: 40,
+                  borderRadius: 20,
+                  backgroundColor: 'rgba(255,255,255,0.2)',
+                  alignItems: 'center',
+                  justifyContent: 'center'
+                }}
+              >
+                <Ionicons name="close" size={24} color="#fff" />
+              </TouchableOpacity>
+            </View>
+
+            <ScrollView
+              horizontal
+              pagingEnabled
+              showsHorizontalScrollIndicator={false}
+              contentOffset={{ x: currentImageIndex * SCREEN_WIDTH, y: 0 }}
+              onMomentumScrollEnd={(e) => {
+                const newIndex = Math.round(e.nativeEvent.contentOffset.x / SCREEN_WIDTH);
+                setCurrentImageIndex(newIndex);
+              }}
+              style={{ flex: 1 }}
+            >
+              {media.filter(item => {
+                const itemUrl = typeof item === 'string' ? item : item.url;
+                const itemType = typeof item === 'string' ? (itemUrl?.endsWith('.mp4') ? 'video' : 'image') : item.type;
+                return itemType === 'image';
+              }).map((item, index) => {
+                const itemUrl = typeof item === 'string' ? item : item.url;
+                return (
+                  <View key={index} style={{ width: SCREEN_WIDTH, flex: 1, justifyContent: 'center' }}>
+                    <Image
+                      source={{ uri: itemUrl }}
+                      style={{ width: SCREEN_WIDTH, height: '100%' }}
+                      resizeMode="contain"
+                    />
+                  </View>
+                );
+              })}
+            </ScrollView>
+
+            {isCarousel && (
+              <View style={{
+                position: 'absolute',
+                bottom: 40,
+                alignSelf: 'center',
+                backgroundColor: 'rgba(255,255,255,0.2)',
+                paddingHorizontal: 12,
+                paddingVertical: 6,
+                borderRadius: 12
+              }}>
+                <Text style={{ color: '#fff', fontWeight: '600', fontSize: 14 }}>
+                  {currentImageIndex + 1} / {media.filter(item => {
+                    const itemUrl = typeof item === 'string' ? item : item.url;
+                    const itemType = typeof item === 'string' ? (itemUrl?.endsWith('.mp4') ? 'video' : 'image') : item.type;
+                    return itemType === 'image';
+                  }).length}
+                </Text>
+              </View>
+            )}
+          </SafeAreaView>
+        </View>
+      </Modal>
 
       {/* Custom Menu Modal */}
       <Modal

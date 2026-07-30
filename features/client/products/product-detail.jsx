@@ -4,7 +4,7 @@ import { useState } from 'react';
 import { ActivityIndicator, Alert, Dimensions, Image, Modal, Pressable, ScrollView, StatusBar, TouchableOpacity, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Text } from '../../../shared/components/ui';
-import { useProductVideos } from '../../../shared/hooks/use-product-posts';
+import { useProductPosts } from '../../../shared/hooks/use-product-posts';
 import { useCurrentUserType } from '../../../shared/hooks/use-user-type';
 import { colors } from '../../../shared/utils/colors';
 import { useDeleteProduct } from '../../shared/products/hooks/use-products';
@@ -15,7 +15,7 @@ const { width } = Dimensions.get('window');
  * Product Detail Screen
  * Instagram/TikTok Shop inspired design with floating header and modern layout
  */
-export default function ProductDetail({ product, onClose, onBusinessPress, onVideoPress }) {
+export default function ProductDetail({ product, onClose, onBusinessPress, onVideoPress, onPostPress }) {
   const router = useRouter();
   const [selectedImageIndex, setSelectedImageIndex] = useState(0);
   const [quantity, setQuantity] = useState(1);
@@ -25,12 +25,18 @@ export default function ProductDetail({ product, onClose, onBusinessPress, onVid
   const [imageErrors, setImageErrors] = useState({});
   const [menuVisible, setMenuVisible] = useState(false);
   const [previewMode, setPreviewMode] = useState(false);
+  const [fullScreenImageVisible, setFullScreenImageVisible] = useState(false);
+  const [fullScreenImageIndex, setFullScreenImageIndex] = useState(0);
 
   const { currentUserType, currentContext } = useCurrentUserType();
   const deleteProductMutation = useDeleteProduct();
 
-  // Fetch videos that have this product tagged
-  const { data: productVideos = [], isLoading: videosLoading } = useProductVideos(product?.id);
+  // Fetch related content (posts and videos) that have this product tagged
+  const { data: relatedPosts = [], isLoading: postsLoading } = useProductPosts(product?.id);
+
+  const currentPrice = product?.isDiscountActive && product?.discountPrice ? product.discountPrice : product?.price;
+  const originalPrice = product?.isDiscountActive && product?.discountPrice ? product.price : product?.compareAtPrice;
+  const hasDiscount = originalPrice && originalPrice > currentPrice;
 
   // Check if current user is the owner of this product
   const isOwner = currentUserType === 'business' &&
@@ -44,11 +50,22 @@ export default function ProductDetail({ product, onClose, onBusinessPress, onVid
     name: product?.name,
     business: product?.business,
     businessId: product?.businessId,
-    productVideosCount: productVideos.length
+    productVideosCount: relatedPosts.filter(p => p.type === 'video').length,
+    productPostsCount: relatedPosts.filter(p => p.type === 'image').length
   });
 
-  // Images and variants
-  const images = product?.images || [product?.thumbnailUrl || 'https://via.placeholder.com/400'];
+  // Images and variants safely parsed
+  let parsedImages = [];
+  try {
+    if (Array.isArray(product?.images)) {
+      parsedImages = product.images;
+    } else if (typeof product?.images === 'string') {
+      parsedImages = JSON.parse(product.images);
+    }
+  } catch (e) {
+    console.warn('Failed to parse product images:', e);
+  }
+  const images = parsedImages.length > 0 ? parsedImages : [product?.thumbnailUrl || 'https://via.placeholder.com/400'];
   const variants = product?.variants || [];
 
   const handleAddToCart = () => {
@@ -76,15 +93,20 @@ export default function ProductDetail({ product, onClose, onBusinessPress, onVid
     }
   };
 
-  const handleVideoPress = (video) => {
-    console.log('Open video:', video.id);
-    // If parent provides onVideoPress callback, use it
-    if (onVideoPress) {
-      onVideoPress(video, productVideos);
+  const handleContentPress = (post) => {
+    if (post.type === 'video') {
+      const allVideos = relatedPosts.filter(p => p.type === 'video');
+      if (onVideoPress) {
+        onVideoPress(post, allVideos);
+      } else {
+        console.warn('No onVideoPress callback provided');
+      }
     } else {
-      // Fallback: close modal (parent should handle video viewer)
-      console.warn('No onVideoPress callback provided');
-      onClose?.();
+      if (onPostPress) {
+        onPostPress(post);
+      } else {
+        console.warn('No onPostPress callback provided');
+      }
     }
   };
 
@@ -182,12 +204,19 @@ export default function ProductDetail({ product, onClose, onBusinessPress, onVid
               setSelectedImageIndex(index);
             }}
           >
-            {images.map((imageUrl, index) => (
-              <View key={index} style={{ width, height: width * 1.1, backgroundColor: '#f3f4f6' }}>
-                <Image
-                  source={{ uri: imageUrl }}
-                  style={{ width: '100%', height: '100%' }}
-                  resizeMode="cover"
+              {images.map((imageUrl, index) => (
+                <Pressable
+                  key={index}
+                  style={{ width, height: width * 0.65, backgroundColor: '#f3f4f6' }}
+                  onPress={() => {
+                    setFullScreenImageIndex(index);
+                    setFullScreenImageVisible(true);
+                  }}
+                >
+                  <Image
+                    source={{ uri: imageUrl }}
+                    style={{ width: '100%', height: '100%' }}
+                    resizeMode="cover"
                   onLoadStart={() => {
                     console.log('Image loading started:', imageUrl);
                     setImageLoadingStates(prev => ({ ...prev, [index]: true }));
@@ -216,8 +245,8 @@ export default function ProductDetail({ product, onClose, onBusinessPress, onVid
                     <Text style={{ marginTop: 8, color: '#6b7280', fontSize: 14 }}>No se pudo cargar la imagen</Text>
                   </View>
                 )}
-              </View>
-            ))}
+                </Pressable>
+              ))}
           </ScrollView>
 
           {/* Image Indicators */}
@@ -238,27 +267,8 @@ export default function ProductDetail({ product, onClose, onBusinessPress, onVid
         {/* Product Info Section with Favorite Button */}
         <View className="px-4 pt-4">
           <View className="flex-row items-center justify-between">
-            {/* Left Side: Price, Name, Rating */}
+            {/* Left Side: Name, Price, Rating */}
             <View className="flex-1 pr-3">
-              {/* Price */}
-              <View className="flex-row items-center mb-2">
-                <Text className="text-3xl font-bold text-gray-900">
-                  ${product?.price || '0.00'}
-                </Text>
-                {product?.compareAtPrice && (
-                  <>
-                    <Text className="text-lg text-gray-400 ml-2" style={{ textDecorationLine: 'line-through', textDecorationColor: '#9ca3af' }}>
-                      ${product.compareAtPrice}
-                    </Text>
-                    <View className="ml-2 px-2 py-1 bg-red-50 rounded-md items-center justify-center">
-                      <Text className="text-xs font-bold text-red-500 leading-tight">
-                        {Math.round(((product.compareAtPrice - product.price) / product.compareAtPrice) * 100)}% OFF
-                      </Text>
-                    </View>
-                  </>
-                )}
-              </View>
-
               {/* Title */}
               <Text className="text-xl font-bold text-gray-900 mb-3 leading-7">
                 {product?.name || 'Product Name'}
@@ -269,10 +279,10 @@ export default function ProductDetail({ product, onClose, onBusinessPress, onVid
                 <View className="flex-row items-center mr-4">
                   <Ionicons name="star" size={16} color="#fbbf24" />
                   <Text className="text-sm font-semibold text-gray-900 ml-1">
-                    {product?.rating || '4.8'}
+                    {product?.rating || '0.0'}
                   </Text>
                   <Text className="text-sm text-gray-500 ml-1">
-                    ({product?.reviewCount || '127'})
+                    ({product?.reviewCount || '0'})
                   </Text>
                 </View>
                 {product?.soldCount && (
@@ -381,16 +391,16 @@ export default function ProductDetail({ product, onClose, onBusinessPress, onVid
                   Precio
                 </Text>
                 <Text className="text-sm font-semibold" style={{ color: colors.text.primary }}>
-                  ${product?.price || '0.00'}
+                  ${currentPrice || '0.00'}
                 </Text>
               </View>
-              {product?.compareAtPrice && (
+              {hasDiscount && (
                 <View className="flex-row items-center justify-between">
                   <Text className="text-sm" style={{ color: colors.text.secondary }}>
-                    Descuento
+                    Descuento (Antes ${originalPrice})
                   </Text>
                   <Text className="text-sm font-semibold" style={{ color: '#ef4444' }}>
-                    {Math.round(((product.compareAtPrice - product.price) / product.compareAtPrice) * 100)}% OFF
+                    {Math.round(((originalPrice - currentPrice) / originalPrice) * 100)}% OFF
                   </Text>
                 </View>
               )}
@@ -405,26 +415,26 @@ export default function ProductDetail({ product, onClose, onBusinessPress, onVid
           </Text>
         </View>
 
-        {/* Related Videos - TikTok Style */}
-        {videosLoading ? (
+        {/* Related Content - TikTok/Instagram Style */}
+        {postsLoading ? (
           <View className="px-4 mb-6">
             <Text className="text-lg font-bold text-gray-900 mb-3">
-              Videos con este producto
+              Contenido relacionado
             </Text>
             <View className="flex-row items-center justify-center py-8">
               <ActivityIndicator size="small" color="#ef4444" />
-              <Text className="text-sm text-gray-500 ml-2">Cargando videos...</Text>
+              <Text className="text-sm text-gray-500 ml-2">Cargando contenido...</Text>
             </View>
           </View>
-        ) : productVideos.length > 0 ? (
+        ) : relatedPosts.length > 0 ? (
           <View className="mb-6">
             <View className="px-4 mb-3 flex-row items-center justify-between">
               <View>
                 <Text className="text-lg font-bold text-gray-900">
-                  Videos con este producto
+                  Contenido relacionado
                 </Text>
                 <Text className="text-sm text-gray-500">
-                  {productVideos.length} {productVideos.length === 1 ? 'video' : 'videos'}
+                  {relatedPosts.length} {relatedPosts.length === 1 ? 'publicación' : 'publicaciones'}
                 </Text>
               </View>
             </View>
@@ -434,26 +444,27 @@ export default function ProductDetail({ product, onClose, onBusinessPress, onVid
               contentContainerStyle={{ paddingHorizontal: 16 }}
               className="gap-3"
             >
-              {productVideos.map((post, index) => (
+              {relatedPosts.map((post, index) => (
                 <TouchableOpacity
                   key={post.id}
                   activeOpacity={0.9}
-                  onPress={() => handleVideoPress(post)}
+                  onPress={() => handleContentPress(post)}
                   className="relative rounded-xl overflow-hidden bg-gray-100"
-                  style={{ width: 130, height: 200, marginRight: index < productVideos.length - 1 ? 12 : 0 }}
+                  style={{ width: 130, height: 200, marginRight: index < relatedPosts.length - 1 ? 12 : 0 }}
                 >
-                  {post.thumbnailUrl ? (
+                  {post.thumbnailUrl || (post.type === 'image' && post.images?.[0]) ? (
                     <Image
-                      source={{ uri: post.thumbnailUrl }}
+                      source={{ uri: post.thumbnailUrl || post.images?.[0] }}
                       className="w-full h-full"
                       resizeMode="cover"
                     />
                   ) : (
                     <View className="flex-1 justify-center items-center">
-                      <Ionicons name="play-circle" size={40} color="#9ca3af" />
+                      <Ionicons name={post.type === 'video' ? 'play-circle' : 'image-outline'} size={40} color="#9ca3af" />
                     </View>
                   )}
-                  {/* Play overlay with gradient */}
+
+                  {/* Play overlay with gradient (only if video or has views) */}
                   <View className="absolute inset-0 justify-end">
                     <View style={{
                       height: 80,
@@ -462,25 +473,54 @@ export default function ProductDetail({ product, onClose, onBusinessPress, onVid
                       paddingLeft: 8,
                       justifyContent: 'flex-end'
                     }}>
-                      <View className="flex-row items-center">
-                        <Ionicons name="play" size={14} color="#fff" />
-                        <Text className="text-xs font-semibold text-white ml-1">
-                          {post.viewCount ? `${post.viewCount >= 1000 ? `${(post.viewCount / 1000).toFixed(1)}K` : post.viewCount}` : ''}
-                        </Text>
+                      <View className="flex-row items-center justify-between w-full pr-2">
+                        <View className="flex-row items-center">
+                          <Ionicons name="eye" size={14} color="#fff" />
+                          <Text className="text-xs font-semibold text-white ml-1">
+                            {post.viewCount ? `${post.viewCount >= 1000 ? `${(post.viewCount / 1000).toFixed(1)}K` : post.viewCount}` : '0'}
+                          </Text>
+                        </View>
+                        {post.type === 'video' && (
+                          <View className="bg-black/60 px-1.5 py-0.5 rounded">
+                            <Text className="text-[10px] font-semibold text-white">
+                              {(() => {
+                                const m = post.media && Array.isArray(post.media) ? post.media : (typeof post.media === 'string' ? JSON.parse(post.media || '[]') : []);
+                                const duration = m[0]?.duration || 15;
+                                const mins = Math.floor(duration / 60);
+                                const secs = Math.floor(duration % 60);
+                                return `${mins}:${secs.toString().padStart(2, '0')}`;
+                              })()}
+                            </Text>
+                          </View>
+                        )}
                       </View>
                     </View>
                   </View>
-                  {/* Play button icon in center */}
-                  <View className="absolute inset-0 justify-center items-center">
-                    <View className="w-12 h-12 rounded-full bg-black/30 items-center justify-center">
-                      <Ionicons name="play" size={24} color="#fff" />
+                  {/* Play button icon in center for video */}
+                  {post.type === 'video' && (
+                    <View className="absolute inset-0 justify-center items-center">
+                      <View className="w-12 h-12 rounded-full bg-black/30 items-center justify-center">
+                        <Ionicons name="play" size={24} color="#fff" />
+                      </View>
                     </View>
-                  </View>
+                  )}
                 </TouchableOpacity>
               ))}
             </ScrollView>
           </View>
-        ) : null}
+        ) : (
+          <View className="px-4 mb-6">
+            <Text className="text-lg font-bold text-gray-900 mb-3">
+              Contenido relacionado
+            </Text>
+            <View className="bg-gray-50 rounded-xl p-6 items-center justify-center border border-gray-100">
+              <Text className="text-4xl mb-3">📭</Text>
+              <Text className="text-sm text-gray-500 text-center">
+                Este producto actualmente no tiene contenido social relacionado
+              </Text>
+            </View>
+          </View>
+        )}
 
         {/* Variants - Shopify Style */}
         {variants.length > 0 && (
@@ -610,7 +650,7 @@ export default function ProductDetail({ product, onClose, onBusinessPress, onVid
             className="bg-red-500 py-4 rounded-xl items-center active:bg-red-600"
           >
             <Text className="text-lg font-bold text-white">
-              Añadir al carrito · ${((product?.price || 0) * quantity).toFixed(2)}
+              Añadir al carrito • ${((currentPrice || 0) * quantity).toFixed(2)}
             </Text>
           </TouchableOpacity>
         </View>
@@ -654,21 +694,6 @@ export default function ProductDetail({ product, onClose, onBusinessPress, onVid
               <Text className="text-xs" style={{ color: colors.text.secondary }}>Vendidos</Text>
             </View>
 
-            <View style={{ width: 1, height: 40, backgroundColor: colors.border.light }} />
-
-            <View className="items-center">
-              <View className="flex-row items-center mb-1" style={{ gap: 4 }}>
-                <Ionicons
-                  name={product?.trackInventory ? "cube-outline" : "infinite-outline"}
-                  size={20}
-                  color={colors.text.secondary}
-                />
-                <Text className="text-2xl font-bold" style={{ color: colors.text.primary }}>
-                  {product?.trackInventory ? (product?.stock || 0) : '∞'}
-                </Text>
-              </View>
-              <Text className="text-xs" style={{ color: colors.text.secondary }}>Stock</Text>
-            </View>
           </View>
         </View>
       )}
@@ -726,6 +751,64 @@ export default function ProductDetail({ product, onClose, onBusinessPress, onVid
             </View>
           </SafeAreaView>
         </Pressable>
+      </Modal>
+
+      {/* Full Screen Image Viewer Modal */}
+      <Modal
+        visible={fullScreenImageVisible}
+        transparent={true}
+        animationType="fade"
+        onRequestClose={() => setFullScreenImageVisible(false)}
+      >
+        <View style={{ flex: 1, backgroundColor: '#000000' }}>
+          <SafeAreaView edges={['top']} style={{ position: 'absolute', top: 0, left: 0, right: 0, zIndex: 10 }}>
+            <View style={{ flexDirection: 'row', justifyContent: 'flex-end', padding: 16 }}>
+              <TouchableOpacity onPress={() => setFullScreenImageVisible(false)} style={{ padding: 8 }}>
+                <Ionicons name="close" size={32} color="#ffffff" />
+              </TouchableOpacity>
+            </View>
+          </SafeAreaView>
+          
+          <ScrollView
+            horizontal
+            pagingEnabled
+            showsHorizontalScrollIndicator={false}
+            contentOffset={{ x: fullScreenImageIndex * width, y: 0 }}
+            onMomentumScrollEnd={(e) => {
+              const index = Math.round(e.nativeEvent.contentOffset.x / width);
+              setFullScreenImageIndex(index);
+            }}
+          >
+            {images.map((imageUrl, index) => (
+              <View key={index} style={{ width, height: '100%', justifyContent: 'center', alignItems: 'center' }}>
+                <Image
+                  source={{ uri: imageUrl }}
+                  style={{ width: '100%', height: '100%' }}
+                  resizeMode="contain"
+                />
+              </View>
+            ))}
+          </ScrollView>
+
+          {/* Full Screen Image Indicators */}
+          {images.length > 1 && (
+            <SafeAreaView edges={['bottom']} style={{ position: 'absolute', bottom: 0, left: 0, right: 0 }}>
+              <View style={{ flexDirection: 'row', justifyContent: 'center', gap: 6, paddingBottom: 20 }}>
+                {images.map((_, index) => (
+                  <View
+                    key={index}
+                    style={{
+                      height: 6,
+                      borderRadius: 3,
+                      backgroundColor: fullScreenImageIndex === index ? '#ffffff' : 'rgba(255, 255, 255, 0.5)',
+                      width: fullScreenImageIndex === index ? 24 : 6,
+                    }}
+                  />
+                ))}
+              </View>
+            </SafeAreaView>
+          )}
+        </View>
       </Modal>
 
       </SafeAreaView>

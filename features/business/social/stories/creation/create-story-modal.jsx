@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { View, Modal, TouchableOpacity, Image, ActivityIndicator, Alert, StatusBar, TextInput, Platform, KeyboardAvoidingView } from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
+import { SafeAreaProvider, SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import * as ImagePicker from 'expo-image-picker';
 import { ref, uploadBytes, getDownloadURL } from 'firebase/storage';
@@ -161,6 +161,7 @@ export const CreateStoryModal = ({ visible, onClose }) => {
       presentationStyle="fullScreen"
       onRequestClose={handleClose}
     >
+      <SafeAreaProvider>
       <SafeAreaView style={{ flex: 1, backgroundColor: colors.bg.primary }} edges={['top', 'bottom']}>
         <StatusBar barStyle="dark-content" backgroundColor={colors.bg.primary} />
 
@@ -328,6 +329,7 @@ export const CreateStoryModal = ({ visible, onClose }) => {
           </View>
         </KeyboardAvoidingView>
       </SafeAreaView>
+      </SafeAreaProvider>
     </Modal>
   );
 };

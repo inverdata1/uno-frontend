@@ -3,7 +3,7 @@ import { LinearGradient } from 'expo-linear-gradient';
 import { useRouter } from 'expo-router';
 import { useState } from 'react';
 import { Dimensions, Image, Modal, ScrollView, TouchableOpacity, View } from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
+import { SafeAreaProvider, SafeAreaView } from 'react-native-safe-area-context';
 import { useProducts } from '../../../features/shared/products/hooks/use-products';
 import { useBusinesses } from '../../../features/shared/social/hooks/use-businesses';
 import { useCategories } from '../../../features/shared/social/hooks/use-categories';
@@ -14,6 +14,7 @@ import { Text } from '../../../shared/components/ui';
 import StoryViewer from '../../shared/social/stories/story-viewer';
 import ProductDetail from '../products/product-detail';
 import VideoViewer from '../social/videos/video-viewer';
+import PostViewer from '../../shared/social/posts/post-viewer';
 import OffersBanner from './offers-banner';
 
 const { width } = Dimensions.get('window');
@@ -29,6 +30,8 @@ export default function ClientHomeScreen() {
   const [videoViewerVisible, setVideoViewerVisible] = useState(false);
   const [selectedVideoIndex, setSelectedVideoIndex] = useState(0);
   const [videoViewerVideos, setVideoViewerVideos] = useState([]);
+  const [postViewerVisible, setPostViewerVisible] = useState(false);
+  const [postViewerPost, setPostViewerPost] = useState(null);
   const [productDetailVisible, setProductDetailVisible] = useState(false);
   const [selectedProduct, setSelectedProduct] = useState(null);
   const [productsBottomSheetVisible, setProductsBottomSheetVisible] = useState(false);
@@ -501,6 +504,27 @@ export default function ClientHomeScreen() {
         }}
       />
 
+      {/* Post Viewer Modal */}
+      {postViewerPost && (
+        <PostViewer
+          visible={postViewerVisible}
+          post={postViewerPost}
+          onClose={() => {
+            setPostViewerVisible(false);
+            setProductDetailVisible(true);
+          }}
+          onBusinessPress={(businessId) => {
+            setPostViewerVisible(false);
+            router.push(`/client/business/${businessId}`);
+          }}
+          onProductPress={(product) => {
+            setPostViewerVisible(false);
+            setSelectedProduct(product);
+            setProductDetailVisible(true);
+          }}
+        />
+      )}
+
       {/* Product Detail Modal */}
       <Modal
         visible={productDetailVisible}
@@ -508,27 +532,34 @@ export default function ClientHomeScreen() {
         presentationStyle="fullScreen"
         onRequestClose={() => setProductDetailVisible(false)}
       >
-        {selectedProduct && (
-          <ProductDetail
-            product={selectedProduct}
-            onClose={() => setProductDetailVisible(false)}
-            onBusinessPress={(businessId) => {
-              setProductDetailVisible(false);
-              // Wait for modal animation to complete before navigating
+        <SafeAreaProvider>
+          {selectedProduct && (
+            <ProductDetail
+              product={selectedProduct}
+              onClose={() => setProductDetailVisible(false)}
+              onBusinessPress={(businessId) => {
+                setProductDetailVisible(false);
+                // Wait for modal animation to complete before navigating
                 router.replace(`/client/business/${businessId}`);
-            }}
-            onVideoPress={(video, allVideos) => {
-              // Close product detail
-              setProductDetailVisible(false);
-              // Find the index of the selected video in the array
-              const videoIndex = allVideos.findIndex(v => v.id === video.id);
-              // Open video viewer with all product videos
-              setVideoViewerVideos(allVideos);
-              setSelectedVideoIndex(videoIndex >= 0 ? videoIndex : 0);
-              setVideoViewerVisible(true);
-            }}
-          />
-        )}
+              }}
+              onVideoPress={(video, allVideos) => {
+                // Close product detail
+                setProductDetailVisible(false);
+                // Find the index of the selected video in the array
+                const videoIndex = allVideos.findIndex(v => v.id === video.id);
+                // Open video viewer with all product videos
+                setVideoViewerVideos(allVideos);
+                setSelectedVideoIndex(videoIndex >= 0 ? videoIndex : 0);
+                setVideoViewerVisible(true);
+              }}
+              onPostPress={(post) => {
+                setProductDetailVisible(false);
+                setPostViewerPost(post);
+                setPostViewerVisible(true);
+              }}
+            />
+          )}
+        </SafeAreaProvider>
       </Modal>
     </ScrollView>
   </SafeAreaView>

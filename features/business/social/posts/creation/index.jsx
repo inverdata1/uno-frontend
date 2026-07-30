@@ -1,6 +1,6 @@
 import React, { useRef } from 'react';
 import { View, Modal, Alert } from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
+import { SafeAreaProvider, SafeAreaView } from 'react-native-safe-area-context';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import { usePostCreationState } from './hooks/use-post-creation-state';
 import { MediaSelectionStep } from './steps/media-selection';
@@ -200,6 +200,7 @@ export function PostCreationFlow({ visible, onClose, initialPost = null, allowed
             onMediaChange={replaceMedia}
             allowedMediaTypes={allowedMediaTypes}
             onNext={goToNextStep}
+            onClose={onClose}
           />
         );
 
@@ -257,11 +258,13 @@ export function PostCreationFlow({ visible, onClose, initialPost = null, allowed
       presentationStyle="fullScreen"
       onRequestClose={handleClose}
     >
-      <GestureHandlerRootView style={{ flex: 1 }}>
-        <SafeAreaView style={{ flex: 1 }} edges={['top']}>
-          {renderCurrentStep()}
-        </SafeAreaView>
-      </GestureHandlerRootView>
+      <SafeAreaProvider>
+        <GestureHandlerRootView style={{ flex: 1 }}>
+          <SafeAreaView style={{ flex: 1 }} edges={['top']}>
+            {renderCurrentStep()}
+          </SafeAreaView>
+        </GestureHandlerRootView>
+      </SafeAreaProvider>
     </Modal>
   );
 }

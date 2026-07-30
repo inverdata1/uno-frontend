@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { View, Modal, TouchableOpacity, ScrollView, TextInput, ActivityIndicator, Alert, KeyboardAvoidingView, Platform, StyleSheet } from 'react-native';
 import DateTimePicker from '@react-native-community/datetimepicker';
 import { Ionicons } from '@expo/vector-icons';
-import { SafeAreaView } from 'react-native-safe-area-context';
+import { SafeAreaProvider, SafeAreaView } from 'react-native-safe-area-context';
 import { Text, TimePickerSheet } from '../../../../shared/components/ui';
 import { colors } from '../../../../shared/utils/colors';
 import { MapPicker } from '../../../../shared/components/ui/map-picker';
@@ -92,6 +92,7 @@ export const EditProfileModal = ({ visible, onClose, businessData, onSave, isSav
       presentationStyle="pageSheet"
       onRequestClose={onClose}
     >
+      <SafeAreaProvider>
       <KeyboardAvoidingView 
         style={{ flex: 1, backgroundColor: colors.bg.primary }}
         behavior={Platform.OS === 'ios' ? 'padding' : undefined}
@@ -314,8 +315,9 @@ export const EditProfileModal = ({ visible, onClose, businessData, onSave, isSav
               </View>
             )}
           </ScrollView>
-        </SafeAreaView>
-      </KeyboardAvoidingView>
+          </SafeAreaView>
+        </KeyboardAvoidingView>
+      </SafeAreaProvider>
     </Modal>
   );
 };

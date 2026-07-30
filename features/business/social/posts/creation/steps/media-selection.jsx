@@ -16,7 +16,7 @@ const ITEM_WIDTH = (width - (ITEM_MARGIN * (COLUMN_COUNT - 1))) / COLUMN_COUNT;
  * Step 1: Media Selection
  * Native gallery view with file explorer fallback
  */
-export function MediaSelectionStep({ selectedMedia, onMediaChange, onNext, allowedMediaTypes = ['image', 'video'] }) {
+export function MediaSelectionStep({ selectedMedia, onMediaChange, onNext, onClose, allowedMediaTypes = ['image', 'video'] }) {
   const [galleryAssets, setGalleryAssets] = useState([]);
   useEffect(() => {
     const initGallery = async () => {
@@ -29,7 +29,9 @@ export function MediaSelectionStep({ selectedMedia, onMediaChange, onNext, allow
           loadGalleryAssets();
         }
       } catch (e) {
-        console.error('Permission error:', e);
+        // Silently ignore permission errors (common in Expo Go on Android 13+)
+        // The user will still be able to use the File Explorer fallback
+        console.log('Gallery permission not fully supported in this environment, falling back to explorer.', e.message);
       }
     };
     initGallery();
@@ -113,7 +115,7 @@ export function MediaSelectionStep({ selectedMedia, onMediaChange, onNext, allow
       backgroundColor: colors.bg.primary
     }}>
       <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
-        <TouchableOpacity onPress={() => {}} disabled={true}>
+        <TouchableOpacity onPress={onClose}>
           <Ionicons name="close" size={24} color={colors.text.primary} />
         </TouchableOpacity>
         <Text style={{ fontSize: 18, fontWeight: '700', color: colors.text.primary, marginLeft: 16 }}>

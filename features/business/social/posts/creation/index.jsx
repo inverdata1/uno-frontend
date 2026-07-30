@@ -200,6 +200,7 @@ export function PostCreationFlow({ visible, onClose, initialPost = null, allowed
             onMediaChange={replaceMedia}
             allowedMediaTypes={allowedMediaTypes}
             onNext={goToNextStep}
+            onClose={onClose}
           />
         );
 

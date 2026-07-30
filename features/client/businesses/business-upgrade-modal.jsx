@@ -51,6 +51,8 @@ export default function BusinessUpgradeModal({ visible, onClose, onSuccess }) {
       // 2. Create business profile
       const business = await apiClient.post('/businesses', {
         businessName: businessData.businessName,
+        businessType: businessData.businessType,
+        businessHours: businessData.businessHours,
         category: businessData.category,
         description: businessData.description || '',
         address: businessData.address,

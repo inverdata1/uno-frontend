@@ -61,6 +61,8 @@ export const authService = {
 
         registerPayload.businessData = {
           businessName: businessData.businessName,
+          businessType: businessData.businessType,
+          businessHours: businessData.businessHours,
           category: businessData.category,
           description: businessData.description || '',
           address: businessData.address,

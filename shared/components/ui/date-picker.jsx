@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Platform, Pressable, View } from 'react-native';
+import { Modal, Platform, Pressable, View } from 'react-native';
 import DateTimePicker from '@react-native-community/datetimepicker';
 import { Ionicons } from '@expo/vector-icons';
 import { Text } from './text';
@@ -17,6 +17,10 @@ export const DatePicker = ({
   ...props
 }) => {
   const [showPicker, setShowPicker] = useState(false);
+  // RNDateTimePicker is a *controlled* component: the native wheel snaps back to
+  // whatever `value` holds, so this draft has to track every onChange or the
+  // wheel can't be scrolled at all. It's only read back on confirm.
+  const [draftDate, setDraftDate] = useState(null);
 
   // Web implementation using native HTML5 input
   if (Platform.OS === 'web') {
@@ -76,24 +80,24 @@ export const DatePicker = ({
     return `${day}/${month}/${year}`;
   };
 
-  const handleChange = (event, selectedDate) => {
-    // On Android, the picker closes automatically
-    if (Platform.OS === 'android') {
-      setShowPicker(false);
-      // Only update if user confirmed (not dismissed/cancelled)
-      if (event.type === 'set' && selectedDate && onChange) {
-        onChange(selectedDate);
-      }
-    } else {
-      // On iOS, update the temp date as user scrolls
-      if (selectedDate && onChange) {
-        onChange(selectedDate);
-      }
+  const fallbackDate = maximumDate || new Date();
+
+  const handleAndroidChange = (event, selectedDate) => {
+    setShowPicker(false);
+    // Only update if user confirmed (not dismissed/cancelled)
+    if (event.type === 'set' && selectedDate && onChange) {
+      onChange(selectedDate);
     }
+  };
+
+  const confirmDate = () => {
+    onChange?.(draftDate || value || fallbackDate);
+    setShowPicker(false);
   };
 
   const openPicker = () => {
     if (!disabled) {
+      setDraftDate(value || fallbackDate);
       setShowPicker(true);
     }
   };
@@ -134,16 +138,49 @@ export const DatePicker = ({
         </Text>
       )}
 
-      {showPicker && (
+      {showPicker && Platform.OS === 'android' && (
         <DateTimePicker
-          value={value || new Date()}
+          value={value || fallbackDate}
           mode="date"
           display="spinner"
-          onChange={handleChange}
+          onChange={handleAndroidChange}
           minimumDate={minimumDate}
           maximumDate={maximumDate}
         />
       )}
+
+      <Modal
+        visible={showPicker && Platform.OS !== 'android'}
+        transparent
+        animationType="slide"
+        onRequestClose={() => setShowPicker(false)}
+      >
+        <View className="flex-1 justify-end" style={{ backgroundColor: 'rgba(0,0,0,0.4)' }}>
+          <View className="bg-white rounded-t-2xl pb-8">
+            <View className="flex-row items-center justify-between px-4 py-3 border-b border-gray-200">
+              <Pressable onPress={() => setShowPicker(false)}>
+                <Text className="text-base text-gray-500">Cancelar</Text>
+              </Pressable>
+              <Text className="text-base font-semibold">Fecha de nacimiento</Text>
+              <Pressable onPress={confirmDate}>
+                <Text className="text-base text-primary-500 font-semibold">Listo</Text>
+              </Pressable>
+            </View>
+            {/* The sheet is always white, so pin the picker to the light theme;
+                otherwise it inherits the phone's dark mode and renders white on white */}
+            <DateTimePicker
+              value={draftDate || value || fallbackDate}
+              mode="date"
+              display="spinner"
+              themeVariant="light"
+              textColor="#111827"
+              onChange={(event, selectedDate) => selectedDate && setDraftDate(selectedDate)}
+              minimumDate={minimumDate}
+              maximumDate={maximumDate}
+            />
+          </View>
+        </View>
+      </Modal>
     </View>
   );
 };

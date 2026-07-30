@@ -34,6 +34,10 @@ export default function ProductDetail({ product, onClose, onBusinessPress, onVid
   // Fetch related content (posts and videos) that have this product tagged
   const { data: relatedPosts = [], isLoading: postsLoading } = useProductPosts(product?.id);
 
+  const currentPrice = product?.isDiscountActive && product?.discountPrice ? product.discountPrice : product?.price;
+  const originalPrice = product?.isDiscountActive && product?.discountPrice ? product.price : product?.compareAtPrice;
+  const hasDiscount = originalPrice && originalPrice > currentPrice;
+
   // Check if current user is the owner of this product
   const isOwner = currentUserType === 'business' &&
     currentContext?.businessId &&
@@ -387,16 +391,16 @@ export default function ProductDetail({ product, onClose, onBusinessPress, onVid
                   Precio
                 </Text>
                 <Text className="text-sm font-semibold" style={{ color: colors.text.primary }}>
-                  ${product?.price || '0.00'}
+                  ${currentPrice || '0.00'}
                 </Text>
               </View>
-              {product?.compareAtPrice && (
+              {hasDiscount && (
                 <View className="flex-row items-center justify-between">
                   <Text className="text-sm" style={{ color: colors.text.secondary }}>
-                    Descuento
+                    Descuento (Antes ${originalPrice})
                   </Text>
                   <Text className="text-sm font-semibold" style={{ color: '#ef4444' }}>
-                    {Math.round(((product.compareAtPrice - product.price) / product.compareAtPrice) * 100)}% OFF
+                    {Math.round(((originalPrice - currentPrice) / originalPrice) * 100)}% OFF
                   </Text>
                 </View>
               )}
@@ -646,7 +650,7 @@ export default function ProductDetail({ product, onClose, onBusinessPress, onVid
             className="bg-red-500 py-4 rounded-xl items-center active:bg-red-600"
           >
             <Text className="text-lg font-bold text-white">
-              Añadir al carrito · ${((product?.price || 0) * quantity).toFixed(2)}
+              Añadir al carrito • ${((currentPrice || 0) * quantity).toFixed(2)}
             </Text>
           </TouchableOpacity>
         </View>

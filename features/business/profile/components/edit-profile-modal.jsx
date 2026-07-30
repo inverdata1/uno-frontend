@@ -3,7 +3,7 @@ import { View, Modal, TouchableOpacity, ScrollView, TextInput, ActivityIndicator
 import DateTimePicker from '@react-native-community/datetimepicker';
 import { Ionicons } from '@expo/vector-icons';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { Text } from '../../../../shared/components/ui';
+import { Text, TimePickerSheet } from '../../../../shared/components/ui';
 import { colors } from '../../../../shared/utils/colors';
 import { MapPicker } from '../../../../shared/components/ui/map-picker';
 
@@ -20,11 +20,12 @@ export const EditProfileModal = ({ visible, onClose, businessData, onSave, isSav
   // Tab 2: Location
   const [address, setAddress] = useState('');
   
-  // Time pickers for business hours
+  // Time pickers for business hours. The scrolling draft lives inside
+  // TimePickerSheet so dragging the wheel doesn't re-render this whole modal.
   const [openTime, setOpenTime] = useState(new Date());
   const [closeTime, setCloseTime] = useState(new Date());
-  const [showOpenPicker, setShowOpenPicker] = useState(false);
-  const [showClosePicker, setShowClosePicker] = useState(false);
+  // Which time is being edited: 'open' | 'close' | null
+  const [editingTime, setEditingTime] = useState(null);
   
   const [coordinates, setCoordinates] = useState(null);
 
@@ -247,7 +248,7 @@ export const EditProfileModal = ({ visible, onClose, businessData, onSave, isSav
                   <View style={{ flexDirection: 'row', gap: 12 }}>
                     <TouchableOpacity
                       style={[styles.input, { flex: 1, alignItems: 'center' }]}
-                      onPress={() => setShowOpenPicker(true)}
+                      onPress={() => setEditingTime('open')}
                     >
                       <Text style={{ color: colors.text.secondary }}>Abre:</Text>
                       <Text style={{ color: colors.text.primary, fontWeight: '600', marginTop: 4 }}>
@@ -257,7 +258,7 @@ export const EditProfileModal = ({ visible, onClose, businessData, onSave, isSav
 
                     <TouchableOpacity
                       style={[styles.input, { flex: 1, alignItems: 'center' }]}
-                      onPress={() => setShowClosePicker(true)}
+                      onPress={() => setEditingTime('close')}
                     >
                       <Text style={{ color: colors.text.secondary }}>Cierra:</Text>
                       <Text style={{ color: colors.text.primary, fontWeight: '600', marginTop: 4 }}>
@@ -266,42 +267,40 @@ export const EditProfileModal = ({ visible, onClose, businessData, onSave, isSav
                     </TouchableOpacity>
                   </View>
 
-                  {showOpenPicker && (
+                  {editingTime && Platform.OS === 'android' && (
                     <DateTimePicker
-                      value={openTime}
+                      value={editingTime === 'open' ? openTime : closeTime}
                       mode="time"
                       display="default"
                       onChange={(event, date) => {
-                        setShowOpenPicker(Platform.OS === 'ios');
-                        if (date) setOpenTime(date);
+                        setEditingTime(null);
+                        if (event.type === 'set' && date) {
+                          (editingTime === 'open' ? setOpenTime : setCloseTime)(date);
+                        }
                       }}
                     />
                   )}
-                  {showClosePicker && (
-                    <DateTimePicker
-                      value={closeTime}
-                      mode="time"
-                      display="default"
-                      onChange={(event, date) => {
-                        setShowClosePicker(Platform.OS === 'ios');
-                        if (date) setCloseTime(date);
-                      }}
-                    />
-                  )}
+
+                  <TimePickerSheet
+                    visible={!!editingTime}
+                    value={editingTime === 'open' ? openTime : closeTime}
+                    title={editingTime === 'open' ? 'Hora de apertura' : 'Hora de cierre'}
+                    onCancel={() => setEditingTime(null)}
+                    onConfirm={(date) => {
+                      if (date) (editingTime === 'open' ? setOpenTime : setCloseTime)(date);
+                      setEditingTime(null);
+                    }}
+                  />
                 </View>
 
                 <View style={styles.inputGroup}>
-                  <Text style={styles.label}>Dirección</Text>
-                  <TextInput
-                    style={[styles.input, { marginBottom: 12 }]}
-                    value={address}
-                    onChangeText={setAddress}
-                    placeholder="Ej. Av. Principal, Local 4..."
-                    placeholderTextColor={colors.text.tertiary}
-                  />
-                  <Text style={styles.label}>Ubicación en el Mapa</Text>
+                  {/* The address field is rendered inside the picker so the map
+                      and the address stay a single control */}
+                  <Text style={styles.label}>Ubicación y Dirección</Text>
                   <MapPicker
                     initialLocation={coordinates}
+                    addressValue={address}
+                    onAddressChange={setAddress}
                     onLocationSelect={(loc) => {
                       setCoordinates(loc);
                       if (loc.address) {
@@ -309,7 +308,7 @@ export const EditProfileModal = ({ visible, onClose, businessData, onSave, isSav
                       }
                     }}
                     height={250}
-                    instructionText="Toca en el mapa para seleccionar la ubicación exacta de tu negocio"
+                    instructionText="Busca una referencia o toca el mapa para ubicar tu negocio"
                   />
                 </View>
               </View>

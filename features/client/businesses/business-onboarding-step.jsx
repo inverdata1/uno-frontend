@@ -1,9 +1,9 @@
 import { Ionicons } from '@expo/vector-icons';
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { Alert, Image, ScrollView, TouchableOpacity, View, Platform } from 'react-native';
 import DateTimePicker from '@react-native-community/datetimepicker';
 import * as ImagePicker from 'expo-image-picker';
-import { Input, MapPicker, Text } from '../../../shared/components/ui';
+import { Input, MapPicker, Text, TimePickerSheet } from '../../../shared/components/ui';
 import { PhoneInput } from '../../../shared/components/ui/phone-input';
 
 /**
@@ -31,11 +31,16 @@ export default function BusinessOnboardingStep({
     bannerMimeType: businessData.bannerMimeType || null,
   });
 
-  // Time pickers state
+  // Keeps the latest form data available to callbacks so that consecutive
+  // updates (e.g. uri + mimeType) don't overwrite each other with stale state
+  const formDataRef = useRef(formData);
+
+  // Time pickers state. The scrolling draft lives inside TimePickerSheet so that
+  // dragging the wheel doesn't re-render this screen (and its live MapView).
   const [openTime, setOpenTime] = useState(new Date(new Date().setHours(8, 0, 0, 0)));
   const [closeTime, setCloseTime] = useState(new Date(new Date().setHours(17, 0, 0, 0)));
-  const [showOpenPicker, setShowOpenPicker] = useState(false);
-  const [showClosePicker, setShowClosePicker] = useState(false);
+  // Which time is being edited: 'open' | 'close' | null
+  const [editingTime, setEditingTime] = useState(null);
 
   // Sync initial time if businessHours exists
   useEffect(() => {
@@ -56,69 +61,74 @@ export default function BusinessOnboardingStep({
           setCloseTime(parseTime(parts[1]));
         }
       } catch(e) {}
+    } else {
+      // The inputs already display the default hours, so record them right away
+      // instead of leaving the field empty until the picker is opened
+      updateHours(openTime, closeTime);
     }
   }, []);
 
-  const updateField = (field, value) => {
-    const newData = { ...formData, [field]: value };
+  // Applies several fields at once so a single change never clobbers another
+  const updateFields = (updates) => {
+    const newData = { ...formDataRef.current, ...updates };
+    formDataRef.current = newData;
     setFormData(newData);
     onBusinessDataChange?.(newData);
   };
 
+  const updateField = (field, value) => updateFields({ [field]: value });
+
+  const formatTime = (date) =>
+    date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+
   const updateHours = (newOpen, newClose) => {
-    const hours = `${newOpen.toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})} - ${newClose.toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}`;
-    updateField('businessHours', hours);
+    updateField('businessHours', `${formatTime(newOpen)} - ${formatTime(newClose)}`);
   };
 
-  const handlePickLogo = async () => {
-    try {
-      const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync();
-      if (status !== 'granted') {
-        Alert.alert('Permiso requerido', 'Necesitamos acceso a tu galería para subir el logo.');
-        return;
-      }
-
-      const result = await ImagePicker.launchImageLibraryAsync({
-        mediaTypes: ImagePicker.MediaTypeOptions.Images,
-        allowsEditing: true,
-        aspect: [1, 1],
-        quality: 0.8,
-        presentationStyle: 'fullScreen',
-      });
-
-      if (!result.canceled && result.assets[0]) {
-        updateField('logoUri', result.assets[0].uri);
-        updateField('logoMimeType', result.assets[0].mimeType || result.assets[0].type);
-      }
-    } catch (error) {
-      Alert.alert('Error', 'No se pudo seleccionar la imagen. Intenta nuevamente.');
-      console.error('Logo picker error:', error);
+  const commitTime = (date) => {
+    if (editingTime === 'open') {
+      setOpenTime(date);
+      updateHours(date, closeTime);
+    } else {
+      setCloseTime(date);
+      updateHours(openTime, date);
     }
   };
 
-  const handlePickBanner = async () => {
-    try {
-      const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync();
-      if (status !== 'granted') {
-        Alert.alert('Permiso requerido', 'Necesitamos acceso a tu galería para subir el banner.');
-        return;
-      }
+  // Android shows its own dialog and reports the final value directly;
+  // iOS uses TimePickerSheet, which confirms explicitly.
+  const handleAndroidTimeChange = (event, date) => {
+    setEditingTime(null);
+    if (event.type === 'set' && date) {
+      commitTime(date);
+    }
+  };
 
+  const confirmTime = (date) => {
+    if (date) commitTime(date);
+    setEditingTime(null);
+  };
+
+  // `kind` is 'logo' or 'banner'; both write their uri and mimeType in one update
+  const handlePickImage = async (kind) => {
+    try {
       const result = await ImagePicker.launchImageLibraryAsync({
-        mediaTypes: ImagePicker.MediaTypeOptions.Images,
+        mediaTypes: ['images'],
         allowsEditing: true,
-        aspect: [3, 1],
+        aspect: kind === 'logo' ? [1, 1] : [3, 1],
         quality: 0.8,
-        presentationStyle: 'fullScreen',
       });
 
-      if (!result.canceled && result.assets[0]) {
-        updateField('bannerUri', result.assets[0].uri);
-        updateField('bannerMimeType', result.assets[0].mimeType || result.assets[0].type);
-      }
+      if (result.canceled || !result.assets?.[0]) return;
+
+      const asset = result.assets[0];
+      updateFields({
+        [`${kind}Uri`]: asset.uri,
+        [`${kind}MimeType`]: asset.mimeType || asset.type,
+      });
     } catch (error) {
       Alert.alert('Error', 'No se pudo seleccionar la imagen. Intenta nuevamente.');
-      console.error('Banner picker error:', error);
+      console.error(`${kind} picker error:`, error);
     }
   };
 
@@ -267,62 +277,45 @@ export default function BusinessOnboardingStep({
         <View className="flex-row gap-3">
           <TouchableOpacity
             className="flex-1 bg-white border border-gray-400 rounded-xl p-3 items-center"
-            onPress={() => setShowOpenPicker(true)}
+            onPress={() => setEditingTime('open')}
           >
             <Text variant="caption" className="text-gray-500">Abre:</Text>
             <Text variant="body" className="font-semibold mt-1">
-              {openTime.toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}
+              {formatTime(openTime)}
             </Text>
           </TouchableOpacity>
 
           <TouchableOpacity
             className="flex-1 bg-white border border-gray-400 rounded-xl p-3 items-center"
-            onPress={() => setShowClosePicker(true)}
+            onPress={() => setEditingTime('close')}
           >
             <Text variant="caption" className="text-gray-500">Cierra:</Text>
             <Text variant="body" className="font-semibold mt-1">
-              {closeTime.toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}
+              {formatTime(closeTime)}
             </Text>
           </TouchableOpacity>
         </View>
 
-        {showOpenPicker && (
+        {editingTime && Platform.OS === 'android' && (
           <DateTimePicker
-            value={openTime}
+            value={editingTime === 'open' ? openTime : closeTime}
             mode="time"
             display="default"
-            onChange={(event, date) => {
-              setShowOpenPicker(Platform.OS === 'ios');
-              if (date) {
-                setOpenTime(date);
-                updateHours(date, closeTime);
-              }
-            }}
+            onChange={handleAndroidTimeChange}
           />
         )}
-        {showClosePicker && (
-          <DateTimePicker
-            value={closeTime}
-            mode="time"
-            display="default"
-            onChange={(event, date) => {
-              setShowClosePicker(Platform.OS === 'ios');
-              if (date) {
-                setCloseTime(date);
-                updateHours(openTime, date);
-              }
-            }}
-          />
-        )}
+
+        <TimePickerSheet
+          visible={!!editingTime}
+          value={editingTime === 'open' ? openTime : closeTime}
+          title={editingTime === 'open' ? 'Hora de apertura' : 'Hora de cierre'}
+          onCancel={() => setEditingTime(null)}
+          onConfirm={confirmTime}
+        />
       </View>
 
-      {/* Address */}
-      <Input
-        value={formData.address}
-        onChangeText={(value) => updateField('address', value)}
-        placeholder="Dirección del negocio"
-        autoCapitalize="words"
-      />
+      {/* Address lives inside the map picker below, so there is one address in
+          the form instead of a text field the map silently overwrites */}
 
       {/* Phone */}
       <PhoneInput
@@ -330,21 +323,25 @@ export default function BusinessOnboardingStep({
         onChangeText={(value) => updateField('phone', value)}
       />
 
-      {/* Map Location Picker - Optional */}
+      {/* Location + address */}
       <View className="mb-3">
         <Text variant="body" className="text-gray-500 font-medium mb-2">
-          Ubicación (opcional)
+          Ubicación y dirección
         </Text>
         <MapPicker
           height={250}
           initialLocation={businessData.coordinates}
+          addressValue={formData.address}
+          onAddressChange={(value) => updateField('address', value)}
           onLocationSelect={(location) => {
-            updateField('coordinates', location);
-            if (location.address) {
-              updateField('address', location.address);
-            }
+            updateFields({
+              coordinates: location,
+              // Fill in the address automatically when the map resolves one,
+              // but never wipe an address the user already typed
+              ...(location.address ? { address: location.address } : {}),
+            });
           }}
-          instructionText="Toca en el mapa para seleccionar la ubicación exacta de tu negocio"
+          instructionText="Busca una referencia o toca el mapa para ubicar tu negocio"
           className="border border-gray-400 rounded-xl"
         />
       </View>
@@ -353,7 +350,7 @@ export default function BusinessOnboardingStep({
       <View className="mb-3">
         {/* Logo */}
         <TouchableOpacity
-          onPress={handlePickLogo}
+          onPress={() => handlePickImage('logo')}
           className="flex-row items-center bg-gray-50 rounded-xl p-4 mb-3 border border-gray-400"
           activeOpacity={0.7}
         >
@@ -381,7 +378,7 @@ export default function BusinessOnboardingStep({
 
         {/* Banner */}
         <TouchableOpacity
-          onPress={handlePickBanner}
+          onPress={() => handlePickImage('banner')}
           className="bg-gray-50 rounded-xl border border-gray-400 overflow-hidden mb-3"
           activeOpacity={0.7}
           style={{ height: 100 }}

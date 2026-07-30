@@ -15,8 +15,10 @@ import "../global.css";
 import { queryClient } from '../shared/config/query-client';
 import { useAuthStore } from '../core/auth/stores/auth-store';
 
-// Keep the splash screen visible while we fetch resources
-SplashScreen.preventAutoHideAsync();
+// Keep the splash screen visible while we fetch resources.
+// Rejects harmlessly on reload when no splash screen is mounted (e.g. Expo Go),
+// so swallow it instead of surfacing an uncaught rejection.
+SplashScreen.preventAutoHideAsync().catch(() => {});
 
 export const unstable_settings = {
   initialRouteName: 'index',
@@ -66,7 +68,7 @@ export default function RootLayout() {
   // Hide splash screen when auth initialization is complete
   React.useEffect(() => {
     if (!authLoading) {
-      SplashScreen.hideAsync();
+      SplashScreen.hideAsync().catch(() => {});
     }
   }, [authLoading]);
 

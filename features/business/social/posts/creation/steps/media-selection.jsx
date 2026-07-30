@@ -21,9 +21,9 @@ export function MediaSelectionStep({ selectedMedia, onMediaChange, onNext, allow
   useEffect(() => {
     const initGallery = async () => {
       try {
-        let status = await MediaLibrary.getPermissionsAsync();
+        let status = await MediaLibrary.getPermissionsAsync(false, ['photo', 'video']);
         if (!status.granted && status.canAskAgain) {
-          status = await MediaLibrary.requestPermissionsAsync();
+          status = await MediaLibrary.requestPermissionsAsync(false, ['photo', 'video']);
         }
         if (status.granted) {
           loadGalleryAssets();

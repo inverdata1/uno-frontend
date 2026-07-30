@@ -18,26 +18,22 @@ const ITEM_WIDTH = (width - (ITEM_MARGIN * (COLUMN_COUNT - 1))) / COLUMN_COUNT;
  */
 export function MediaSelectionStep({ selectedMedia, onMediaChange, onNext, allowedMediaTypes = ['image', 'video'] }) {
   const [galleryAssets, setGalleryAssets] = useState([]);
-  const [permissionResponse, requestPermission] = MediaLibrary.usePermissions();
-
   useEffect(() => {
-    const checkPerms = async () => {
-      if (!permissionResponse) return;
-      if (permissionResponse.granted) {
-        loadGalleryAssets();
-      } else if (permissionResponse.canAskAgain) {
-        try {
-          const result = await requestPermission();
-          if (result.granted) {
-            loadGalleryAssets();
-          }
-        } catch (e) {
-          console.error('Permission error:', e);
+    const initGallery = async () => {
+      try {
+        let status = await MediaLibrary.getPermissionsAsync();
+        if (!status.granted && status.canAskAgain) {
+          status = await MediaLibrary.requestPermissionsAsync();
         }
+        if (status.granted) {
+          loadGalleryAssets();
+        }
+      } catch (e) {
+        console.error('Permission error:', e);
       }
     };
-    checkPerms();
-  }, [permissionResponse?.status]);
+    initGallery();
+  }, []);
 
   const loadGalleryAssets = async () => {
     try {

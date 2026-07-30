@@ -251,38 +251,19 @@ export default function ProductDetail({ product, onClose, onBusinessPress, onVid
             {/* Left Side: Name, Price, Rating */}
             <View className="flex-1 pr-3">
               {/* Title */}
-              <Text className="text-xl font-bold text-gray-900 mb-2 leading-7">
+              <Text className="text-xl font-bold text-gray-900 mb-3 leading-7">
                 {product?.name || 'Product Name'}
               </Text>
-
-              {/* Price */}
-              <View className="flex-row items-center mb-3">
-                <Text className="text-3xl font-bold text-gray-900">
-                  ${product?.price || '0.00'}
-                </Text>
-                {product?.compareAtPrice && (
-                  <>
-                    <Text className="text-lg text-gray-400 ml-2" style={{ textDecorationLine: 'line-through', textDecorationColor: '#9ca3af' }}>
-                      ${product.compareAtPrice}
-                    </Text>
-                    <View className="ml-2 px-2 py-1 bg-red-50 rounded-md items-center justify-center">
-                      <Text className="text-xs font-bold text-red-500 leading-tight">
-                        {Math.round(((product.compareAtPrice - product.price) / product.compareAtPrice) * 100)}% OFF
-                      </Text>
-                    </View>
-                  </>
-                )}
-              </View>
 
               {/* Rating & Sales */}
               <View className="flex-row items-center mb-4">
                 <View className="flex-row items-center mr-4">
                   <Ionicons name="star" size={16} color="#fbbf24" />
                   <Text className="text-sm font-semibold text-gray-900 ml-1">
-                    {product?.rating || '4.8'}
+                    {product?.rating || '0.0'}
                   </Text>
                   <Text className="text-sm text-gray-500 ml-1">
-                    ({product?.reviewCount || '127'})
+                    ({product?.reviewCount || '0'})
                   </Text>
                 </View>
                 {product?.soldCount && (

@@ -91,7 +91,7 @@ export const CreateStoryModal = ({ visible, onClose }) => {
       });
 
       if (uploadRes.data?.url) {
-        const backendUrl = process.env.EXPO_PUBLIC_API_URL?.replace(/\/api$/, '') || 'http://localhost:3000';
+        const backendUrl = process.env.EXPO_PUBLIC_API_URL || 'http://localhost:3000';
         return `${backendUrl}${uploadRes.data.url}`;
       } else {
         throw new Error('No URL returned from upload');

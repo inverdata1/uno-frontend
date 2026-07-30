@@ -309,7 +309,7 @@ export const uploadMedia = async (uri, uploadType, options = {}, onProgress = nu
       });
 
       if (uploadRes.data?.url) {
-        const backendUrl = process.env.EXPO_PUBLIC_API_URL?.replace(/\/api$/, '') || 'http://localhost:3000';
+        const backendUrl = process.env.EXPO_PUBLIC_API_URL || 'http://localhost:3000';
         return {
           url: `${backendUrl}${uploadRes.data.url}`,
           path: uploadRes.data.url,

@@ -115,7 +115,7 @@ export const CreateProductModal = ({ visible, onClose, editingProduct }) => {
             }
           });
 
-          const backendUrl = process.env.EXPO_PUBLIC_API_URL?.replace(/\/api$/, '') || 'http://localhost:3000';
+          const backendUrl = process.env.EXPO_PUBLIC_API_URL || 'http://localhost:3000';
           uploadedUrls.push(`${backendUrl}${res.data.url}`);
         } catch (fallbackErr) {
           console.error('Fallback upload failed', fallbackErr);

@@ -25,6 +25,8 @@ export default function ProductDetail({ product, onClose, onBusinessPress, onVid
   const [imageErrors, setImageErrors] = useState({});
   const [menuVisible, setMenuVisible] = useState(false);
   const [previewMode, setPreviewMode] = useState(false);
+  const [fullScreenImageVisible, setFullScreenImageVisible] = useState(false);
+  const [fullScreenImageIndex, setFullScreenImageIndex] = useState(0);
 
   const { currentUserType, currentContext } = useCurrentUserType();
   const deleteProductMutation = useDeleteProduct();
@@ -192,12 +194,19 @@ export default function ProductDetail({ product, onClose, onBusinessPress, onVid
               setSelectedImageIndex(index);
             }}
           >
-            {images.map((imageUrl, index) => (
-              <View key={index} style={{ width, height: width * 0.65, backgroundColor: '#f3f4f6' }}>
-                <Image
-                  source={{ uri: imageUrl }}
-                  style={{ width: '100%', height: '100%' }}
-                  resizeMode="cover"
+              {images.map((imageUrl, index) => (
+                <Pressable
+                  key={index}
+                  style={{ width, height: width * 0.65, backgroundColor: '#f3f4f6' }}
+                  onPress={() => {
+                    setFullScreenImageIndex(index);
+                    setFullScreenImageVisible(true);
+                  }}
+                >
+                  <Image
+                    source={{ uri: imageUrl }}
+                    style={{ width: '100%', height: '100%' }}
+                    resizeMode="contain"
                   onLoadStart={() => {
                     console.log('Image loading started:', imageUrl);
                     setImageLoadingStates(prev => ({ ...prev, [index]: true }));
@@ -226,8 +235,8 @@ export default function ProductDetail({ product, onClose, onBusinessPress, onVid
                     <Text style={{ marginTop: 8, color: '#6b7280', fontSize: 14 }}>No se pudo cargar la imagen</Text>
                   </View>
                 )}
-              </View>
-            ))}
+                </Pressable>
+              ))}
           </ScrollView>
 
           {/* Image Indicators */}
@@ -702,6 +711,64 @@ export default function ProductDetail({ product, onClose, onBusinessPress, onVid
             </View>
           </SafeAreaView>
         </Pressable>
+      </Modal>
+
+      {/* Full Screen Image Viewer Modal */}
+      <Modal
+        visible={fullScreenImageVisible}
+        transparent={true}
+        animationType="fade"
+        onRequestClose={() => setFullScreenImageVisible(false)}
+      >
+        <View style={{ flex: 1, backgroundColor: '#000000' }}>
+          <SafeAreaView edges={['top']} style={{ position: 'absolute', top: 0, left: 0, right: 0, zIndex: 10 }}>
+            <View style={{ flexDirection: 'row', justifyContent: 'flex-end', padding: 16 }}>
+              <TouchableOpacity onPress={() => setFullScreenImageVisible(false)} style={{ padding: 8 }}>
+                <Ionicons name="close" size={32} color="#ffffff" />
+              </TouchableOpacity>
+            </View>
+          </SafeAreaView>
+          
+          <ScrollView
+            horizontal
+            pagingEnabled
+            showsHorizontalScrollIndicator={false}
+            contentOffset={{ x: fullScreenImageIndex * width, y: 0 }}
+            onMomentumScrollEnd={(e) => {
+              const index = Math.round(e.nativeEvent.contentOffset.x / width);
+              setFullScreenImageIndex(index);
+            }}
+          >
+            {images.map((imageUrl, index) => (
+              <View key={index} style={{ width, height: '100%', justifyContent: 'center', alignItems: 'center' }}>
+                <Image
+                  source={{ uri: imageUrl }}
+                  style={{ width: '100%', height: '100%' }}
+                  resizeMode="contain"
+                />
+              </View>
+            ))}
+          </ScrollView>
+
+          {/* Full Screen Image Indicators */}
+          {images.length > 1 && (
+            <SafeAreaView edges={['bottom']} style={{ position: 'absolute', bottom: 0, left: 0, right: 0 }}>
+              <View style={{ flexDirection: 'row', justifyContent: 'center', gap: 6, paddingBottom: 20 }}>
+                {images.map((_, index) => (
+                  <View
+                    key={index}
+                    style={{
+                      height: 6,
+                      borderRadius: 3,
+                      backgroundColor: fullScreenImageIndex === index ? '#ffffff' : 'rgba(255, 255, 255, 0.5)',
+                      width: fullScreenImageIndex === index ? 24 : 6,
+                    }}
+                  />
+                ))}
+              </View>
+            </SafeAreaView>
+          )}
+        </View>
       </Modal>
 
       </SafeAreaView>

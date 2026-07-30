@@ -645,21 +645,6 @@ export default function ProductDetail({ product, onClose, onBusinessPress, onVid
               <Text className="text-xs" style={{ color: colors.text.secondary }}>Vendidos</Text>
             </View>
 
-            <View style={{ width: 1, height: 40, backgroundColor: colors.border.light }} />
-
-            <View className="items-center">
-              <View className="flex-row items-center mb-1" style={{ gap: 4 }}>
-                <Ionicons
-                  name={product?.trackInventory ? "cube-outline" : "infinite-outline"}
-                  size={20}
-                  color={colors.text.secondary}
-                />
-                <Text className="text-2xl font-bold" style={{ color: colors.text.primary }}>
-                  {product?.trackInventory ? (product?.stock || 0) : '∞'}
-                </Text>
-              </View>
-              <Text className="text-xs" style={{ color: colors.text.secondary }}>Stock</Text>
-            </View>
           </View>
         </View>
       )}

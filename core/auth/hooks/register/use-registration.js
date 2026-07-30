@@ -56,9 +56,22 @@ export const useRegistration = ({ onComplete }) => {
       if (result && !result.error) {
         // Success - call onComplete callback
         onComplete?.();
+        return;
       }
-      // If there's an error, it's already in the store state and will be displayed
-      // No navigation happens, user stays on register screen with error message
+
+      // Duplicate email (409): the message is generic elsewhere on the confirmation
+      // step, but the user can't see the email field from there, so point at it
+      // directly and jump back to where it can be fixed.
+      // `errors` is derived from `errorMap`, not settable directly — `onServer` is
+      // the cause TanStack Form reserves for exactly this (async/server errors).
+      if (result?.status === 409) {
+        form.setFieldMeta('email', (prev) => ({
+          ...prev,
+          errorMap: { ...prev.errorMap, onServer: 'Este correo ya está registrado' },
+          errorSourceMap: { ...prev.errorSourceMap, onServer: 'field' },
+        }));
+        setCurrentStep(1);
+      }
     },
   });
 

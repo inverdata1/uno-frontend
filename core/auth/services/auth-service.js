@@ -110,7 +110,9 @@ export const authService = {
       }
 
       const msg = error.response?.data?.message || error.message || 'Error en el registro';
-      return { error: msg };
+      // status lets callers react to specific failures (e.g. 409 = email taken)
+      // without matching on message text, which breaks if the wording changes
+      return { error: msg, status: error.response?.status };
     }
   },
 

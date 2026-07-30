@@ -36,13 +36,12 @@ export const useAuthStore = create((set, get) => ({
     const result = await authService.signUp(userData);
 
     if (result.error) {
-      // Service returned an error - temporarily disable alert
-      console.log('🚨 SIGNUP ERROR (Alert disabled):', result.error);
       set({
         isLoading: false,
         isAuthenticated: false,
+        error: result.error,
       });
-      return { error: result.error };
+      return result;
     } else {
       // Success - manually set user state with complete data
       // This prevents race condition with auth listener

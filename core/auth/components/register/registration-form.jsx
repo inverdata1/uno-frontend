@@ -11,6 +11,10 @@ import { BasicInfoStep } from './basic-info-step';
 export const RegistrationForm = ({ onComplete }) => {
   const { width } = useWindowDimensions();
   const isDesktop = Platform.OS === 'web' && width >= 768;
+  // Subscribed selector, not useAuthStore.getState(): the latter reads a
+  // snapshot at render time and never triggers a re-render on its own, so a
+  // failed registration silently updated the store with no visible change.
+  const authError = useAuthStore((state) => state.error);
 
   const {
     // Form
@@ -451,10 +455,10 @@ export const RegistrationForm = ({ onComplete }) => {
 
             {/* Navigation Buttons */}
             <View className="mb-6">
-              {useAuthStore.getState().error && (
+              {authError && (
                 <View className="mb-4 bg-red-50 p-3 rounded-lg border border-red-200">
                   <Text className="text-red-600 text-center text-sm font-medium">
-                    {useAuthStore.getState().error}
+                    {authError}
                   </Text>
                 </View>
               )}
@@ -555,10 +559,10 @@ export const RegistrationForm = ({ onComplete }) => {
 
       {/* Navigation Buttons */}
       <View className="mb-6">
-        {useAuthStore.getState().error && (
+        {authError && (
           <View className="mb-4 bg-red-50 p-3 rounded-lg border border-red-200">
             <Text className="text-red-600 text-center text-sm font-medium">
-              {useAuthStore.getState().error}
+              {authError}
             </Text>
           </View>
         )}

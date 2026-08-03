@@ -1,5 +1,7 @@
 import React, { useState } from 'react';
-import { View, TouchableOpacity, TextInput, Image, ScrollView, KeyboardAvoidingView, Platform, Alert } from 'react-native';
+import { View, TouchableOpacity, TextInput, ScrollView, KeyboardAvoidingView, Platform, Alert } from 'react-native';
+// expo-image resolves iOS `ph://` photo-library URLs; react-native's renders them blank
+import { Image } from 'expo-image';
 import { Ionicons } from '@expo/vector-icons';
 import { Text } from '../../../../../../shared/components/ui';
 import { colors } from '../../../../../../shared/utils/colors';
@@ -83,14 +85,14 @@ export function CaptionDetailsStep({ selectedMedia, title, caption, keywords = [
         }}>
           {/* Thumbnail */}
           <Image
-            source={{ uri: firstMedia.uri }}
+            source={{ uri: firstMedia.previewUri || firstMedia.uri }}
             style={{
               width: 80,
               height: 80,
               borderRadius: 8,
               backgroundColor: colors.bg.secondary
             }}
-            resizeMode="cover"
+            contentFit="cover"
           />
 
           {/* Caption Input */}

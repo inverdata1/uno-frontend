@@ -15,6 +15,10 @@ import { storage } from '../../../../../shared/config/firebase';
 import { apiClient } from '../../../../../shared/config/api-client';
 import * as VideoThumbnails from 'expo-video-thumbnails';
 
+// Long enough for a real video upload on a slow connection, short enough that a
+// misconfigured bucket doesn't leave the user staring at a spinner
+const FIREBASE_UPLOAD_TIMEOUT_MS = 45000;
+
 /**
  * Multi-Step Post Creation Flow
  * Instagram/TikTok-inspired UX with product tagging
@@ -53,16 +57,34 @@ export function PostCreationFlow({ visible, onClose, initialPost = null, allowed
     const imageUri = mediaItem.uri;
     const isVideo = mediaItem.type === 'video' || imageUri.endsWith('.mp4');
     const mediaTypeStr = isVideo ? 'video' : 'image';
-    const ext = imageUri.split('.').pop() || (isVideo ? 'mp4' : 'jpg');
+    // Parse the extension off the filename only. Taking the last dot-segment of
+    // the whole URI picked up query strings and iOS' `#<plist>` fragment, which
+    // ended up baked into the uploaded filename.
+    const fileName = imageUri.split('#')[0].split('?')[0].split('/').pop() || '';
+    const ext = fileName.includes('.')
+      ? fileName.split('.').pop()
+      : (isVideo ? 'mp4' : 'jpg');
     
     try {
-      // 1. Try Firebase first
-      const response = await fetch(imageUri);
-      const blob = await response.blob();
-      const filename = `businesses/${businessId || 'unknown'}/posts/${mediaTypeStr}_${Date.now()}_${index}.${ext}`;
-      const storageRef = ref(storage, filename);
-      await uploadBytes(storageRef, blob);
-      return await getDownloadURL(storageRef);
+      // 1. Try Firebase first, but don't let it stall the whole publish: an
+      // unreachable bucket leaves uploadBytes pending forever, which showed up
+      // as a "Publicando..." spinner that never resolved. On timeout we fall
+      // through to the local backend below.
+      const firebaseUpload = (async () => {
+        const response = await fetch(imageUri);
+        const blob = await response.blob();
+        const filename = `businesses/${businessId || 'unknown'}/posts/${mediaTypeStr}_${Date.now()}_${index}.${ext}`;
+        const storageRef = ref(storage, filename);
+        await uploadBytes(storageRef, blob);
+        return await getDownloadURL(storageRef);
+      })();
+
+      return await Promise.race([
+        firebaseUpload,
+        new Promise((_, reject) =>
+          setTimeout(() => reject(new Error('Firebase upload timed out')), FIREBASE_UPLOAD_TIMEOUT_MS)
+        ),
+      ]);
     } catch (err) {
       console.warn('Firebase upload failed, attempting local backend fallback...', err);
       

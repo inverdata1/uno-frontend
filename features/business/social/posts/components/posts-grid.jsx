@@ -132,15 +132,22 @@ const PhotoGrid = ({ posts, onPostPress }) => {
             padding: 1
           }}
         >
-          <Image
-            source={{ uri: post.thumbnailUrl || (typeof post.media?.[0] === 'string' ? post.media[0] : post.media?.[0]?.url) || post.mediaUrl || post.images?.[0] }}
-            style={{
-              width: '100%',
-              height: '100%',
-              backgroundColor: colors.bg.secondary
-            }}
-            resizeMode="cover"
-          />
+          {/* A video's own URL can't be rendered by Image, so without a
+              generated thumbnail the tile would just be blank. Fall back to a
+              plain block — the video badge below still marks what it is. */}
+          {post.type === 'video' && !post.thumbnailUrl ? (
+            <View style={{ width: '100%', height: '100%', backgroundColor: colors.bg.tertiary }} />
+          ) : (
+            <Image
+              source={{ uri: post.thumbnailUrl || (typeof post.media?.[0] === 'string' ? post.media[0] : post.media?.[0]?.url) || post.mediaUrl || post.images?.[0] }}
+              style={{
+                width: '100%',
+                height: '100%',
+                backgroundColor: colors.bg.secondary
+              }}
+              resizeMode="cover"
+            />
+          )}
           {post.type === 'video' && (
             <View style={{
               position: 'absolute',

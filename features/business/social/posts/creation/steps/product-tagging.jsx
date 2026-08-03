@@ -1,5 +1,7 @@
 import React, { useState, useRef } from 'react';
-import { View, TouchableOpacity, Image, Dimensions, FlatList, ScrollView, ActivityIndicator } from 'react-native';
+import { View, TouchableOpacity, Dimensions, FlatList, ScrollView, ActivityIndicator } from 'react-native';
+// expo-image resolves iOS `ph://` photo-library URLs; react-native's renders them blank
+import { Image } from 'expo-image';
 import { Ionicons } from '@expo/vector-icons';
 import BottomSheet, { BottomSheetView, BottomSheetTextInput } from '@gorhom/bottom-sheet';
 import { Text } from '../../../../../../shared/components/ui';
@@ -112,9 +114,9 @@ export function ProductTaggingStep({ selectedMedia, taggedProducts, onAddTag, on
           }}
         >
           <Image
-            source={{ uri: currentMedia.uri }}
+            source={{ uri: currentMedia.previewUri || currentMedia.uri }}
             style={{ width: '100%', height: '100%' }}
-            resizeMode="cover"
+            contentFit="cover"
           />
 
           {/* Tap Indicator */}
@@ -165,9 +167,9 @@ export function ProductTaggingStep({ selectedMedia, taggedProducts, onAddTag, on
                 }}
               >
                 <Image
-                  source={{ uri: media.uri }}
+                  source={{ uri: media.previewUri || media.uri }}
                   style={{ width: '100%', height: '100%' }}
-                  resizeMode="cover"
+                  contentFit="cover"
                 />
                 {taggedProducts.filter(t => t.mediaIndex === index).length > 0 && (
                   <View style={{
@@ -229,7 +231,7 @@ export function ProductTaggingStep({ selectedMedia, taggedProducts, onAddTag, on
                         borderRadius: 8,
                         backgroundColor: colors.bg.secondary
                       }}
-                      resizeMode="cover"
+                      contentFit="cover"
                     />
                   )}
                   <Text style={{
@@ -309,7 +311,7 @@ export function ProductTaggingStep({ selectedMedia, taggedProducts, onAddTag, on
                       borderRadius: 8,
                       backgroundColor: colors.bg.secondary
                     }}
-                    resizeMode="cover"
+                    contentFit="cover"
                     onError={() => {
                       console.log('[ProductTagging] Failed to load image for:', item.name);
                     }}

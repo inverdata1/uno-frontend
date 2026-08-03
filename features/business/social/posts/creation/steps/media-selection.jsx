@@ -1,12 +1,21 @@
 import React, { useState, useEffect } from 'react';
-import { View, TouchableOpacity, Dimensions, FlatList, Image, Alert } from 'react-native';
+import { View, TouchableOpacity, Dimensions, FlatList, Alert, ActivityIndicator } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
+// expo-image (not react-native's Image) because it ships a Photo Library
+// loader that resolves iOS `ph://` asset URLs, including the poster frame of
+// videos. react-native's Image renders those as blank.
+import { Image } from 'expo-image';
 import * as DocumentPicker from 'expo-document-picker';
 import * as MediaLibrary from 'expo-media-library';
 import { Text } from '../../../../../../shared/components/ui';
 import { colors } from '../../../../../../shared/utils/colors';
 
 const { width } = Dimensions.get('window');
+
+// iOS returns localUri for videos with a `#<base64 plist>` fragment appended
+// (playback hints). Anything treating the value as a file path — extension
+// parsing, VideoThumbnails, the upload filename — breaks on it, so drop it.
+const stripUriFragment = (uri) => uri.split('#')[0].split('?')[0];
 const COLUMN_COUNT = 3;
 const ITEM_MARGIN = 2;
 // Calculate item width exactly like typical grid
@@ -18,6 +27,8 @@ const ITEM_WIDTH = (width - (ITEM_MARGIN * (COLUMN_COUNT - 1))) / COLUMN_COUNT;
  */
 export function MediaSelectionStep({ selectedMedia, onMediaChange, onNext, onClose, allowedMediaTypes = ['image', 'video'] }) {
   const [galleryAssets, setGalleryAssets] = useState([]);
+  // Asset currently being resolved to a local file (see toggleGallerySelection)
+  const [resolvingId, setResolvingId] = useState(null);
   useEffect(() => {
     const initGallery = async () => {
       try {
@@ -78,22 +89,44 @@ export function MediaSelectionStep({ selectedMedia, onMediaChange, onNext, onClo
     }
   };
 
-  const toggleGallerySelection = (asset) => {
+  const toggleGallerySelection = async (asset) => {
     const isSelected = selectedMedia.findIndex(m => m.id === asset.id);
     if (isSelected >= 0) {
       const updated = selectedMedia.filter((_, idx) => idx !== isSelected);
       onMediaChange(updated);
-    } else {
-      const newAsset = {
-        id: asset.id, 
-        uri: asset.uri,
-        type: asset.mediaType === 'video' ? 'video' : 'image',
-        mimeType: asset.mediaType === 'video' ? 'video/mp4' : 'image/jpeg',
-        name: asset.filename,
-        fromGallery: true
-      };
-      onMediaChange([...selectedMedia, newAsset]);
+      return;
     }
+
+    if (resolvingId) return; // a resolution is already in flight
+
+    // On iOS getAssetsAsync hands back a `ph://` identifier, which is a handle
+    // into the Photos framework rather than a file on disk. fetch(), FormData
+    // uploads and VideoThumbnails all fail on it — that's what left publishing
+    // stuck on "Publicando...". Resolve it to a real file:// path once, here,
+    // so every later step gets something it can actually read.
+    setResolvingId(asset.id);
+    let uri = asset.uri;
+    try {
+      const info = await MediaLibrary.getAssetInfoAsync(asset);
+      if (info?.localUri) uri = stripUriFragment(info.localUri);
+    } catch (error) {
+      console.warn('Could not resolve a local file for the asset, using the raw uri', error);
+    } finally {
+      setResolvingId(null);
+    }
+
+    const newAsset = {
+      id: asset.id,
+      uri,
+      // Keep the original handle for display: expo-image renders it directly
+      // (video posters included) without needing a generated thumbnail
+      previewUri: asset.uri,
+      type: asset.mediaType === 'video' ? 'video' : 'image',
+      mimeType: asset.mediaType === 'video' ? 'video/mp4' : 'image/jpeg',
+      name: asset.filename,
+      fromGallery: true
+    };
+    onMediaChange([...selectedMedia, newAsset]);
   };
 
   const handleNext = () => {
@@ -182,8 +215,22 @@ export function MediaSelectionStep({ selectedMedia, onMediaChange, onNext, onClo
         <Image
           source={{ uri: asset.uri }}
           style={{ width: '100%', height: '100%' }}
-          resizeMode="cover"
+          contentFit="cover"
         />
+        {resolvingId === asset.id && (
+          <View style={{
+            position: 'absolute',
+            top: 0,
+            left: 0,
+            right: 0,
+            bottom: 0,
+            alignItems: 'center',
+            justifyContent: 'center',
+            backgroundColor: 'rgba(255,255,255,0.6)'
+          }}>
+            <ActivityIndicator size="small" color={colors.primary[500]} />
+          </View>
+        )}
         {asset.mediaType === 'video' && (
           <View style={{
             position: 'absolute',

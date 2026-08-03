@@ -1,5 +1,8 @@
 import React from 'react';
-import { View, TouchableOpacity, Image, ScrollView, ActivityIndicator, Dimensions } from 'react-native';
+import { View, TouchableOpacity, ScrollView, ActivityIndicator, Dimensions } from 'react-native';
+// expo-image resolves iOS `ph://` photo-library URLs (and video poster frames);
+// react-native's Image renders them blank
+import { Image } from 'expo-image';
 import { Ionicons } from '@expo/vector-icons';
 import { Text } from '../../../../../../shared/components/ui';
 import { colors } from '../../../../../../shared/utils/colors';
@@ -111,12 +114,12 @@ export function PreviewShareStep({
             {selectedMedia.map((media, index) => (
               <View key={index} style={{ width, backgroundColor: colors.bg.secondary }}>
                 <Image
-                  source={{ uri: media.uri }}
+                  source={{ uri: media.previewUri || media.uri }}
                   style={{
                     width: width,
                     height: width * 1.25, // 4:5 aspect ratio
                   }}
-                  resizeMode="cover"
+                  contentFit="cover"
                 />
                 {media.type === 'video' && (
                   <View style={{

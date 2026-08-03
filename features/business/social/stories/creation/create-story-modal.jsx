@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { View, Modal, TouchableOpacity, Image, ActivityIndicator, Alert, StatusBar, TextInput, Platform, KeyboardAvoidingView } from 'react-native';
+import { View, Modal, TouchableOpacity, Image, ActivityIndicator, Alert, StatusBar, TextInput, Platform, KeyboardAvoidingView, ScrollView } from 'react-native';
 import { SafeAreaProvider, SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import * as ImagePicker from 'expo-image-picker';
@@ -32,7 +32,7 @@ export const CreateStoryModal = ({ visible, onClose }) => {
   const handlePickMedia = async () => {
     try {
       const result = await ImagePicker.launchImageLibraryAsync({
-        mediaTypes: ImagePicker.MediaTypeOptions.All,
+        mediaTypes: ['images', 'videos'],
         videoMaxDuration: 30, // iOS limits to 30s in the picker
         quality: 1,
       });
@@ -58,7 +58,12 @@ export const CreateStoryModal = ({ visible, onClose }) => {
     const imageUri = asset.uri;
     const isVideo = asset.type === 'video' || asset.mimeType?.startsWith('video/') || imageUri.endsWith('.mp4');
     const mediaTypeStr = isVideo ? 'video' : 'image';
-    const ext = asset.uri?.split('.').pop() || (isVideo ? 'mp4' : 'jpg');
+    // Parse the extension off the filename only; query strings and iOS' `#<plist>`
+    // fragment would otherwise end up baked into the uploaded filename
+    const fileName = imageUri.split('#')[0].split('?')[0].split('/').pop() || '';
+    const ext = fileName.includes('.')
+      ? fileName.split('.').pop()
+      : (isVideo ? 'mp4' : 'jpg');
     
     try {
       // 1. Try Firebase first
@@ -204,11 +209,17 @@ export const CreateStoryModal = ({ visible, onClose }) => {
           </TouchableOpacity>
         </View>
 
-        <KeyboardAvoidingView 
-          style={{ flex: 1 }} 
+        <KeyboardAvoidingView
+          style={{ flex: 1 }}
           behavior={Platform.OS === 'ios' ? 'padding' : undefined}
         >
-          <View style={{ flex: 1, padding: 16, gap: 20 }}>
+          {/* Without this ScrollView the tags field sat below a fixed 300px
+              media box with no way to reach it once the keyboard pushed the
+              layout up — the input was open and receiving text, just off-screen */}
+          <ScrollView
+            contentContainerStyle={{ padding: 16, gap: 20 }}
+            keyboardShouldPersistTaps="handled"
+          >
             
             {/* Media Selector */}
             <TouchableOpacity 
@@ -326,7 +337,7 @@ export const CreateStoryModal = ({ visible, onClose }) => {
               </Text>
             </View>
 
-          </View>
+          </ScrollView>
         </KeyboardAvoidingView>
       </SafeAreaView>
       </SafeAreaProvider>

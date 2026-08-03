@@ -141,7 +141,10 @@ const getTimeRemaining = (expiresAt) => {
   if (!expiresAt) return '24h';
 
   const now = Date.now();
-  const expiry = expiresAt.toMillis ? expiresAt.toMillis() : expiresAt;
+  // expiresAt is a Firestore Timestamp on legacy data but an ISO string from
+  // the NestJS backend (JSON has no Date type); `expiresAt - now` on a raw
+  // string coerces to NaN, so route both shapes through Date.
+  const expiry = expiresAt.toMillis ? expiresAt.toMillis() : new Date(expiresAt).getTime();
   const remaining = expiry - now;
 
   if (remaining <= 0) return '0h';

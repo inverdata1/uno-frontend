@@ -2,7 +2,7 @@ import React, { useState, useRef } from 'react';
 import { View, TouchableOpacity, TextInput, Alert, ScrollView, ActivityIndicator, Image, Modal, StatusBar, Switch, Platform } from 'react-native';
 import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
-import * as DocumentPicker from 'expo-document-picker';
+import * as ImagePicker from 'expo-image-picker';
 import { Text } from '../../../../shared/components/ui';
 import { colors } from '../../../../shared/utils/colors';
 import { useCreateProduct, useUpdateProduct } from '../../../../features/shared/products/hooks/use-products';
@@ -60,18 +60,21 @@ export const CreateProductModal = ({ visible, onClose, editingProduct }) => {
 
   const pickImages = async () => {
     try {
-      const result = await DocumentPicker.getDocumentAsync({
-        type: 'image/*',
-        multiple: true,
-        copyToCacheDirectory: true,
+      // launchImageLibraryAsync opens the OS media picker (Photos/Gallery,
+      // Google Photos, etc.) instead of DocumentPicker, which only offers
+      // the Files app and has no notion of a camera roll
+      const result = await ImagePicker.launchImageLibraryAsync({
+        mediaTypes: ['images'],
+        allowsMultipleSelection: true,
+        quality: 0.8,
       });
 
       if (!result.canceled && result.assets) {
         setSelectedImages([...selectedImages, ...result.assets.map(asset => asset.uri)]);
       }
     } catch (error) {
-      console.error('Error al seleccionar documento:', error);
-      Alert.alert('Error', 'Hubo un problema al abrir el explorador de archivos');
+      console.error('Error al seleccionar imágenes:', error);
+      Alert.alert('Error', 'Hubo un problema al abrir la galería');
     }
   };
 

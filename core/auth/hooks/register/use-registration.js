@@ -133,17 +133,16 @@ export const useRegistration = ({ onComplete }) => {
         return selectedUserType !== null;
       case 3:
         // For business users: business info must be valid
-        // For client users: must select at least 1 preference/goal/category
+        // For client users: must select at least 2 goals, 3 categories, 2 tags
         // For driver: confirmation (always valid)
         if (selectedUserType === 'business') {
           return isBusinessDataValid(businessData);
         }
         if (selectedUserType === 'client') {
-          return (
-            (clientPreferences.goals && clientPreferences.goals.length > 0) ||
-            (clientPreferences.categories && clientPreferences.categories.length > 0) ||
-            (clientPreferences.subcategories && clientPreferences.subcategories.length > 0)
-          );
+          const goalsValid = (clientPreferences.goals?.length || 0) >= 2;
+          const categoriesValid = (clientPreferences.categories?.length || 0) >= 3;
+          const tagsValid = (clientPreferences.subcategories?.length || 0) >= 2;
+          return goalsValid && categoriesValid && tagsValid;
         }
         return true;
       default:

@@ -87,12 +87,15 @@ export default function ClientPreferencesOnboardingStep({
     });
   };
 
-  const totalSelected = selectedGoals.length + selectedCategories.length + selectedSubcategories.length;
+  const goalsValid = selectedGoals.length >= 2;
+  const categoriesValid = selectedCategories.length >= 3;
+  const tagsValid = selectedSubcategories.length >= 2;
+  const isFormValid = goalsValid && categoriesValid && tagsValid;
 
   return (
     <View className="mb-4">
       {/* Header Badge & Title */}
-      <View className="items-center mb-6">
+      <View className="items-center mb-5">
         <View style={styles.badgeContainer}>
           <Text style={styles.badgeText}>✨ Personaliza tu experiencia</Text>
         </View>
@@ -100,26 +103,50 @@ export default function ClientPreferencesOnboardingStep({
           ¿Qué buscas en UNO?
         </Text>
         <Text variant="caption" className="text-center text-gray-500 px-2 leading-5">
-          Selecciona tus metas e intereses para que nuestro sistema te recomiende las mejores ofertas, negocios y contenido cerca de ti.
+          Selecciona tus metas e intereses para alimentar tu recomendador personalizado.
         </Text>
       </View>
 
-      {/* Selected Counter */}
-      <View style={styles.counterBanner}>
-        <Ionicons name="sparkles" size={16} color="#ef4444" />
-        <Text style={styles.counterBannerText}>
-          {totalSelected > 0
-            ? `${totalSelected} ${totalSelected === 1 ? 'interés seleccionado' : 'intereses seleccionados'}`
-            : 'Selecciona al menos 1 opción para continuar'}
+      {/* Selected Counter & Validation Banner */}
+      <View style={[styles.counterBanner, isFormValid && styles.counterBannerValid]}>
+        <Ionicons name={isFormValid ? "checkmark-circle" : "alert-circle"} size={18} color={isFormValid ? "#16a34a" : "#be123c"} />
+        <Text style={[styles.counterBannerText, isFormValid && styles.counterBannerTextValid]}>
+          {isFormValid
+            ? '✨ ¡Excelente! Has completado tus preferencias mínimas'
+            : 'Selecciona al menos 2 metas, 3 categorías y 2 antojos'}
         </Text>
+      </View>
+
+      {/* Progress Badges */}
+      <View className="flex-row justify-between mb-6 px-1">
+        <View style={[styles.progressBadge, goalsValid && styles.progressBadgeValid]}>
+          <Text style={[styles.progressBadgeText, goalsValid && styles.progressBadgeTextValid]}>
+            🎯 Metas ({selectedGoals.length}/2) {goalsValid ? '✓' : ''}
+          </Text>
+        </View>
+        <View style={[styles.progressBadge, categoriesValid && styles.progressBadgeValid]}>
+          <Text style={[styles.progressBadgeText, categoriesValid && styles.progressBadgeTextValid]}>
+            🛍️ Categorías ({selectedCategories.length}/3) {categoriesValid ? '✓' : ''}
+          </Text>
+        </View>
+        <View style={[styles.progressBadge, tagsValid && styles.progressBadgeValid]}>
+          <Text style={[styles.progressBadgeText, tagsValid && styles.progressBadgeTextValid]}>
+            😋 Antojos ({selectedSubcategories.length}/2) {tagsValid ? '✓' : ''}
+          </Text>
+        </View>
       </View>
 
       {/* Section 1: Goals */}
       <View className="mb-6">
-        <View className="flex-row items-center mb-3">
+        <View className="flex-row items-center justify-between mb-3">
           <Text className="text-base font-bold text-gray-900">
             🎯 ¿Qué deseas conseguir en UNO?
           </Text>
+          <View style={[styles.sectionMinTag, goalsValid && styles.sectionMinTagValid]}>
+            <Text style={[styles.sectionMinTagText, goalsValid && styles.sectionMinTagTextValid]}>
+              Mín. 2 {goalsValid ? '✓' : ''}
+            </Text>
+          </View>
         </View>
         <View className="space-y-2">
           {GOALS_OPTIONS.map((goal) => {
@@ -160,9 +187,11 @@ export default function ClientPreferencesOnboardingStep({
           <Text className="text-base font-bold text-gray-900">
             🛍️ Categorías de tu interés
           </Text>
-          <Text variant="caption" className="text-gray-400">
-            (Elige tus favoritas)
-          </Text>
+          <View style={[styles.sectionMinTag, categoriesValid && styles.sectionMinTagValid]}>
+            <Text style={[styles.sectionMinTagText, categoriesValid && styles.sectionMinTagTextValid]}>
+              Mín. 3 {categoriesValid ? '✓' : ''}
+            </Text>
+          </View>
         </View>
 
         <View className="flex-row flex-wrap justify-between">
@@ -195,9 +224,16 @@ export default function ClientPreferencesOnboardingStep({
 
       {/* Section 3: Subcategories / Specific Tags */}
       <View className="mb-4">
-        <Text className="text-base font-bold text-gray-900 mb-3">
-          😋 Gustos y antojos frecuentes
-        </Text>
+        <View className="flex-row items-center justify-between mb-3">
+          <Text className="text-base font-bold text-gray-900">
+            😋 Gustos y antojos frecuentes
+          </Text>
+          <View style={[styles.sectionMinTag, tagsValid && styles.sectionMinTagValid]}>
+            <Text style={[styles.sectionMinTagText, tagsValid && styles.sectionMinTagTextValid]}>
+              Mín. 2 {tagsValid ? '✓' : ''}
+            </Text>
+          </View>
+        </View>
         <View className="flex-row flex-wrap gap-2">
           {TAGS_OPTIONS.map((tag) => {
             const isSelected = selectedSubcategories.includes(tag.id);
@@ -255,10 +291,59 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: '#ffe4e6',
   },
+  counterBannerValid: {
+    backgroundColor: '#f0fdf4',
+    borderColor: '#bbf7d0',
+  },
   counterBannerText: {
     color: '#be123c',
     fontSize: 13,
     fontWeight: '600',
+  },
+  counterBannerTextValid: {
+    color: '#15803d',
+  },
+  progressBadge: {
+    backgroundColor: '#f3f4f6',
+    borderRadius: 8,
+    paddingHorizontal: 8,
+    paddingVertical: 5,
+    borderWidth: 1,
+    borderColor: '#e5e7eb',
+  },
+  progressBadgeValid: {
+    backgroundColor: '#f0fdf4',
+    borderColor: '#bbf7d0',
+  },
+  progressBadgeText: {
+    fontSize: 11,
+    fontWeight: '600',
+    color: '#6b7280',
+  },
+  progressBadgeTextValid: {
+    color: '#15803d',
+    fontWeight: '700',
+  },
+  sectionMinTag: {
+    backgroundColor: '#f3f4f6',
+    paddingHorizontal: 8,
+    paddingVertical: 3,
+    borderRadius: 12,
+    borderWidth: 1,
+    borderColor: '#e5e7eb',
+  },
+  sectionMinTagValid: {
+    backgroundColor: '#dcfce7',
+    borderColor: '#86efac',
+  },
+  sectionMinTagText: {
+    fontSize: 11,
+    fontWeight: '600',
+    color: '#6b7280',
+  },
+  sectionMinTagTextValid: {
+    color: '#15803d',
+    fontWeight: '700',
   },
   goalCard: {
     backgroundColor: '#ffffff',

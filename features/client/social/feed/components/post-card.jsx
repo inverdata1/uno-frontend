@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { View, Image, Pressable, ScrollView, Dimensions, Share, Alert } from 'react-native';
+import { View, Image, Pressable, ScrollView, Dimensions, Share, Alert, TouchableOpacity } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { Text } from '../../../../../shared/components/ui/text';
 import { useAuthStore } from '../../../../../core/auth/stores/auth-store';

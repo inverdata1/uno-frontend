@@ -218,24 +218,6 @@ export default function ClientProfileScreen() {
               <Ionicons name="chevron-down" size={16} color="#fff" />
             </TouchableOpacity>
           )}
-
-          {/* Settings Button - Top Right */}
-          <TouchableOpacity
-            onPress={() => router.push('/client/profile/settings')}
-            style={{
-              position: 'absolute',
-              top: 16,
-              right: 16,
-              width: 40,
-              height: 40,
-              borderRadius: 12,
-              backgroundColor: 'rgba(0, 0, 0, 0.6)',
-              alignItems: 'center',
-              justifyContent: 'center'
-            }}
-          >
-            <Ionicons name="settings" size={20} color="#fff" />
-          </TouchableOpacity>
         </View>
 
         {/* Profile Info */}
@@ -601,7 +583,7 @@ export default function ClientProfileScreen() {
             </TouchableOpacity>
           </View>
 
-          {/* Logout */}
+          {/* Advanced Settings */}
           <View style={{
             backgroundColor: colors.bg.secondary,
             borderRadius: 16,
@@ -609,7 +591,7 @@ export default function ClientProfileScreen() {
             marginBottom: 32
           }}>
             <TouchableOpacity
-              onPress={handleLogout}
+              onPress={() => router.push('/client/profile/settings')}
               style={{
                 padding: 16,
                 flexDirection: 'row',
@@ -621,20 +603,29 @@ export default function ClientProfileScreen() {
                 width: 40,
                 height: 40,
                 borderRadius: 12,
-                backgroundColor: 'rgba(239, 68, 68, 0.1)',
+                backgroundColor: colors.bg.primary,
                 alignItems: 'center',
                 justifyContent: 'center'
               }}>
-                <Ionicons name="log-out" size={20} color="#ef4444" />
+                <Ionicons name="settings" size={20} color={colors.text.primary} />
               </View>
-              <Text style={{
-                fontSize: 14,
-                fontWeight: '600',
-                color: '#ef4444',
-                flex: 1
-              }}>
-                Cerrar Sesión
-              </Text>
+              <View style={{ flex: 1 }}>
+                <Text style={{
+                  fontSize: 14,
+                  fontWeight: '600',
+                  color: colors.text.primary,
+                  marginBottom: 2
+                }}>
+                  Configuración Avanzada
+                </Text>
+                <Text style={{
+                  fontSize: 13,
+                  color: colors.text.secondary
+                }}>
+                  Seguridad, notificaciones y cuenta
+                </Text>
+              </View>
+              <Ionicons name="chevron-forward" size={20} color={colors.text.secondary} />
             </TouchableOpacity>
           </View>
         </View>

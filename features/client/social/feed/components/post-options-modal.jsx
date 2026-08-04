@@ -1,9 +1,9 @@
 import React from 'react';
 import { View, Modal, TouchableOpacity, Alert } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
-import { Text } from '../../../../shared/components/ui/text';
-import { useAuthStore } from '../../../../core/auth/stores/auth-store';
-import { apiClient } from '../../../../shared/config/api-client';
+import { Text } from '../../../../../shared/components/ui/text';
+import { useAuthStore } from '../../../../../core/auth/stores/auth-store';
+import { apiClient } from '../../../../../shared/config/api-client';
 
 /**
  * PostOptionsModal Component

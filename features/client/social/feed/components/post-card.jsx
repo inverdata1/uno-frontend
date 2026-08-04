@@ -2,6 +2,8 @@ import React, { useState, useEffect, useRef } from 'react';
 import { View, Image, Pressable, ScrollView, Dimensions, Share, Alert } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { Text } from '../../../../../shared/components/ui/text';
+import { useAuthStore } from '../../../../../core/auth/stores/auth-store';
+import { apiClient } from '../../../../../shared/config/api-client';
 import { TaggedProductsModal } from './tagged-products-modal';
 import { PostOptionsModal } from './post-options-modal';
 
@@ -26,6 +28,7 @@ export const PostCard = ({
   businessData,
   className
 }) => {
+  const { user } = useAuthStore();
   const {
     type,
     media = [],
@@ -44,6 +47,20 @@ export const PostCard = ({
 
   const scrollViewRef = useRef(null);
   const isCarousel = (type === 'carousel' || media.length > 1) && media.length > 1;
+
+  const trackAction = async (action, extraData = {}) => {
+    try {
+      await apiClient.post('/posts/track-interaction', {
+        userId: user?.id,
+        action,
+        postId: post?.id,
+        businessId: post?.businessId,
+        ...extraData
+      });
+    } catch (e) {
+      // silent fallback
+    }
+  };
 
   // Auto-scroll carousel every 5 seconds if multi-image post
   useEffect(() => {
@@ -69,7 +86,18 @@ export const PostCard = ({
     setCurrentImageIndex(index);
   };
 
+  const handleMediaPress = () => {
+    trackAction('FULLSCREEN_VIEW');
+    onPress?.();
+  };
+
+  const handleBusinessHeaderPress = () => {
+    trackAction('VIEW_BUSINESS');
+    onBusinessPress?.();
+  };
+
   const handleSharePost = async () => {
+    trackAction('SHARE_POST');
     try {
       if (onShare) {
         onShare();
@@ -90,7 +118,7 @@ export const PostCard = ({
       {/* FB Lite Header */}
       <View style={{ flexDirection: 'row', alignItems: 'center', paddingHorizontal: 14, paddingVertical: 12 }}>
         <Pressable
-          onPress={onBusinessPress}
+          onPress={handleBusinessHeaderPress}
           style={{ flexDirection: 'row', alignItems: 'center', flex: 1 }}
         >
           <View style={{
@@ -139,7 +167,7 @@ export const PostCard = ({
 
       {/* Media Carousel */}
       <View style={{ position: 'relative' }}>
-        <Pressable onPress={onPress}>
+        <Pressable onPress={handleMediaPress}>
           {isCarousel ? (
             <ScrollView
               ref={scrollViewRef}

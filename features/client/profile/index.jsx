@@ -381,13 +381,13 @@ export default function ClientProfileScreen() {
                 color: colors.text.primary,
                 marginBottom: 2
               }}>
-                {user?.reviewsCount || 0}
+                {user?.followingCount || user?.followsCount || 0}
               </Text>
               <Text style={{
                 fontSize: 12,
                 color: colors.text.secondary
               }}>
-                Reseñas
+                Seguidos
               </Text>
             </View>
           </View>

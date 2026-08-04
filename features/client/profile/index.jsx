@@ -2,13 +2,16 @@ import { Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useRouter } from 'expo-router';
 import { useCallback, useState } from 'react';
-import { Alert, ScrollView, TouchableOpacity, View } from 'react-native';
+import { ActivityIndicator, Alert, Image, ScrollView, TouchableOpacity, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import * as ImagePicker from 'expo-image-picker';
 import { useAuthStore } from '../../../core/auth/stores/auth-store';
 import BusinessUpgradeModal from '../businesses/business-upgrade-modal';
 import { Text } from '../../../shared/components/ui';
 import { getUserTypeConfig } from '../../../shared/config/user-types';
 import { useCurrentUserType } from '../../../shared/hooks/use-user-type';
+import { useUserProfile, useUpdateUserProfile } from '../../../shared/hooks/use-user-profile';
+import { uploadMedia } from '../../../shared/services/media-upload';
 import { useAppStore } from '../../../shared/stores/app-store';
 import { colors, getModeColors } from '../../../shared/utils/colors';
 
@@ -22,6 +25,14 @@ export default function ClientProfileScreen() {
   const { currentUserType, availableUserTypes = [] } = useCurrentUserType();
   const { openUserTypeSwitcher } = useAppStore();
   const [businessUpgradeModalVisible, setBusinessUpgradeModalVisible] = useState(false);
+
+  const { data: profileData } = useUserProfile();
+  const updateUserProfile = useUpdateUserProfile();
+  const [uploadingAvatar, setUploadingAvatar] = useState(false);
+  const [uploadingBanner, setUploadingBanner] = useState(false);
+
+  const avatarUrl = profileData?.avatarUrl || user?.avatarUrl || user?.photoUrl;
+  const bannerUrl = profileData?.bannerUrl || user?.bannerUrl || user?.coverImageUrl;
 
   const userTypeInfo = getUserTypeConfig(currentUserType);
 
@@ -53,6 +64,86 @@ export default function ClientProfileScreen() {
     );
   }, [signOut]);
 
+  const handlePickAvatar = async () => {
+    try {
+      const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync();
+      if (status !== 'granted') {
+        Alert.alert('Permiso requerido', 'Necesitamos acceso a tu galería para cambiar tu foto de perfil.');
+        return;
+      }
+
+      const result = await ImagePicker.launchImageLibraryAsync({
+        mediaTypes: ImagePicker.MediaTypeOptions.Images,
+        allowsEditing: true,
+        aspect: [1, 1],
+        quality: 0.8,
+      });
+
+      if (!result.canceled && result.assets && result.assets[0]) {
+        setUploadingAvatar(true);
+        const asset = result.assets[0];
+
+        const uploadResult = await uploadMedia(
+          asset.uri,
+          'PROFILE_IMAGE',
+          {
+            mimeType: asset.mimeType || asset.type,
+            metadata: { userId: user?.id }
+          },
+          null,
+          { uid: user?.id }
+        );
+
+        await updateUserProfile.mutateAsync({ avatarUrl: uploadResult.url });
+      }
+    } catch (error) {
+      console.error('Error picking avatar:', error);
+      Alert.alert('Error', 'No se pudo actualizar la foto de perfil');
+    } finally {
+      setUploadingAvatar(false);
+    }
+  };
+
+  const handlePickBanner = async () => {
+    try {
+      const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync();
+      if (status !== 'granted') {
+        Alert.alert('Permiso requerido', 'Necesitamos acceso a tu galería para cambiar tu banner.');
+        return;
+      }
+
+      const result = await ImagePicker.launchImageLibraryAsync({
+        mediaTypes: ImagePicker.MediaTypeOptions.Images,
+        allowsEditing: true,
+        aspect: [3, 1],
+        quality: 0.8,
+      });
+
+      if (!result.canceled && result.assets && result.assets[0]) {
+        setUploadingBanner(true);
+        const asset = result.assets[0];
+
+        const uploadResult = await uploadMedia(
+          asset.uri,
+          'BUSINESS_BANNER',
+          {
+            mimeType: asset.mimeType || asset.type,
+            metadata: { userId: user?.id }
+          },
+          null,
+          { uid: user?.id }
+        );
+
+        await updateUserProfile.mutateAsync({ bannerUrl: uploadResult.url });
+      }
+    } catch (error) {
+      console.error('Error picking banner:', error);
+      Alert.alert('Error', 'No se pudo actualizar el banner');
+    } finally {
+      setUploadingBanner(false);
+    }
+  };
+
   const clientColors = getModeColors('client');
 
   return (
@@ -60,12 +151,44 @@ export default function ClientProfileScreen() {
       <ScrollView showsVerticalScrollIndicator={false}>
         {/* Cover Photo */}
         <View style={{ position: 'relative', height: 200 }}>
-          <LinearGradient
-            colors={clientColors.gradient}
-            start={{ x: 0, y: 0 }}
-            end={{ x: 1, y: 1 }}
-            style={{ width: '100%', height: '100%' }}
-          />
+          {bannerUrl ? (
+            <Image
+              source={{ uri: bannerUrl }}
+              style={{ width: '100%', height: '100%' }}
+              resizeMode="cover"
+            />
+          ) : (
+            <LinearGradient
+              colors={clientColors.gradient}
+              start={{ x: 0, y: 0 }}
+              end={{ x: 1, y: 1 }}
+              style={{ width: '100%', height: '100%' }}
+            />
+          )}
+
+          {/* Edit Banner Button */}
+          <TouchableOpacity
+            onPress={handlePickBanner}
+            disabled={uploadingBanner}
+            style={{
+              position: 'absolute',
+              bottom: 56,
+              right: 16,
+              width: 40,
+              height: 40,
+              borderRadius: 12,
+              backgroundColor: 'rgba(0, 0, 0, 0.6)',
+              alignItems: 'center',
+              justifyContent: 'center',
+              zIndex: 10
+            }}
+          >
+            {uploadingBanner ? (
+              <ActivityIndicator size="small" color="#fff" />
+            ) : (
+              <Ionicons name="camera" size={20} color="#fff" />
+            )}
+          </TouchableOpacity>
 
           {/* User Type Switcher Button - Top Left */}
           {availableUserTypes.length > 1 && (
@@ -127,28 +250,72 @@ export default function ClientProfileScreen() {
           {/* Avatar */}
           <View style={{ alignItems: 'center', marginBottom: 20 }}>
             <View style={{
-              width: 100,
-              height: 100,
-              borderRadius: 50,
-              backgroundColor: clientColors.primary,
-              borderWidth: 4,
-              borderColor: colors.bg.primary,
+              position: 'relative',
               marginTop: -60,
-              alignItems: 'center',
-              justifyContent: 'center',
-              shadowColor: '#000',
-              shadowOffset: { width: 0, height: 4 },
-              shadowOpacity: 0.2,
-              shadowRadius: 12,
-              elevation: 8
             }}>
-              <Text style={{
-                fontSize: 40,
-                fontWeight: '700',
-                color: colors.text.inverse
+              <View style={{
+                width: 100,
+                height: 100,
+                borderRadius: 50,
+                backgroundColor: clientColors.primary,
+                borderWidth: 4,
+                borderColor: colors.bg.primary,
+                alignItems: 'center',
+                justifyContent: 'center',
+                shadowColor: '#000',
+                shadowOffset: { width: 0, height: 4 },
+                shadowOpacity: 0.2,
+                shadowRadius: 12,
+                elevation: 8,
+                overflow: 'hidden'
               }}>
-                {user?.firstName?.charAt(0) || user?.displayName?.charAt(0) || user?.email?.charAt(0) || 'U'}
-              </Text>
+                {avatarUrl ? (
+                  <Image
+                    source={{ uri: avatarUrl }}
+                    style={{ width: '100%', height: '100%' }}
+                    resizeMode="cover"
+                  />
+                ) : (
+                  <Text style={{
+                    fontSize: 40,
+                    fontWeight: '700',
+                    color: colors.text.inverse
+                  }}>
+                    {user?.firstName?.charAt(0) || user?.displayName?.charAt(0) || user?.email?.charAt(0) || 'U'}
+                  </Text>
+                )}
+              </View>
+
+              {/* Edit Avatar Button */}
+              <TouchableOpacity
+                onPress={handlePickAvatar}
+                disabled={uploadingAvatar}
+                style={{
+                  position: 'absolute',
+                  bottom: 0,
+                  right: 0,
+                  width: 34,
+                  height: 34,
+                  borderRadius: 17,
+                  backgroundColor: '#ef4444',
+                  borderWidth: 3,
+                  borderColor: colors.bg.primary,
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  shadowColor: '#000',
+                  shadowOffset: { width: 0, height: 2 },
+                  shadowOpacity: 0.25,
+                  shadowRadius: 4,
+                  elevation: 5,
+                  zIndex: 10
+                }}
+              >
+                {uploadingAvatar ? (
+                  <ActivityIndicator size="small" color="#fff" />
+                ) : (
+                  <Ionicons name="camera" size={16} color="#fff" />
+                )}
+              </TouchableOpacity>
             </View>
           </View>
 

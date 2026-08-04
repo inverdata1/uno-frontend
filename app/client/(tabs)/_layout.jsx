@@ -25,7 +25,6 @@ export default function ClientTabsLayout() {
   const clientRoutes = [
     { label: 'Inicio', path: '/client', icon: 'home' },
     { label: 'Feed', path: '/client/feed', icon: 'apps' },
-    { label: 'Pedidos', path: '/client/orders', icon: 'receipt' },
     { label: 'Perfil', path: '/client/profile', icon: 'person' },
   ];
 
@@ -67,12 +66,12 @@ export default function ClientTabsLayout() {
             }}
           />
 
-          {/* Orders Tab */}
+          {/* Orders Screen (Accessible from Profile, hidden from bottom tab bar) */}
           <Tabs.Screen
             name="orders"
             options={{
-              title: 'Pedidos',
-              tabBarIcon: ({ focused }) => getTabIcon('receipt', focused),
+              href: null,
+              headerShown: false,
             }}
           />
 

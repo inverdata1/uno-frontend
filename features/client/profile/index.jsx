@@ -443,31 +443,6 @@ export default function ClientProfileScreen() {
                 Editar Perfil
               </Text>
             </TouchableOpacity>
-
-            <TouchableOpacity
-              onPress={() => Alert.alert('Próximamente', 'Función en desarrollo')}
-              style={{
-                flex: 1,
-                backgroundColor: colors.bg.secondary,
-                paddingVertical: 12,
-                borderRadius: 12,
-                flexDirection: 'row',
-                alignItems: 'center',
-                justifyContent: 'center',
-                gap: 8,
-                borderWidth: 1.5,
-                borderColor: colors.border.light
-              }}
-            >
-              <Ionicons name="share-social" size={18} color={colors.text.primary} />
-              <Text style={{
-                fontSize: 14,
-                fontWeight: '600',
-                color: colors.text.primary
-              }}>
-                Compartir
-              </Text>
-            </TouchableOpacity>
           </View>
 
           {/* Quick Actions */}
@@ -478,6 +453,43 @@ export default function ClientProfileScreen() {
             marginBottom: 24,
             gap: 12
           }}>
+            {/* Mis Pedidos */}
+            <TouchableOpacity
+              onPress={() => router.push('/client/orders')}
+              style={{ flexDirection: 'row', alignItems: 'center', gap: 12 }}
+            >
+              <View style={{
+                width: 40,
+                height: 40,
+                borderRadius: 12,
+                backgroundColor: colors.bg.primary,
+                alignItems: 'center',
+                justifyContent: 'center'
+              }}>
+                <Ionicons name="receipt" size={20} color={clientColors.primary} />
+              </View>
+              <View style={{ flex: 1 }}>
+                <Text style={{
+                  fontSize: 14,
+                  fontWeight: '600',
+                  color: colors.text.primary,
+                  marginBottom: 2
+                }}>
+                  Mis Pedidos
+                </Text>
+                <Text style={{
+                  fontSize: 13,
+                  color: colors.text.secondary
+                }}>
+                  Historial y estado de tus compras
+                </Text>
+              </View>
+              <Ionicons name="chevron-forward" size={20} color={colors.text.secondary} />
+            </TouchableOpacity>
+
+            <View style={{ height: 1, backgroundColor: colors.border.light }} />
+
+            {/* Favoritos */}
             <TouchableOpacity
               onPress={() => Alert.alert('Próximamente', 'Función en desarrollo')}
               style={{ flexDirection: 'row', alignItems: 'center', gap: 12 }}
@@ -502,7 +514,7 @@ export default function ClientProfileScreen() {
                   Favoritos
                 </Text>
                 <Text style={{
-                  fontSize: 14,
+                  fontSize: 13,
                   color: colors.text.secondary
                 }}>
                   {user?.favoriteStores?.length || 0} tiendas guardadas
@@ -513,6 +525,7 @@ export default function ClientProfileScreen() {
 
             <View style={{ height: 1, backgroundColor: colors.border.light }} />
 
+            {/* Seguidos */}
             <TouchableOpacity
               onPress={() => Alert.alert('Próximamente', 'Función en desarrollo')}
               style={{ flexDirection: 'row', alignItems: 'center', gap: 12 }}
@@ -525,7 +538,7 @@ export default function ClientProfileScreen() {
                 alignItems: 'center',
                 justifyContent: 'center'
               }}>
-                <Ionicons name="location" size={20} color={clientColors.primary} />
+                <Ionicons name="storefront" size={20} color={clientColors.primary} />
               </View>
               <View style={{ flex: 1 }}>
                 <Text style={{
@@ -534,139 +547,59 @@ export default function ClientProfileScreen() {
                   color: colors.text.primary,
                   marginBottom: 2
                 }}>
-                  Direcciones
+                  Negocios Seguidos
                 </Text>
                 <Text style={{
-                  fontSize: 14,
+                  fontSize: 13,
                   color: colors.text.secondary
                 }}>
-                  Gestiona tus direcciones
-                </Text>
-              </View>
-              <Ionicons name="chevron-forward" size={20} color={colors.text.secondary} />
-            </TouchableOpacity>
-
-            <View style={{ height: 1, backgroundColor: colors.border.light }} />
-
-            <TouchableOpacity
-              onPress={() => Alert.alert('Próximamente', 'Función en desarrollo')}
-              style={{ flexDirection: 'row', alignItems: 'center', gap: 12 }}
-            >
-              <View style={{
-                width: 40,
-                height: 40,
-                borderRadius: 12,
-                backgroundColor: colors.bg.primary,
-                alignItems: 'center',
-                justifyContent: 'center'
-              }}>
-                <Ionicons name="card" size={20} color={clientColors.primary} />
-              </View>
-              <View style={{ flex: 1 }}>
-                <Text style={{
-                  fontSize: 14,
-                  fontWeight: '600',
-                  color: colors.text.primary,
-                  marginBottom: 2
-                }}>
-                  Métodos de Pago
-                </Text>
-                <Text style={{
-                  fontSize: 14,
-                  color: colors.text.secondary
-                }}>
-                  Tarjetas y métodos guardados
+                  Tiendas y marcas que sigues
                 </Text>
               </View>
               <Ionicons name="chevron-forward" size={20} color={colors.text.secondary} />
             </TouchableOpacity>
           </View>
 
-          {/* Upgrade Options - Only if not already enabled */}
-          {(!availableUserTypes.includes('business') || !availableUserTypes.includes('delivery')) && (
-            <View style={{
-              backgroundColor: colors.bg.secondary,
-              borderRadius: 16,
-              padding: 16,
-              marginBottom: 24,
-              gap: 12
-            }}>
-              {!availableUserTypes.includes('business') && (
-                <>
-                  <TouchableOpacity
-                    onPress={() => setBusinessUpgradeModalVisible(true)}
-                    style={{ flexDirection: 'row', alignItems: 'center', gap: 12 }}
-                  >
-                    <View style={{
-                      width: 40,
-                      height: 40,
-                      borderRadius: 12,
-                      backgroundColor: 'rgba(245, 158, 11, 0.1)',
-                      alignItems: 'center',
-                      justifyContent: 'center'
-                    }}>
-                      <Ionicons name="briefcase" size={20} color="#f59e0b" />
-                    </View>
-                    <View style={{ flex: 1 }}>
-                      <Text style={{
-                        fontSize: 14,
-                        fontWeight: '600',
-                        color: colors.text.primary,
-                        marginBottom: 2
-                      }}>
-                        Vende con UNO
-                      </Text>
-                      <Text style={{
-                        fontSize: 14,
-                        color: colors.text.secondary
-                      }}>
-                        Crea tu negocio y empieza a vender
-                      </Text>
-                    </View>
-                    <Ionicons name="chevron-forward" size={20} color="#f59e0b" />
-                  </TouchableOpacity>
-                  {!availableUserTypes.includes('delivery') && (
-                    <View style={{ height: 1, backgroundColor: colors.border.light }} />
-                  )}
-                </>
-              )}
-
-              {!availableUserTypes.includes('delivery') && (
-                <TouchableOpacity
-                  onPress={() => Alert.alert('Próximamente', 'Función en desarrollo')}
-                  style={{ flexDirection: 'row', alignItems: 'center', gap: 12 }}
-                >
-                  <View style={{
-                    width: 40,
-                    height: 40,
-                    borderRadius: 12,
-                    backgroundColor: 'rgba(34, 197, 94, 0.1)',
-                    alignItems: 'center',
-                    justifyContent: 'center'
-                  }}>
-                    <Ionicons name="bicycle" size={20} color="#22c55e" />
-                  </View>
-                  <View style={{ flex: 1 }}>
-                    <Text style={{
-                      fontSize: 14,
-                      fontWeight: '600',
-                      color: colors.text.primary,
-                      marginBottom: 2
-                    }}>
-                      Entrega con UNO
-                    </Text>
-                    <Text style={{
-                      fontSize: 14,
-                      color: colors.text.secondary
-                    }}>
-                      Conviértete en repartidor
-                    </Text>
-                  </View>
-                  <Ionicons name="chevron-forward" size={20} color="#22c55e" />
-                </TouchableOpacity>
-              )}
-            </View>
-          )}
+          {/* Account Verification Card */}
+          <View style={{
+            backgroundColor: colors.bg.secondary,
+            borderRadius: 16,
+            padding: 16,
+            marginBottom: 24,
+          }}>
+            <TouchableOpacity
+              onPress={() => Alert.alert('Verificación de Cuenta', 'La función de verificación de identidad estará disponible próximamente para brindarte mayor seguridad.')}
+              style={{ flexDirection: 'row', alignItems: 'center', gap: 12 }}
+            >
+              <View style={{
+                width: 40,
+                height: 40,
+                borderRadius: 12,
+                backgroundColor: 'rgba(59, 130, 246, 0.1)',
+                alignItems: 'center',
+                justifyContent: 'center'
+              }}>
+                <Ionicons name="shield-checkmark" size={20} color="#3b82f6" />
+              </View>
+              <View style={{ flex: 1 }}>
+                <Text style={{
+                  fontSize: 14,
+                  fontWeight: '600',
+                  color: colors.text.primary,
+                  marginBottom: 2
+                }}>
+                  Verifica tu cuenta
+                </Text>
+                <Text style={{
+                  fontSize: 13,
+                  color: colors.text.secondary
+                }}>
+                  Obtén tu insignia de verificación e identidad
+                </Text>
+              </View>
+              <Ionicons name="chevron-forward" size={20} color="#3b82f6" />
+            </TouchableOpacity>
+          </View>
 
           {/* Logout */}
           <View style={{

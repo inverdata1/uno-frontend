@@ -17,8 +17,8 @@ import { colors } from '../../../../shared/utils/colors';
 
 /**
  * Feed Screen
- * Main social feed with stories and posts
- * Shared between Client and Business user types
+ * Main social feed with stories, image posts, and video posts.
+ * Interleaves 5 image posts with 1 video post.
  */
 export default function FeedScreen() {
   const router = useRouter();
@@ -31,7 +31,7 @@ export default function FeedScreen() {
   const [selectedPost, setSelectedPost] = useState(null);
 
   // Use domain hooks to fetch data
-  const { data: posts = [], isLoading: postsLoading } = usePosts({ limit: 20 });
+  const { data: posts = [], isLoading: postsLoading } = usePosts({ limit: 50 });
   const { data: storiesData = [], isLoading: storiesLoading } = useStories();
   const { data: businesses = [], isLoading: businessesLoading } = useBusinesses();
   const likeMutation = useLikePost();
@@ -45,6 +45,36 @@ export default function FeedScreen() {
     });
     return map;
   }, [businesses]);
+
+  // Interleave feed: 5 image posts -> 1 video post
+  const combinedFeed = useMemo(() => {
+    if (!posts || posts.length === 0) return [];
+
+    const imagePosts = posts.filter(p => p.type !== 'video');
+    const videoPosts = posts.filter(p => p.type === 'video');
+
+    if (videoPosts.length === 0) return imagePosts;
+    if (imagePosts.length === 0) return videoPosts;
+
+    const result = [];
+    let videoIdx = 0;
+
+    for (let i = 0; i < imagePosts.length; i++) {
+      result.push(imagePosts[i]);
+      if ((i + 1) % 5 === 0 && videoIdx < videoPosts.length) {
+        result.push(videoPosts[videoIdx]);
+        videoIdx++;
+      }
+    }
+
+    // Append any leftover videos
+    while (videoIdx < videoPosts.length) {
+      result.push(videoPosts[videoIdx]);
+      videoIdx++;
+    }
+
+    return result;
+  }, [posts]);
 
   const isLoading = postsLoading || businessesLoading;
 
@@ -71,8 +101,7 @@ export default function FeedScreen() {
   };
 
   const handleCreateStory = () => {
-    // TODO: Navigate to create story screen
-    console.log('Create story');
+    router.push('/business/stories/create');
   };
 
   const handlePostPress = (post) => {
@@ -81,21 +110,25 @@ export default function FeedScreen() {
   };
 
   const handleBusinessPress = (businessId) => {
-    router.push(`/client/business/${businessId}`);
+    if (businessId) {
+      router.push(`/client/business/${businessId}`);
+    }
   };
 
-  const handleProductPress = (productId) => {
-    // TODO: Navigate to product view
-    console.log('View product:', productId);
+  const handleProductPress = (productOrId) => {
+    const productId = typeof productOrId === 'object' ? (productOrId.id || productOrId.productId) : productOrId;
+    if (productId) {
+      router.push(`/client/product/${productId}`);
+    }
   };
 
   const renderHeader = () => {
     if (storiesData.length === 0 && !storiesLoading) return null;
 
     return (
-      <View className="bg-white border-b border-gray-200 py-3">
+      <View style={{ backgroundColor: '#ffffff', borderBottomWidth: 1, borderBottomColor: '#f3f4f6', paddingVertical: 12 }}>
         {storiesLoading ? (
-          <View className="px-4 py-2">
+          <View style={{ paddingHorizontal: 16, paddingVertical: 8 }}>
             <ActivityIndicator size="small" color={colors.primary[500]} />
           </View>
         ) : (
@@ -116,8 +149,8 @@ export default function FeedScreen() {
                   style={{ marginHorizontal: 6 }}
                 >
                   <StoryRing
-                    imageUrl={business.logo}
-                    name={business.name || 'Business'}
+                    imageUrl={business.logo || business.logoUrl}
+                    name={business.name || business.businessName || 'Business'}
                     hasUnseenStories={true}
                   />
                 </Pressable>
@@ -133,11 +166,10 @@ export default function FeedScreen() {
     // Get real business data from the map
     const business = businessMap[post.businessId] || {};
     const businessData = {
-      name: business.name || 'Business',
-      logo: business.logo || 'https://via.placeholder.com/100'
+      name: business.businessName || business.name || post.businessName || 'Negocio',
+      logo: business.logoUrl || business.logo || post.businessLogo || null
     };
 
-    // TODO: Check if post is liked/saved by current user from auth state
     const isLiked = false;
     const isSaved = false;
 
@@ -157,32 +189,32 @@ export default function FeedScreen() {
   };
 
   const renderEmpty = () => (
-    <View className="flex-1 items-center justify-center py-20 px-8">
-      <View className="w-20 h-20 rounded-full bg-gray-200 items-center justify-center mb-4">
+    <View style={{ flex: 1, alignItems: 'center', justifyContent: 'center', paddingVertical: 80, paddingHorizontal: 32 }}>
+      <View style={{ width: 80, height: 80, borderRadius: 40, backgroundColor: '#f3f4f6', alignItems: 'center', justifyContent: 'center', marginBottom: 16 }}>
         <Ionicons name="images-outline" size={36} color={colors.text.secondary} />
       </View>
-      <Text className="text-gray-700 text-lg font-semibold mb-2 text-center">
-        No hay publicaciones aun
+      <Text style={{ fontSize: 18, fontWeight: '700', color: '#374151', marginBottom: 8, textAlign: 'center' }}>
+        No hay publicaciones aún
       </Text>
-      <Text className="text-gray-500 text-sm text-center">
-        Sigue a negocios para ver sus publicaciones aqui
+      <Text style={{ fontSize: 14, color: '#6b7280', textAlign: 'center', leading: 20 }}>
+        Las publicaciones de los negocios aparecerán aquí en tu feed social.
       </Text>
     </View>
   );
 
   if (isLoading) {
     return (
-      <SafeAreaView className="flex-1 bg-gray-50 items-center justify-center" edges={['top']}>
+      <SafeAreaView style={{ flex: 1, backgroundColor: '#f9fafb', alignItems: 'center', justifyContent: 'center' }} edges={['top']}>
         <ActivityIndicator size="large" color={colors.primary[500]} />
-        <Text className="text-gray-500 text-sm mt-4">Cargando feed...</Text>
+        <Text style={{ fontSize: 14, color: '#6b7280', marginTop: 16 }}>Cargando feed...</Text>
       </SafeAreaView>
     );
   }
 
   return (
-    <SafeAreaView className="flex-1 bg-gray-50" edges={['top']}>
+    <SafeAreaView style={{ flex: 1, backgroundColor: '#f3f4f6' }} edges={['top']}>
       <FlatList
-        data={posts}
+        data={combinedFeed}
         renderItem={renderPost}
         keyExtractor={(item) => item.id}
         ListHeaderComponent={renderHeader}

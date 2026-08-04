@@ -162,7 +162,9 @@ export default function FeedScreen() {
     );
   };
 
-  const renderPost = ({ item: post }) => {
+  const renderPost = ({ item: post, index }) => {
+    if (!post) return null;
+
     // Get real business data from the map
     const business = businessMap[post.businessId] || {};
     const businessData = {
@@ -216,7 +218,7 @@ export default function FeedScreen() {
       <FlatList
         data={combinedFeed}
         renderItem={renderPost}
-        keyExtractor={(item) => item.id}
+        keyExtractor={(item, idx) => item?.id || `feed-${idx}`}
         ListHeaderComponent={renderHeader}
         ListEmptyComponent={renderEmpty}
         refreshControl={

@@ -29,17 +29,44 @@ export const PostCard = ({
   className
 }) => {
   const { user } = useAuthStore();
+  
+  if (!post) return null;
+
   const {
     type,
-    media = [],
     caption,
-    taggedProducts = [],
     likeCount = 0,
     commentCount = 0,
     shareCount = 0,
     createdAt,
     updatedAt
   } = post;
+
+  // Safely parse media array
+  let media = [];
+  if (Array.isArray(post.media)) {
+    media = post.media;
+  } else if (typeof post.media === 'string') {
+    try {
+      const parsed = JSON.parse(post.media);
+      media = Array.isArray(parsed) ? parsed : [parsed];
+    } catch (e) {
+      media = post.media ? [{ url: post.media }] : [];
+    }
+  }
+
+  // Safely parse taggedProducts array
+  let taggedProducts = [];
+  if (Array.isArray(post.taggedProducts)) {
+    taggedProducts = post.taggedProducts;
+  } else if (typeof post.taggedProducts === 'string') {
+    try {
+      const parsed = JSON.parse(post.taggedProducts);
+      taggedProducts = Array.isArray(parsed) ? parsed : [];
+    } catch (e) {
+      taggedProducts = [];
+    }
+  }
 
   const [currentImageIndex, setCurrentImageIndex] = useState(0);
   const [productsModalVisible, setProductsModalVisible] = useState(false);

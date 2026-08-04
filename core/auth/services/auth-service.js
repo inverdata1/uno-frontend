@@ -6,7 +6,7 @@ export const authService = {
   /**
    * Register a new user
    */
-  async signUp({ firstName, lastName, email, phone, dateOfBirth, password, selectedUserType = 'client', businessData }) {
+  async signUp({ firstName, lastName, email, phone, dateOfBirth, password, selectedUserType = 'client', businessData, preferences }) {
     try {
       // 1. Prepare userTypes structure
       const userTypes = {};
@@ -36,7 +36,8 @@ export const authService = {
             orders: true,
             promotions: false,
             email: true
-          }
+          },
+          ...(preferences || {})
         }
       };
 

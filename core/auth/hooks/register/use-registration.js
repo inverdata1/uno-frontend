@@ -21,12 +21,18 @@ export const useRegistration = ({ onComplete }) => {
   const [currentStep, setCurrentStep] = useState(1);
   const [selectedUserType, setSelectedUserType] = useState('client');
   const [businessData, setBusinessData] = useState({});
+  const [clientPreferences, setClientPreferences] = useState({
+    goals: [],
+    categories: [],
+    subcategories: [],
+  });
   const [forceUpdate, setForceUpdate] = useState(0);
 
   // Calculate total steps based on user type
   // Business: 1. Basic Info -> 2. User Type -> 3. Business Info -> 4. Confirmation
-  // Client/Driver: 1. Basic Info -> 2. User Type -> 3. Confirmation
-  const totalSteps = selectedUserType === 'business' ? 4 : 3;
+  // Client: 1. Basic Info -> 2. User Type -> 3. Preferences -> 4. Confirmation
+  // Driver: 1. Basic Info -> 2. User Type -> 3. Confirmation
+  const totalSteps = selectedUserType === 'business' ? 4 : selectedUserType === 'client' ? 4 : 3;
 
   const form = useForm({
     defaultValues: {
@@ -43,11 +49,12 @@ export const useRegistration = ({ onComplete }) => {
       onSubmit: registerSchema,
     },
     onSubmit: async ({ value }) => {
-      // Include selected user type and business data in registration
+      // Include selected user type, business data or client preferences in registration
       const registrationData = {
         ...value,
         selectedUserType,
-        ...(selectedUserType === 'business' && { businessData })
+        ...(selectedUserType === 'business' && { businessData }),
+        ...(selectedUserType === 'client' && { preferences: clientPreferences })
       };
 
       const result = await signUp(registrationData);
@@ -62,8 +69,6 @@ export const useRegistration = ({ onComplete }) => {
       // Duplicate email (409): the message is generic elsewhere on the confirmation
       // step, but the user can't see the email field from there, so point at it
       // directly and jump back to where it can be fixed.
-      // `errors` is derived from `errorMap`, not settable directly — `onServer` is
-      // the cause TanStack Form reserves for exactly this (async/server errors).
       if (result?.status === 409) {
         form.setFieldMeta('email', (prev) => ({
           ...prev,
@@ -101,19 +106,6 @@ export const useRegistration = ({ onComplete }) => {
 
     const valid = hasAllValues && passwordsMatch && emailValid && phoneValid;
 
-    // Include forceUpdate in dependency to trigger re-computation
-    console.log('🔄 Validation check (update #' + forceUpdate + '):', {
-      hasAllValues,
-      passwordsMatch,
-      emailValid,
-      phoneValid,
-      acceptTerms: basicFields.acceptTerms,
-      valid,
-      pwdLength: basicFields.password?.length,
-      confirmPwdLength: basicFields.confirmPassword?.length,
-      areEqual: basicFields.password === basicFields.confirmPassword
-    });
-
     return valid;
   };
 
@@ -135,16 +127,23 @@ export const useRegistration = ({ onComplete }) => {
     switch (currentStep) {
       case 1:
         const valid = isStep1Valid();
-        console.log('✅ Step 1 validation result:', valid);
         return valid;
       case 2:
         // User type selection step - ensure user type is selected
         return selectedUserType !== null;
       case 3:
-        // For business users, step 3 is business info (must be valid)
-        // For others, step 3 is confirmation (always valid)
+        // For business users: business info must be valid
+        // For client users: must select at least 1 preference/goal/category
+        // For driver: confirmation (always valid)
         if (selectedUserType === 'business') {
           return isBusinessDataValid(businessData);
+        }
+        if (selectedUserType === 'client') {
+          return (
+            (clientPreferences.goals && clientPreferences.goals.length > 0) ||
+            (clientPreferences.categories && clientPreferences.categories.length > 0) ||
+            (clientPreferences.subcategories && clientPreferences.subcategories.length > 0)
+          );
         }
         return true;
       default:
@@ -176,6 +175,10 @@ export const useRegistration = ({ onComplete }) => {
     // Business Data
     businessData,
     setBusinessData,
+
+    // Client Preferences
+    clientPreferences,
+    setClientPreferences,
 
     // Validation
     isStep1Valid,

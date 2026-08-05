@@ -23,7 +23,7 @@ export default function ClientTabsLayout() {
   const isDesktopWeb = isMounted && Platform.OS === 'web' && width > 768;
 
   const clientRoutes = [
-    { label: 'Inicio', path: '/client', icon: 'home' },
+    { label: 'Descubre', path: '/client', icon: 'compass' },
     { label: 'Feed', path: '/client/feed', icon: 'apps' },
     { label: 'Perfil', path: '/client/profile', icon: 'person' },
   ];
@@ -48,12 +48,12 @@ export default function ClientTabsLayout() {
             unmountOnBlur: true,
           }}>
 
-          {/* Home Tab */}
+          {/* Discover Tab */}
           <Tabs.Screen
             name="index"
             options={{
-              title: 'Inicio',
-              tabBarIcon: ({ focused }) => getTabIcon('home', focused),
+              title: 'Descubre',
+              tabBarIcon: ({ focused }) => getTabIcon('compass', focused),
             }}
           />
 

@@ -1,16 +1,18 @@
 import { Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useRouter } from 'expo-router';
-import { useState } from 'react';
-import { Dimensions, Image, Modal, ScrollView, TouchableOpacity, View } from 'react-native';
+import { useEffect, useState } from 'react';
+import { Dimensions, Image, Modal, ScrollView, TextInput, TouchableOpacity, View, ActivityIndicator } from 'react-native';
 import { SafeAreaProvider, SafeAreaView } from 'react-native-safe-area-context';
 import { useProducts } from '../../../features/shared/products/hooks/use-products';
 import { useBusinesses } from '../../../features/shared/social/hooks/use-businesses';
 import { useCategories } from '../../../features/shared/social/hooks/use-categories';
 import { useStories } from '../../../features/shared/social/hooks/use-stories';
 import { useVideos } from '../../../features/shared/social/hooks/use-videos';
+import { useDiscover, useBusinessSearch } from '../../../features/shared/social/hooks/use-discover';
 import { AdaptiveHeader } from '../../../shared/components/layout/adaptive-header';
 import { Text } from '../../../shared/components/ui';
+import { colors } from '../../../shared/utils/colors';
 import StoryViewer from '../../shared/social/stories/story-viewer';
 import ProductDetail from '../products/product-detail';
 import VideoViewer from '../social/videos/video-viewer';
@@ -20,8 +22,54 @@ import OffersBanner from './offers-banner';
 const { width } = Dimensions.get('window');
 
 /**
- * Client Home Screen (Inicio)
- * Instagram/TikTok inspired layout
+ * Business Card - used for featured, by-category, and search sections
+ */
+function BusinessCard({ business, onPress }) {
+  return (
+    <TouchableOpacity
+      activeOpacity={0.9}
+      onPress={onPress}
+      style={{
+        width: 160,
+        backgroundColor: '#ffffff',
+        borderRadius: 12,
+        overflow: 'hidden',
+        borderWidth: 1,
+        borderColor: '#f1f5f9'
+      }}
+    >
+      <View style={{ width: '100%', height: 120, backgroundColor: '#f8fafc' }}>
+        {business.logoUrl ? (
+          <Image source={{ uri: business.logoUrl }} style={{ width: '100%', height: '100%' }} resizeMode="cover" />
+        ) : (
+          <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center' }}>
+            <Ionicons name="storefront" size={48} color="#cbd5e1" />
+          </View>
+        )}
+      </View>
+      <View style={{ padding: 12 }}>
+        <Text style={{ fontSize: 14, fontWeight: '700', color: '#0f172a', marginBottom: 4 }} numberOfLines={1}>
+          {business.businessName}
+        </Text>
+        <Text style={{ fontSize: 12, color: '#64748b', marginBottom: 6 }} numberOfLines={1}>
+          {business.businessType || 'Negocio'}
+        </Text>
+        {business.rating > 0 && (
+          <View style={{ flexDirection: 'row', alignItems: 'center' }}>
+            <Ionicons name="star" size={12} color="#f59e0b" />
+            <Text style={{ fontSize: 12, color: '#64748b', marginLeft: 4 }}>
+              {Number(business.rating).toFixed(1)} ({business.reviewsCount || 0})
+            </Text>
+          </View>
+        )}
+      </View>
+    </TouchableOpacity>
+  );
+}
+
+/**
+ * Client Discover Screen (Descubre)
+ * Instagram/TikTok inspired layout for exploring businesses, brands and content
  */
 export default function ClientHomeScreen() {
   const router = useRouter();
@@ -36,6 +84,14 @@ export default function ClientHomeScreen() {
   const [selectedProduct, setSelectedProduct] = useState(null);
   const [productsBottomSheetVisible, setProductsBottomSheetVisible] = useState(false);
   const [taggedProducts, setTaggedProducts] = useState([]);
+  const [searchInput, setSearchInput] = useState('');
+  const [searchQuery, setSearchQuery] = useState('');
+
+  // Debounce search input before hitting the backend
+  useEffect(() => {
+    const timer = setTimeout(() => setSearchQuery(searchInput.trim()), 400);
+    return () => clearTimeout(timer);
+  }, [searchInput]);
 
   // Use domain hooks instead of inline queries
   const { data: categories = [] } = useCategories();
@@ -43,6 +99,13 @@ export default function ClientHomeScreen() {
   const { data: stories = [] } = useStories();
   const { data: videos = [] } = useVideos({ limit: 10 });
   const { data: businesses = [] } = useBusinesses({ limit: 10 });
+  const { data: discoverData } = useDiscover();
+  const { data: searchResults = [], isFetching: isSearching } = useBusinessSearch(searchQuery);
+
+  const featuredBusinesses = discoverData?.featured?.length ? discoverData.featured : businesses;
+  const businessCategories = discoverData?.categories || [];
+  const trendingPosts = discoverData?.trendingPosts || [];
+  const isSearchActive = searchQuery.length > 0;
 
   const offers = [
     {
@@ -75,18 +138,89 @@ export default function ClientHomeScreen() {
 
       {/* Search Bar */}
       <View style={{ paddingHorizontal: 16, paddingTop: 8, paddingBottom: 12 }}>
-        <TouchableOpacity style={{
+        <View style={{
           backgroundColor: '#f1f5f9',
           borderRadius: 10,
-          padding: 12,
+          paddingHorizontal: 12,
+          paddingVertical: 4,
           flexDirection: 'row',
           alignItems: 'center'
         }}>
           <Ionicons name="search" size={18} color="#64748b" style={{ marginRight: 8 }} />
-          <Text style={{ color: '#94a3b8', fontSize: 15, flex: 1 }}>
-            Search
-          </Text>
-        </TouchableOpacity>
+          <TextInput
+            value={searchInput}
+            onChangeText={setSearchInput}
+            placeholder="Buscar negocios, marcas..."
+            placeholderTextColor="#94a3b8"
+            style={{ flex: 1, fontSize: 15, color: '#0f172a', paddingVertical: 10 }}
+          />
+          {searchInput.length > 0 && (
+            <TouchableOpacity onPress={() => setSearchInput('')}>
+              <Ionicons name="close-circle" size={18} color="#94a3b8" />
+            </TouchableOpacity>
+          )}
+        </View>
+
+        {/* Search Results */}
+        {isSearchActive && (
+          <View style={{
+            marginTop: 8,
+            backgroundColor: '#ffffff',
+            borderRadius: 12,
+            borderWidth: 1,
+            borderColor: '#f1f5f9',
+            overflow: 'hidden'
+          }}>
+            {isSearching ? (
+              <View style={{ padding: 20, alignItems: 'center' }}>
+                <ActivityIndicator size="small" color={colors.primary[500]} />
+              </View>
+            ) : searchResults.length === 0 ? (
+              <View style={{ padding: 20, alignItems: 'center' }}>
+                <Text style={{ color: '#94a3b8', fontSize: 14 }}>
+                  No se encontraron negocios para &quot;{searchQuery}&quot;
+                </Text>
+              </View>
+            ) : (
+              searchResults.map((business, index) => (
+                <TouchableOpacity
+                  key={business.id}
+                  activeOpacity={0.8}
+                  onPress={() => {
+                    setSearchInput('');
+                    router.push(`/client/business/${business.id}`);
+                  }}
+                  style={{
+                    flexDirection: 'row',
+                    alignItems: 'center',
+                    padding: 12,
+                    borderTopWidth: index === 0 ? 0 : 1,
+                    borderTopColor: '#f1f5f9'
+                  }}
+                >
+                  <View style={{ width: 40, height: 40, borderRadius: 8, backgroundColor: '#f8fafc', overflow: 'hidden', marginRight: 12 }}>
+                    {business.logoUrl ? (
+                      <Image source={{ uri: business.logoUrl }} style={{ width: '100%', height: '100%' }} resizeMode="cover" />
+                    ) : (
+                      <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center' }}>
+                        <Ionicons name="storefront" size={20} color="#cbd5e1" />
+                      </View>
+                    )}
+                  </View>
+                  <View style={{ flex: 1 }}>
+                    <Text style={{ fontSize: 14, fontWeight: '600', color: '#0f172a' }} numberOfLines={1}>
+                      {business.businessName}
+                    </Text>
+                    <Text style={{ fontSize: 12, color: '#64748b' }} numberOfLines={1}>
+                      {business.category || business.businessType || 'Negocio'}
+                    </Text>
+                  </View>
+                  <Ionicons name="chevron-forward" size={18} color="#cbd5e1" />
+                </TouchableOpacity>
+              ))
+            )}
+          </View>
+        )}
       </View>
 
       {/* Offers Banner Carousel */}
@@ -284,59 +418,14 @@ export default function ClientHomeScreen() {
           showsHorizontalScrollIndicator={false}
           contentContainerStyle={{ paddingHorizontal: 16, gap: 12 }}
         >
-          {businesses.slice(0, 5).map((business) => (
-            <TouchableOpacity
+          {featuredBusinesses.slice(0, 10).map((business) => (
+            <BusinessCard
               key={business.id}
-              activeOpacity={0.9}
+              business={business}
               onPress={() => router.push(`/client/business/${business.id}`)}
-              style={{
-                width: 160,
-                backgroundColor: '#ffffff',
-                borderRadius: 12,
-                overflow: 'hidden',
-                borderWidth: 1,
-                borderColor: '#f1f5f9'
-              }}
-            >
-              {/* Business Logo/Image */}
-              <View style={{
-                width: '100%',
-                height: 120,
-                backgroundColor: '#f8fafc'
-              }}>
-                {business.logoUrl ? (
-                  <Image
-                    source={{ uri: business.logoUrl }}
-                    style={{ width: '100%', height: '100%' }}
-                    resizeMode="cover"
-                  />
-                ) : (
-                  <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center' }}>
-                    <Ionicons name="storefront" size={48} color="#cbd5e1" />
-                  </View>
-                )}
-              </View>
-
-              {/* Business Info */}
-              <View style={{ padding: 12 }}>
-                <Text style={{ fontSize: 14, fontWeight: '700', color: '#0f172a', marginBottom: 4 }} numberOfLines={1}>
-                  {business.businessName}
-                </Text>
-                <Text style={{ fontSize: 12, color: '#64748b', marginBottom: 6 }} numberOfLines={1}>
-                  {business.businessType || 'Negocio'}
-                </Text>
-                {business.rating > 0 && (
-                  <View style={{ flexDirection: 'row', alignItems: 'center' }}>
-                    <Ionicons name="star" size={12} color="#f59e0b" />
-                    <Text style={{ fontSize: 12, color: '#64748b', marginLeft: 4 }}>
-                      {business.rating.toFixed(1)} ({business.reviewsCount || 0})
-                    </Text>
-                  </View>
-                )}
-              </View>
-            </TouchableOpacity>
+            />
           ))}
-          {businesses.length === 0 && (
+          {featuredBusinesses.length === 0 && (
             <View style={{ paddingHorizontal: 16, paddingVertical: 40 }}>
               <Text style={{ color: '#94a3b8', fontSize: 14 }}>
                 No hay negocios disponibles
@@ -345,6 +434,93 @@ export default function ClientHomeScreen() {
           )}
         </ScrollView>
       </View>
+
+      {/* Explora por categoría (Business categories) */}
+      {businessCategories.length > 0 && (
+        <View style={{ paddingVertical: 20, borderBottomWidth: 1, borderBottomColor: '#f1f5f9' }}>
+          {businessCategories.map((group) => (
+            <View key={group.category} style={{ marginBottom: 16 }}>
+              <View style={{ paddingHorizontal: 16, marginBottom: 12 }}>
+                <Text style={{ fontSize: 16, fontWeight: '700', color: '#0f172a', textTransform: 'capitalize' }}>
+                  {group.category}
+                </Text>
+              </View>
+              <ScrollView
+                horizontal
+                showsHorizontalScrollIndicator={false}
+                contentContainerStyle={{ paddingHorizontal: 16, gap: 12 }}
+              >
+                {group.businesses.map((business) => (
+                  <BusinessCard
+                    key={business.id}
+                    business={business}
+                    onPress={() => router.push(`/client/business/${business.id}`)}
+                  />
+                ))}
+              </ScrollView>
+            </View>
+          ))}
+        </View>
+      )}
+
+      {/* Tendencias (Trending posts) */}
+      {trendingPosts.length > 0 && (
+        <View style={{ paddingVertical: 20, borderBottomWidth: 1, borderBottomColor: '#f1f5f9' }}>
+          <View style={{ paddingHorizontal: 16, marginBottom: 16 }}>
+            <Text style={{ fontSize: 20, fontWeight: '700', color: '#0f172a' }}>
+              Tendencias
+            </Text>
+          </View>
+          <ScrollView
+            horizontal
+            showsHorizontalScrollIndicator={false}
+            contentContainerStyle={{ paddingHorizontal: 16, gap: 12 }}
+          >
+            {trendingPosts.map((post) => {
+              const firstMedia = Array.isArray(post.media) ? post.media[0] : null;
+              const thumbnail = post.thumbnailUrl || (typeof firstMedia === 'string' ? firstMedia : firstMedia?.url);
+              return (
+                <TouchableOpacity
+                  key={post.id}
+                  activeOpacity={0.9}
+                  onPress={() => {
+                    setPostViewerPost(post);
+                    setPostViewerVisible(true);
+                  }}
+                  style={{ width: 120, height: 170, borderRadius: 12, overflow: 'hidden', backgroundColor: '#f8fafc' }}
+                >
+                  {thumbnail ? (
+                    <Image source={{ uri: thumbnail }} style={{ width: '100%', height: '100%' }} resizeMode="cover" />
+                  ) : (
+                    <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center' }}>
+                      <Ionicons name="image-outline" size={32} color="#cbd5e1" />
+                    </View>
+                  )}
+                  {post.type === 'video' && (
+                    <View style={{
+                      position: 'absolute', top: 8, right: 8,
+                      width: 24, height: 24, borderRadius: 12,
+                      backgroundColor: 'rgba(0,0,0,0.5)',
+                      alignItems: 'center', justifyContent: 'center'
+                    }}>
+                      <Ionicons name="play" size={12} color="#ffffff" />
+                    </View>
+                  )}
+                  <View style={{
+                    position: 'absolute', bottom: 0, left: 0, right: 0,
+                    paddingHorizontal: 8, paddingVertical: 6,
+                    backgroundColor: 'rgba(0,0,0,0.45)'
+                  }}>
+                    <Text style={{ color: '#ffffff', fontSize: 11, fontWeight: '700' }} numberOfLines={1}>
+                      {post.business?.businessName || 'Negocio'}
+                    </Text>
+                  </View>
+                </TouchableOpacity>
+              );
+            })}
+          </ScrollView>
+        </View>
+      )}
 
       {/* Cerca de ti */}
       <View style={{ paddingHorizontal: 16, paddingTop: 20, paddingBottom: 16 }}>

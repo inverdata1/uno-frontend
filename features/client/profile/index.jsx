@@ -473,7 +473,7 @@ export default function ClientProfileScreen() {
 
             {/* Favoritos */}
             <TouchableOpacity
-              onPress={() => Alert.alert('Próximamente', 'Función en desarrollo')}
+              onPress={() => router.push('/client/favorites')}
               style={{ flexDirection: 'row', alignItems: 'center', gap: 12 }}
             >
               <View style={{
@@ -499,7 +499,7 @@ export default function ClientProfileScreen() {
                   fontSize: 13,
                   color: colors.text.secondary
                 }}>
-                  {user?.favoriteStores?.length || 0} tiendas guardadas
+                  Publicaciones y productos guardados
                 </Text>
               </View>
               <Ionicons name="chevron-forward" size={20} color={colors.text.secondary} />

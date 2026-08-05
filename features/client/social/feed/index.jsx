@@ -5,6 +5,7 @@ import { useQueryClient } from '@tanstack/react-query';
 import { useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { PostCard } from './components/post-card';
+import { CommentsModal } from '../../../shared/social/comments/comments-modal';
 import { StoryRing, AddStoryButton } from './components/story-ring';
 import { Text } from '../../../../shared/components/ui/text';
 import { useAuthStore } from '../../../../core/auth/stores/auth-store';
@@ -31,6 +32,7 @@ export default function FeedScreen() {
   const [selectedStories, setSelectedStories] = useState([]);
   const [postViewerVisible, setPostViewerVisible] = useState(false);
   const [selectedPost, setSelectedPost] = useState(null);
+  const [commentsPostId, setCommentsPostId] = useState(null);
 
   // Use domain hooks to fetch data with logged in userId
   const { data: posts = [], isLoading: postsLoading } = usePosts({ userId: user?.id, limit: 50 });
@@ -188,6 +190,7 @@ export default function FeedScreen() {
         onPress={() => handlePostPress(post)}
         onLike={() => handleLike(post.id, isLiked)}
         onSave={() => handleSave(post.id, isSaved)}
+        onComment={() => setCommentsPostId(post.id)}
         onBusinessPress={() => handleBusinessPress(post.businessId)}
         onProductPress={handleProductPress}
       />
@@ -255,6 +258,12 @@ export default function FeedScreen() {
           onProductPress={handleProductPress}
         />
       )}
+
+      <CommentsModal
+        visible={!!commentsPostId}
+        postId={commentsPostId}
+        onClose={() => setCommentsPostId(null)}
+      />
     </SafeAreaView>
   );
 }

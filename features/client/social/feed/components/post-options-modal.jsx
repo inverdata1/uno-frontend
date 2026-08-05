@@ -35,13 +35,14 @@ export const PostOptionsModal = ({
     onClose();
     try {
       if (user?.id && post?.id) {
-        await apiClient.post(`/posts/${post.id}/favorite`, { userId: user.id });
+        const res = await apiClient.post(`/posts/${post.id}/favorite`, { userId: user.id });
+        Alert.alert(
+          res.data?.isFavorite ? 'Publicación Favorita' : 'Favoritos',
+          res.data?.isFavorite
+            ? '⭐ Publicación guardada en tu lista de Publicaciones Favoritas.'
+            : 'Publicación eliminada de tus Favoritos.'
+        );
       }
-      Alert.alert(
-        'Publicación Favorita',
-        '⭐ Publicación guardada en tu lista de Publicaciones Favoritas.',
-        [{ text: 'Genial', style: 'default' }]
-      );
     } catch (err) {
       Alert.alert('Publicación Favorita', '⭐ Publicación guardada en tu lista de Favoritos.');
     }

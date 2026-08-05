@@ -1,64 +1,84 @@
 import { Ionicons } from '@expo/vector-icons';
-import { useState } from 'react';
-import { Dimensions, Image, ScrollView, TextInput, TouchableOpacity, View } from 'react-native';
+import { useMemo, useState } from 'react';
+import { ActivityIndicator, Dimensions, Image, ScrollView, TextInput, TouchableOpacity, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Text } from '../../../../shared/components/ui';
+import { useAuthStore } from '../../../../core/auth/stores/auth-store';
+import { colors } from '../../../../shared/utils/colors';
+import {
+  useFavorites,
+  useToggleFavoritePost,
+  useToggleFavoriteProduct,
+} from '../../../shared/social/hooks/use-favorites';
 
 const { width } = Dimensions.get('window');
 
 /**
  * Favorites Screen
- * Shows saved videos and products
+ * Shows the user's favorited posts and products (backed by the Favorite model)
  */
-export default function FavoritesScreen({ onVideoPress, onProductPress }) {
+export default function FavoritesScreen({ onPostPress, onProductPress }) {
+  const { user } = useAuthStore();
   const [searchQuery, setSearchQuery] = useState('');
-  const [activeTab, setActiveTab] = useState('all'); // 'all', 'videos', 'products'
+  const [activeTab, setActiveTab] = useState('all'); // 'all', 'posts', 'products'
 
-  // Mock data - will be replaced with real data from hooks
-  const savedVideos = [];
-  const savedProducts = [];
+  const { data, isLoading } = useFavorites(user?.id);
+  const togglePost = useToggleFavoritePost();
+  const toggleProduct = useToggleFavoriteProduct();
 
-  const filteredVideos =
-    activeTab === 'products'
-      ? []
-      : savedVideos.filter(
-          (video) =>
-            !searchQuery ||
-            video.caption?.toLowerCase().includes(searchQuery.toLowerCase()) ||
-            video.business?.name?.toLowerCase().includes(searchQuery.toLowerCase())
-        );
+  const savedPosts = data?.posts;
+  const savedProducts = data?.products;
 
-  const filteredProducts =
-    activeTab === 'videos'
-      ? []
-      : savedProducts.filter(
-          (product) =>
-            !searchQuery ||
-            product.name?.toLowerCase().includes(searchQuery.toLowerCase()) ||
-            product.business?.name?.toLowerCase().includes(searchQuery.toLowerCase())
-        );
+  const filteredPosts = useMemo(() => {
+    const posts = savedPosts || [];
+    if (activeTab === 'products') return [];
+    if (!searchQuery) return posts;
+    const q = searchQuery.toLowerCase();
+    return posts.filter(
+      (post) =>
+        post.caption?.toLowerCase().includes(q) ||
+        post.title?.toLowerCase().includes(q) ||
+        post.business?.businessName?.toLowerCase().includes(q)
+    );
+  }, [savedPosts, searchQuery, activeTab]);
 
-  const handleVideoPress = (video) => {
-    console.log('Open video:', video.id);
-    onVideoPress?.(video);
+  const filteredProducts = useMemo(() => {
+    const products = savedProducts || [];
+    if (activeTab === 'posts') return [];
+    if (!searchQuery) return products;
+    const q = searchQuery.toLowerCase();
+    return products.filter(
+      (product) =>
+        product.name?.toLowerCase().includes(q) ||
+        product.business?.businessName?.toLowerCase().includes(q)
+    );
+  }, [savedProducts, searchQuery, activeTab]);
+
+  const handlePostPress = (post) => {
+    onPostPress?.(post);
   };
 
   const handleProductPress = (product) => {
-    console.log('Open product:', product.id);
     onProductPress?.(product);
   };
 
-  const handleRemoveVideo = (videoId) => {
-    console.log('Remove video:', videoId);
-    // TODO: Implement remove from favorites
+  const handleRemovePost = (postId) => {
+    if (!user?.id) return;
+    togglePost.mutate({ postId, userId: user.id });
   };
 
   const handleRemoveProduct = (productId) => {
-    console.log('Remove product:', productId);
-    // TODO: Implement remove from favorites
+    if (!user?.id) return;
+    toggleProduct.mutate({ productId, userId: user.id });
   };
 
-  const videoCardWidth = (width - 36) / 3; // 3 columns
+  const getPostThumbnail = (post) => {
+    if (post.thumbnailUrl) return post.thumbnailUrl;
+    const firstMedia = Array.isArray(post.media) ? post.media[0] : null;
+    return typeof firstMedia === 'string' ? firstMedia : firstMedia?.url;
+  };
+
+  const postCardWidth = (width - 36) / 3; // 3 columns
   const productCardWidth = (width - 48) / 2; // 2 columns
 
   return (
@@ -112,17 +132,17 @@ export default function FavoritesScreen({ onVideoPress, onProductPress }) {
               </Text>
             </TouchableOpacity>
             <TouchableOpacity
-              onPress={() => setActiveTab('videos')}
+              onPress={() => setActiveTab('posts')}
               className={`px-4 py-2 rounded-full ${
-                activeTab === 'videos' ? 'bg-gray-900' : 'bg-gray-50'
+                activeTab === 'posts' ? 'bg-gray-900' : 'bg-gray-50'
               }`}
             >
               <Text
                 className={`text-sm font-semibold ${
-                  activeTab === 'videos' ? 'text-white' : 'text-gray-600'
+                  activeTab === 'posts' ? 'text-white' : 'text-gray-600'
                 }`}
               >
-                Videos
+                Publicaciones
               </Text>
             </TouchableOpacity>
             <TouchableOpacity
@@ -142,142 +162,153 @@ export default function FavoritesScreen({ onVideoPress, onProductPress }) {
           </View>
         </View>
 
-        {/* Content */}
-        <View className="px-4 pt-5">
-          {/* Videos Section */}
-          {filteredVideos.length > 0 && (
-            <View className="mb-6">
-              <Text className="text-lg font-bold text-gray-900 mb-3">
-                Videos guardados
-              </Text>
-              <View className="flex-row flex-wrap gap-1">
-                {filteredVideos.map((video) => (
-                  <TouchableOpacity
-                    key={video.id}
-                    activeOpacity={0.9}
-                    onPress={() => handleVideoPress(video)}
-                    className="rounded-lg overflow-hidden bg-gray-50 relative"
-                    style={{
-                      width: videoCardWidth,
-                      height: videoCardWidth * 1.6,
-                    }}
-                  >
-                    {video.thumbnailUrl ? (
-                      <Image
-                        source={{ uri: video.thumbnailUrl }}
-                        className="w-full h-full"
-                        resizeMode="cover"
-                      />
-                    ) : (
-                      <View className="flex-1 justify-center items-center">
-                        <Ionicons name="play-circle" size={32} color="#cbd5e1" />
-                      </View>
-                    )}
-                    {/* Play icon overlay */}
-                    <View className="absolute bottom-2 left-2 w-6 h-6 rounded-full bg-black/60 justify-center items-center">
-                      <Ionicons name="play" size={12} color="#ffffff" />
-                    </View>
-                    {/* Remove heart */}
-                    <TouchableOpacity
-                      onPress={(e) => {
-                        e.stopPropagation();
-                        handleRemoveVideo(video.id);
-                      }}
-                      className="absolute top-2 right-2 w-7 h-7 rounded-full bg-black/60 justify-center items-center"
-                    >
-                      <Ionicons name="heart" size={16} color="#ef4444" />
-                    </TouchableOpacity>
-                  </TouchableOpacity>
-                ))}
-              </View>
-            </View>
-          )}
+        {/* Loading */}
+        {isLoading && (
+          <View className="py-16 items-center">
+            <ActivityIndicator size="small" color={colors.primary[500]} />
+          </View>
+        )}
 
-          {/* Products Section */}
-          {filteredProducts.length > 0 && (
-            <View>
-              <Text className="text-lg font-bold text-gray-900 mb-3">
-                Productos guardados
-              </Text>
-              <View className="flex-row flex-wrap gap-3">
-                {filteredProducts.map((product) => (
-                  <TouchableOpacity
-                    key={product.id}
-                    activeOpacity={0.9}
-                    onPress={() => handleProductPress(product)}
-                    className="bg-white rounded-xl overflow-hidden border border-gray-100"
-                    style={{ width: productCardWidth }}
-                  >
-                    {/* Product Image */}
-                    <View
-                      className="w-full bg-gray-50"
-                      style={{ height: productCardWidth }}
+        {/* Content */}
+        {!isLoading && (
+          <View className="px-4 pt-5">
+            {/* Posts Section */}
+            {filteredPosts.length > 0 && (
+              <View className="mb-6">
+                <Text className="text-lg font-bold text-gray-900 mb-3">
+                  Publicaciones guardadas
+                </Text>
+                <View className="flex-row flex-wrap gap-1">
+                  {filteredPosts.map((post) => (
+                    <TouchableOpacity
+                      key={post.id}
+                      activeOpacity={0.9}
+                      onPress={() => handlePostPress(post)}
+                      className="rounded-lg overflow-hidden bg-gray-50 relative"
+                      style={{
+                        width: postCardWidth,
+                        height: postCardWidth * 1.3,
+                      }}
                     >
-                      {product.thumbnailUrl ? (
+                      {getPostThumbnail(post) ? (
                         <Image
-                          source={{ uri: product.thumbnailUrl }}
+                          source={{ uri: getPostThumbnail(post) }}
                           className="w-full h-full"
                           resizeMode="cover"
                         />
                       ) : (
                         <View className="flex-1 justify-center items-center">
-                          <Ionicons name="image-outline" size={48} color="#cbd5e1" />
+                          <Ionicons name="image-outline" size={28} color="#cbd5e1" />
                         </View>
                       )}
-                      {/* Favorite button - filled */}
+                      {/* Video icon overlay */}
+                      {post.type === 'video' && (
+                        <View className="absolute bottom-2 left-2 w-6 h-6 rounded-full bg-black/60 justify-center items-center">
+                          <Ionicons name="play" size={12} color="#ffffff" />
+                        </View>
+                      )}
+                      {/* Remove heart */}
                       <TouchableOpacity
                         onPress={(e) => {
                           e.stopPropagation();
-                          handleRemoveProduct(product.id);
+                          handleRemovePost(post.id);
                         }}
-                        className="absolute top-2 right-2 w-8 h-8 rounded-full bg-white/95 justify-center items-center shadow-sm"
+                        className="absolute top-2 right-2 w-7 h-7 rounded-full bg-black/60 justify-center items-center"
                       >
-                        <Ionicons name="heart" size={18} color="#ef4444" />
+                        <Ionicons name="heart" size={16} color="#ef4444" />
                       </TouchableOpacity>
-                    </View>
+                    </TouchableOpacity>
+                  ))}
+                </View>
+              </View>
+            )}
 
-                    {/* Product Info */}
-                    <View className="p-3">
-                      <Text
-                        className="text-sm font-semibold text-gray-900 mb-1"
-                        numberOfLines={2}
+            {/* Products Section */}
+            {filteredProducts.length > 0 && (
+              <View>
+                <Text className="text-lg font-bold text-gray-900 mb-3">
+                  Productos guardados
+                </Text>
+                <View className="flex-row flex-wrap gap-3">
+                  {filteredProducts.map((product) => (
+                    <TouchableOpacity
+                      key={product.id}
+                      activeOpacity={0.9}
+                      onPress={() => handleProductPress(product)}
+                      className="bg-white rounded-xl overflow-hidden border border-gray-100"
+                      style={{ width: productCardWidth }}
+                    >
+                      {/* Product Image */}
+                      <View
+                        className="w-full bg-gray-50"
+                        style={{ height: productCardWidth }}
                       >
-                        {product.name}
-                      </Text>
-                      <View className="flex-row items-center mt-1">
-                        <Text className="text-base font-bold text-gray-900">
-                          ${product.price}
-                        </Text>
-                        {product.compareAtPrice && (
-                          <Text className="text-sm text-gray-400 line-through ml-1.5">
-                            ${product.compareAtPrice}
-                          </Text>
+                        {product.thumbnailUrl ? (
+                          <Image
+                            source={{ uri: product.thumbnailUrl }}
+                            className="w-full h-full"
+                            resizeMode="cover"
+                          />
+                        ) : (
+                          <View className="flex-1 justify-center items-center">
+                            <Ionicons name="image-outline" size={48} color="#cbd5e1" />
+                          </View>
                         )}
+                        {/* Favorite button - filled */}
+                        <TouchableOpacity
+                          onPress={(e) => {
+                            e.stopPropagation();
+                            handleRemoveProduct(product.id);
+                          }}
+                          className="absolute top-2 right-2 w-8 h-8 rounded-full bg-white/95 justify-center items-center shadow-sm"
+                        >
+                          <Ionicons name="heart" size={18} color="#ef4444" />
+                        </TouchableOpacity>
                       </View>
-                    </View>
-                  </TouchableOpacity>
-                ))}
-              </View>
-            </View>
-          )}
 
-          {/* Empty State */}
-          {filteredVideos.length === 0 && filteredProducts.length === 0 && (
-            <View className="py-16 items-center">
-              <View className="w-20 h-20 rounded-full bg-red-50 justify-center items-center mb-4">
-                <Ionicons name="heart-outline" size={40} color="#ef4444" />
+                      {/* Product Info */}
+                      <View className="p-3">
+                        <Text
+                          className="text-sm font-semibold text-gray-900 mb-1"
+                          numberOfLines={2}
+                        >
+                          {product.name}
+                        </Text>
+                        <View className="flex-row items-center mt-1">
+                          <Text className="text-base font-bold text-gray-900">
+                            ${product.price}
+                          </Text>
+                          {product.discountPrice && (
+                            <Text className="text-sm text-gray-400 line-through ml-1.5">
+                              ${product.discountPrice}
+                            </Text>
+                          )}
+                        </View>
+                      </View>
+                    </TouchableOpacity>
+                  ))}
+                </View>
               </View>
-              <Text className="text-lg font-bold text-gray-900 mb-2">
-                {searchQuery ? 'No se encontraron resultados' : 'No tienes favoritos aún'}
-              </Text>
-              <Text className="text-sm text-gray-600 text-center px-8">
-                {searchQuery
-                  ? 'Intenta con otras palabras clave'
-                  : 'Guarda videos y productos para verlos más tarde'}
-              </Text>
-            </View>
-          )}
-        </View>
+            )}
+
+            {/* Empty State */}
+            {filteredPosts.length === 0 && filteredProducts.length === 0 && (
+              <View className="py-16 items-center">
+                <View className="w-20 h-20 rounded-full bg-red-50 justify-center items-center mb-4">
+                  <Ionicons name="heart-outline" size={40} color="#ef4444" />
+                </View>
+                <Text className="text-lg font-bold text-gray-900 mb-2">
+                  {searchQuery ? 'No se encontraron resultados' : 'No tienes favoritos aún'}
+                </Text>
+                <Text className="text-sm text-gray-600 text-center px-8">
+                  {searchQuery
+                    ? 'Intenta con otras palabras clave'
+                    : 'Guarda publicaciones y productos para verlos más tarde'}
+                </Text>
+              </View>
+            )}
+          </View>
+        )}
       </ScrollView>
     </SafeAreaView>
   );

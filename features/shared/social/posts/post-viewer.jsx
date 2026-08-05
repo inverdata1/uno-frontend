@@ -20,6 +20,7 @@ import { useCurrentUserType } from '../../../../shared/hooks/use-user-type';
 import { colors } from '../../../../shared/utils/colors';
 import { useDeletePost, useLikePost, useSavePost } from '../hooks/use-posts';
 import { useProducts } from '../../products/hooks/use-products';
+import { CommentsModal } from '../comments/comments-modal';
 
 const { width: SCREEN_WIDTH } = Dimensions.get('window');
 
@@ -173,6 +174,7 @@ export default function PostViewer({
   const [currentImageIndex, setCurrentImageIndex] = useState(0);
   const [menuVisible, setMenuVisible] = useState(false);
   const [fullscreenVisible, setFullscreenVisible] = useState(false);
+  const [commentsVisible, setCommentsVisible] = useState(false);
   const { currentUserType, currentContext } = useCurrentUserType();
 
   const deletePostMutation = useDeletePost();
@@ -487,7 +489,10 @@ export default function PostViewer({
                 </TouchableOpacity>
 
                 {/* Comment */}
-                <TouchableOpacity style={{ flexDirection: 'row', alignItems: 'center', gap: 4 }}>
+                <TouchableOpacity
+                  onPress={() => setCommentsVisible(true)}
+                  style={{ flexDirection: 'row', alignItems: 'center', gap: 4 }}
+                >
                   <Ionicons name="chatbubble-outline" size={24} color={colors.text.primary} />
                   {commentCount > 0 && (
                     <Text style={{ fontSize: 14, fontWeight: '600', color: colors.text.primary }}>
@@ -777,6 +782,13 @@ export default function PostViewer({
           </SafeAreaView>
         </Pressable>
       </Modal>
+
+      {/* Comments Modal */}
+      <CommentsModal
+        visible={commentsVisible}
+        postId={post.id}
+        onClose={() => setCommentsVisible(false)}
+      />
     </Modal>
   );
 }

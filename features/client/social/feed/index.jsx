@@ -89,8 +89,10 @@ export default function FeedScreen() {
     setRefreshing(false);
   };
 
-  const handleLike = (postId, isLiked) => {
-    likeMutation.mutate({ postId, isLiked });
+  const handleLike = (postId) => {
+    if (user?.id && postId) {
+      likeMutation.mutate({ postId, userId: user.id });
+    }
   };
 
   const handleSave = (postId, isSaved) => {
@@ -244,7 +246,7 @@ export default function FeedScreen() {
         <PostViewer
           visible={postViewerVisible}
           post={selectedPost}
-          businessData={businessMap[selectedPost.businessId] || {}}
+          businessData={selectedPost?.business || businessMap[selectedPost?.businessId] || {}}
           onClose={() => {
             setPostViewerVisible(false);
             setSelectedPost(null);

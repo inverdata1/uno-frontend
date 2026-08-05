@@ -182,6 +182,9 @@ export default function PostViewer({
 
   if (!post) return null;
 
+  const resolvedBusinessName = businessData?.name || businessData?.businessName || post?.business?.businessName || post?.business?.name || post?.businessName || 'Negocio';
+  const resolvedBusinessLogo = businessData?.logo || businessData?.logoUrl || post?.business?.logoUrl || post?.business?.logo || post?.businessLogo || null;
+
   const {
     title,
     type,
@@ -202,8 +205,7 @@ export default function PostViewer({
 
   const isCarousel = type === 'carousel' && media.length > 1;
 
-  // TODO: Get from auth state
-  const isLiked = false;
+  const isLiked = Boolean(post.isLiked);
   const isSaved = false;
 
   const handleScroll = (event) => {
@@ -360,21 +362,21 @@ export default function PostViewer({
                 justifyContent: 'center',
                 alignItems: 'center'
               }}>
-                {businessData?.logo ? (
+                {resolvedBusinessLogo ? (
                   <Image
-                    source={{ uri: businessData.logo }}
+                    source={{ uri: resolvedBusinessLogo }}
                     style={{ width: '100%', height: '100%' }}
                     resizeMode="cover"
                   />
                 ) : (
                   <Text style={{ color: colors.text.secondary, fontSize: 16, fontWeight: '700' }}>
-                    {(businessData?.name || 'B').charAt(0).toUpperCase()}
+                    {resolvedBusinessName.charAt(0).toUpperCase()}
                   </Text>
                 )}
               </View>
               <View style={{ marginLeft: 12, flex: 1 }}>
                 <Text style={{ fontSize: 14, fontWeight: '600', color: colors.text.primary }}>
-                  {businessData?.name || 'Business'}
+                  {resolvedBusinessName}
                 </Text>
                 <Text style={{ fontSize: 12, color: colors.text.secondary }}>
                   {getTimeAgo(post.createdAt)}

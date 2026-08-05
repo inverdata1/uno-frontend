@@ -7,6 +7,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { PostCard } from './components/post-card';
 import { StoryRing, AddStoryButton } from './components/story-ring';
 import { Text } from '../../../../shared/components/ui/text';
+import { useAuthStore } from '../../../../core/auth/stores/auth-store';
 import { useCurrentUserType } from '../../../../shared/hooks/use-user-type';
 import StoryViewer from '../../../shared/social/stories/story-viewer';
 import PostViewer from '../../../shared/social/posts/post-viewer';
@@ -22,6 +23,7 @@ import { colors } from '../../../../shared/utils/colors';
  */
 export default function FeedScreen() {
   const router = useRouter();
+  const { user } = useAuthStore();
   const { currentUserType } = useCurrentUserType();
   const queryClient = useQueryClient();
   const [refreshing, setRefreshing] = useState(false);
@@ -30,8 +32,8 @@ export default function FeedScreen() {
   const [postViewerVisible, setPostViewerVisible] = useState(false);
   const [selectedPost, setSelectedPost] = useState(null);
 
-  // Use domain hooks to fetch data
-  const { data: posts = [], isLoading: postsLoading } = usePosts({ limit: 50 });
+  // Use domain hooks to fetch data with logged in userId
+  const { data: posts = [], isLoading: postsLoading } = usePosts({ userId: user?.id, limit: 50 });
   const { data: storiesData = [], isLoading: storiesLoading } = useStories();
   const { data: businesses = [], isLoading: businessesLoading } = useBusinesses();
   const likeMutation = useLikePost();
@@ -165,14 +167,14 @@ export default function FeedScreen() {
   const renderPost = ({ item: post, index }) => {
     if (!post) return null;
 
-    // Get real business data from the map
-    const business = businessMap[post.businessId] || {};
+    // Get real business data from post relation or map
+    const business = post.business || businessMap[post.businessId] || {};
     const businessData = {
       name: business.businessName || business.name || post.businessName || 'Negocio',
       logo: business.logoUrl || business.logo || post.businessLogo || null
     };
 
-    const isLiked = false;
+    const isLiked = Boolean(post.isLiked);
     const isSaved = false;
 
     return (

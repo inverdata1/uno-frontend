@@ -71,6 +71,37 @@ export const PostCard = ({
   const [currentImageIndex, setCurrentImageIndex] = useState(0);
   const [productsModalVisible, setProductsModalVisible] = useState(false);
   const [optionsModalVisible, setOptionsModalVisible] = useState(false);
+  const [localIsLiked, setLocalIsLiked] = useState(Boolean(post?.isLiked || isLiked));
+  const [localLikeCount, setLocalLikeCount] = useState(Number(post?.likeCount || 0));
+
+  useEffect(() => {
+    setLocalIsLiked(Boolean(post?.isLiked || isLiked));
+    setLocalLikeCount(Number(post?.likeCount || 0));
+  }, [post?.isLiked, post?.likeCount, isLiked]);
+
+  const handleToggleLike = async () => {
+    const nextIsLiked = !localIsLiked;
+    const nextCount = nextIsLiked ? localLikeCount + 1 : Math.max(0, localLikeCount - 1);
+    
+    // Optimistic UI update
+    setLocalIsLiked(nextIsLiked);
+    setLocalLikeCount(nextCount);
+
+    try {
+      if (onLike) {
+        onLike();
+      } else {
+        const res = await apiClient.patch(`/posts/${post.id}/like`, { userId: user?.id });
+        if (res.data && typeof res.data.likeCount === 'number') {
+          setLocalLikeCount(res.data.likeCount);
+          setLocalIsLiked(res.data.isLiked);
+        }
+      }
+    } catch (err) {
+      setLocalIsLiked(!nextIsLiked);
+      setLocalLikeCount(localLikeCount);
+    }
+  };
 
   const scrollViewRef = useRef(null);
   const isCarousel = (type === 'carousel' || media.length > 1) && media.length > 1;
@@ -310,17 +341,17 @@ export const PostCard = ({
       }}>
         {/* Like */}
         <TouchableOpacity
-          onPress={onLike}
+          onPress={handleToggleLike}
           activeOpacity={0.7}
           style={{ flexDirection: 'row', alignItems: 'center', gap: 6, paddingVertical: 4, paddingHorizontal: 12 }}
         >
           <Ionicons
-            name={isLiked ? 'heart' : 'heart-outline'}
+            name={localIsLiked ? 'heart' : 'heart-outline'}
             size={22}
-            color={isLiked ? '#ef4444' : '#374151'}
+            color={localIsLiked ? '#ef4444' : '#374151'}
           />
-          <Text style={{ fontSize: 13, fontWeight: isLiked ? '700' : '600', color: isLiked ? '#ef4444' : '#374151' }}>
-            {likeCount > 0 ? formatCount(likeCount) : 'Me gusta'}
+          <Text style={{ fontSize: 13, fontWeight: localIsLiked ? '700' : '600', color: localIsLiked ? '#ef4444' : '#374151' }}>
+            {localLikeCount > 0 ? formatCount(localLikeCount) : 'Me gusta'}
           </Text>
         </TouchableOpacity>
 

@@ -43,9 +43,8 @@ export const useLikePost = () => {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: async ({ postId, isLiked }) => {
-      const endpoint = isLiked ? `/posts/${postId}/unlike` : `/posts/${postId}/like`;
-      return apiClient.patch(endpoint).then(res => res.data);
+    mutationFn: async ({ postId, userId }) => {
+      return apiClient.patch(`/posts/${postId}/like`, { userId }).then(res => res.data);
     },
     onSuccess: () => {
       // Invalidate all post queries to refresh like status

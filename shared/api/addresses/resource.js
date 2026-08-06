@@ -4,7 +4,10 @@ import { COLLECTION_NAME } from './collection';
 
 /**
  * Addresses resource - handles all address-related operations
- * Extends BaseFirebaseService for common CRUD operations
+ *
+ * The NestJS backend takes `userId` (and `id`, where relevant) as query string
+ * parameters rather than in the body or the path, so these handlers build the
+ * request URLs explicitly instead of relying on the generic CRUD helpers.
  */
 export class AddressesResource extends BaseApiService {
   constructor(client) {
@@ -32,7 +35,7 @@ export class AddressesResource extends BaseApiService {
   // === ADDRESS CRUD ENDPOINTS ===
 
   /**
-   * GET /addresses
+   * GET /addresses?userId=
    * Get all addresses for current user
    */
   async get_index(data, params) {
@@ -42,11 +45,11 @@ export class AddressesResource extends BaseApiService {
       throw new Error('userId parameter is required');
     }
 
-    return await this.findAll({ userId, isActive: true });
+    return await this._request(`?userId=${encodeURIComponent(userId)}`);
   }
 
   /**
-   * POST /addresses
+   * POST /addresses?userId=
    * Create new address
    */
   async post_index(data, params) {
@@ -56,24 +59,14 @@ export class AddressesResource extends BaseApiService {
       throw new Error('userId parameter is required');
     }
 
-    // If this is set as default, unset other defaults first
-    if (data.isDefault) {
-      await this.unsetOtherDefaults(userId);
-    }
-
-    const addressData = {
-      ...data,
-      userId,
-      isActive: true
-    };
-
-    const newAddress = await this.create(addressData);
-    console.log('Address added successfully for mode:', data.mode || 'unknown');
-    return newAddress;
+    return await this._request(`?userId=${encodeURIComponent(userId)}`, {
+      method: 'POST',
+      body: JSON.stringify(data),
+    });
   }
 
   /**
-   * PUT /addresses/{id}
+   * PUT /addresses/id?id=&userId=
    * Update existing address
    */
   async put_id(data, params) {
@@ -83,23 +76,15 @@ export class AddressesResource extends BaseApiService {
       throw new Error('userId and id parameters are required');
     }
 
-    // Verify ownership
-    const currentAddress = await this.findById(id);
-    if (currentAddress.userId !== userId) {
-      throw new Error('Address not found or access denied');
-    }
-
-    // Handle default address logic
-    if (data.isDefault) {
-      await this.unsetOtherDefaults(userId);
-    }
-
-    return await this.update(id, data);
+    return await this._request(
+      `/id?id=${encodeURIComponent(id)}&userId=${encodeURIComponent(userId)}`,
+      { method: 'PUT', body: JSON.stringify(data) },
+    );
   }
 
   /**
-   * DELETE /addresses/{id}
-   * Soft delete address (mark as inactive)
+   * DELETE /addresses/id?id=&userId=
+   * Delete address
    */
   async delete_id(data, params) {
     const { userId, id } = params;
@@ -108,22 +93,16 @@ export class AddressesResource extends BaseApiService {
       throw new Error('userId and id parameters are required');
     }
 
-    // Verify ownership
-    const currentAddress = await this.findById(id);
-    if (currentAddress.userId !== userId) {
-      throw new Error('Address not found or access denied');
-    }
-
-    return await this.update(id, {
-      isActive: false,
-      updatedAt: new Date().toISOString()
-    });
+    return await this._request(
+      `/id?id=${encodeURIComponent(id)}&userId=${encodeURIComponent(userId)}`,
+      { method: 'DELETE' },
+    );
   }
 
   // === SPECIAL ENDPOINTS ===
 
   /**
-   * GET /addresses/default
+   * GET /addresses/default?userId=
    * Get user's default address
    */
   async get_default(data, params) {
@@ -133,17 +112,11 @@ export class AddressesResource extends BaseApiService {
       throw new Error('userId parameter is required');
     }
 
-    const defaultAddress = await this.findOne([
-      ['userId', '==', userId],
-      ['isDefault', '==', true],
-      ['isActive', '==', true]
-    ]);
-
-    return defaultAddress;
+    return await this._request(`/default?userId=${encodeURIComponent(userId)}`);
   }
 
   /**
-   * POST /addresses/{id}/set-default
+   * POST /addresses/id/set_default?id=&userId=
    * Set address as default
    */
   async post_id_set_default(data, params) {
@@ -153,42 +126,9 @@ export class AddressesResource extends BaseApiService {
       throw new Error('userId and id parameters are required');
     }
 
-    // Verify ownership
-    const address = await this.findById(id);
-    if (address.userId !== userId) {
-      throw new Error('Address not found or access denied');
-    }
-
-    // Unset other defaults first
-    await this.unsetOtherDefaults(userId);
-
-    // Set this one as default
-    return await this.update(id, {
-      isDefault: true,
-      updatedAt: new Date().toISOString()
-    });
-  }
-
-  // === UTILITY METHODS ===
-
-  /**
-   * Unset other default addresses for user
-   * @param {string} userId - User ID
-   * @returns {Promise<void>}
-   */
-  async unsetOtherDefaults(userId) {
-    const currentDefaults = await this.findWhere([
-      ['userId', '==', userId],
-      ['isDefault', '==', true]
-    ]);
-
-    const updates = currentDefaults.map(address =>
-      this.update(address.id, {
-        isDefault: false,
-        updatedAt: new Date().toISOString()
-      })
+    return await this._request(
+      `/id/set_default?id=${encodeURIComponent(id)}&userId=${encodeURIComponent(userId)}`,
+      { method: 'POST' },
     );
-
-    await Promise.all(updates);
   }
 }

@@ -1,19 +1,15 @@
 import { Ionicons } from '@expo/vector-icons';
-import { LinearGradient } from 'expo-linear-gradient';
 import { useRouter } from 'expo-router';
-import { useEffect, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { Dimensions, Image, Modal, ScrollView, TextInput, TouchableOpacity, View, ActivityIndicator } from 'react-native';
 import { SafeAreaProvider, SafeAreaView } from 'react-native-safe-area-context';
 import { useProducts } from '../../../features/shared/products/hooks/use-products';
 import { useBusinesses } from '../../../features/shared/social/hooks/use-businesses';
 import { useCategories } from '../../../features/shared/social/hooks/use-categories';
-import { useStories } from '../../../features/shared/social/hooks/use-stories';
-import { useVideos } from '../../../features/shared/social/hooks/use-videos';
 import { useDiscover, useBusinessSearch } from '../../../features/shared/social/hooks/use-discover';
 import { AdaptiveHeader } from '../../../shared/components/layout/adaptive-header';
 import { Text } from '../../../shared/components/ui';
 import { colors } from '../../../shared/utils/colors';
-import StoryViewer from '../../shared/social/stories/story-viewer';
 import ProductDetail from '../products/product-detail';
 import VideoViewer from '../social/videos/video-viewer';
 import PostViewer from '../../shared/social/posts/post-viewer';
@@ -73,8 +69,6 @@ function BusinessCard({ business, onPress }) {
  */
 export default function ClientHomeScreen() {
   const router = useRouter();
-  const [storyViewerVisible, setStoryViewerVisible] = useState(false);
-  const [selectedStories, setSelectedStories] = useState([]);
   const [videoViewerVisible, setVideoViewerVisible] = useState(false);
   const [selectedVideoIndex, setSelectedVideoIndex] = useState(0);
   const [videoViewerVideos, setVideoViewerVideos] = useState([]);
@@ -86,6 +80,7 @@ export default function ClientHomeScreen() {
   const [taggedProducts, setTaggedProducts] = useState([]);
   const [searchInput, setSearchInput] = useState('');
   const [searchQuery, setSearchQuery] = useState('');
+  const [searchOpen, setSearchOpen] = useState(false);
 
   // Debounce search input before hitting the backend
   useEffect(() => {
@@ -96,8 +91,6 @@ export default function ClientHomeScreen() {
   // Use domain hooks instead of inline queries
   const { data: categories = [] } = useCategories();
   const { data: products = [] } = useProducts({ limit: 20 });
-  const { data: stories = [] } = useStories();
-  const { data: videos = [] } = useVideos({ limit: 10 });
   const { data: businesses = [] } = useBusinesses({ limit: 10 });
   const { data: discoverData } = useDiscover();
   const { data: searchResults = [], isFetching: isSearching } = useBusinessSearch(searchQuery);
@@ -106,6 +99,28 @@ export default function ClientHomeScreen() {
   const businessCategories = discoverData?.categories || [];
   const trendingPosts = discoverData?.trendingPosts || [];
   const isSearchActive = searchQuery.length > 0;
+
+  // Chips offered inside the search panel. Business categories come first since
+  // the search endpoint matches on them; product categories round out the list.
+  const searchCategories = useMemo(() => {
+    const names = [
+      ...(discoverData?.categories || []).map((group) => group.category),
+      ...categories.map((category) => category.name),
+    ].filter(Boolean);
+
+    const seen = new Set();
+    return names.filter((name) => {
+      const key = name.toLowerCase();
+      if (seen.has(key)) return false;
+      seen.add(key);
+      return true;
+    });
+  }, [discoverData?.categories, categories]);
+
+  const closeSearch = () => {
+    setSearchOpen(false);
+    setSearchInput('');
+  };
 
   const offers = [
     {
@@ -132,34 +147,77 @@ export default function ClientHomeScreen() {
       <ScrollView
         showsVerticalScrollIndicator={false}
         contentContainerStyle={{ paddingBottom: 100 }}
+        keyboardShouldPersistTaps="handled"
       >
       {/* Adaptive Header */}
       <AdaptiveHeader />
 
       {/* Search Bar */}
       <View style={{ paddingHorizontal: 16, paddingTop: 8, paddingBottom: 12 }}>
-        <View style={{
-          backgroundColor: '#f1f5f9',
-          borderRadius: 10,
-          paddingHorizontal: 12,
-          paddingVertical: 4,
-          flexDirection: 'row',
-          alignItems: 'center'
-        }}>
-          <Ionicons name="search" size={18} color="#64748b" style={{ marginRight: 8 }} />
-          <TextInput
-            value={searchInput}
-            onChangeText={setSearchInput}
-            placeholder="Buscar negocios, marcas..."
-            placeholderTextColor="#94a3b8"
-            style={{ flex: 1, fontSize: 15, color: '#0f172a', paddingVertical: 10 }}
-          />
-          {searchInput.length > 0 && (
-            <TouchableOpacity onPress={() => setSearchInput('')}>
-              <Ionicons name="close-circle" size={18} color="#94a3b8" />
+        <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10 }}>
+          <View style={{
+            flex: 1,
+            backgroundColor: '#f1f5f9',
+            borderRadius: 10,
+            paddingHorizontal: 12,
+            paddingVertical: 4,
+            flexDirection: 'row',
+            alignItems: 'center'
+          }}>
+            <Ionicons name="search" size={18} color="#64748b" style={{ marginRight: 8 }} />
+            <TextInput
+              value={searchInput}
+              onChangeText={setSearchInput}
+              onFocus={() => setSearchOpen(true)}
+              placeholder="Buscar negocios, marcas..."
+              placeholderTextColor="#94a3b8"
+              style={{ flex: 1, fontSize: 15, color: '#0f172a', paddingVertical: 10 }}
+            />
+            {searchInput.length > 0 && (
+              <TouchableOpacity onPress={() => setSearchInput('')}>
+                <Ionicons name="close-circle" size={18} color="#94a3b8" />
+              </TouchableOpacity>
+            )}
+          </View>
+
+          {searchOpen && (
+            <TouchableOpacity onPress={closeSearch}>
+              <Text style={{ fontSize: 15, fontWeight: '600', color: colors.primary[500] }}>
+                Cancelar
+              </Text>
             </TouchableOpacity>
           )}
         </View>
+
+        {/* Categories - shown when the search bar is opened and nothing typed yet */}
+        {searchOpen && !isSearchActive && searchCategories.length > 0 && (
+          <View style={{ marginTop: 16 }}>
+            <Text style={{ fontSize: 15, fontWeight: '700', color: '#0f172a', marginBottom: 12 }}>
+              Categorías
+            </Text>
+            <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 8 }}>
+              {searchCategories.map((category) => (
+                <TouchableOpacity
+                  key={category}
+                  activeOpacity={0.8}
+                  onPress={() => setSearchInput(category)}
+                  style={{
+                    paddingHorizontal: 16,
+                    paddingVertical: 10,
+                    borderRadius: 20,
+                    borderWidth: 1.5,
+                    borderColor: '#e2e8f0',
+                    backgroundColor: '#ffffff'
+                  }}
+                >
+                  <Text style={{ fontSize: 14, fontWeight: '600', color: '#334155', textTransform: 'capitalize' }}>
+                    {category}
+                  </Text>
+                </TouchableOpacity>
+              ))}
+            </View>
+          </View>
+        )}
 
         {/* Search Results */}
         {isSearchActive && (
@@ -231,180 +289,6 @@ export default function ClientHomeScreen() {
           // Navigate to offer detail or apply discount
         }}
       />
-
-      {/* Stories Row - Instagram style */}
-      <View style={{ paddingVertical: 16, borderBottomWidth: 1, borderBottomColor: '#f1f5f9' }}>
-        {stories.length === 0 ? (
-          <View style={{ paddingHorizontal: 16, paddingVertical: 20, alignItems: 'center' }}>
-            <Text style={{ fontSize: 14, color: '#94a3b8' }}>
-              No hay historias disponibles
-            </Text>
-          </View>
-        ) : (
-          <ScrollView
-            horizontal
-            showsHorizontalScrollIndicator={false}
-            contentContainerStyle={{ paddingHorizontal: 12 }}
-          >
-            {stories.map((businessStories, index) => {
-              const firstStory = businessStories.stories[0];
-              return (
-                <TouchableOpacity
-                  key={businessStories.businessId}
-                  style={{ alignItems: 'center', marginHorizontal: 6 }}
-                  activeOpacity={0.7}
-                  onPress={() => {
-                    setSelectedStories(businessStories.stories);
-                    setStoryViewerVisible(true);
-                  }}
-                >
-                  {/* Story Ring Container */}
-                  <View style={{
-                    width: 72,
-                    height: 72,
-                    marginBottom: 6,
-                    alignItems: 'center',
-                    justifyContent: 'center'
-                  }}>
-                    {businessStories.hasUnviewed ? (
-                      // Instagram gradient ring for unviewed
-                      <LinearGradient
-                        colors={['#f09433', '#e6683c', '#dc2743', '#cc2366', '#bc1888']}
-                        start={{ x: 0, y: 0 }}
-                        end={{ x: 1, y: 1 }}
-                        style={{
-                          position: 'absolute',
-                          width: 72,
-                          height: 72,
-                          borderRadius: 36
-                        }}
-                      />
-                    ) : (
-                      // Gray border for viewed
-                      <View style={{
-                        position: 'absolute',
-                        width: 72,
-                        height: 72,
-                        borderRadius: 36,
-                        borderWidth: 2,
-                        borderColor: '#d1d5db'
-                      }} />
-                    )}
-
-                    {/* White padding */}
-                    <View style={{
-                      width: 66,
-                      height: 66,
-                      borderRadius: 33,
-                      backgroundColor: '#ffffff',
-                      alignItems: 'center',
-                      justifyContent: 'center'
-                    }}>
-                      {/* Story Image */}
-                      <View style={{
-                        width: 62,
-                        height: 62,
-                        borderRadius: 31,
-                        backgroundColor: '#e2e8f0',
-                        overflow: 'hidden'
-                      }}>
-                        {firstStory?.thumbnailUrl ? (
-                          <Image
-                            source={{ uri: firstStory.thumbnailUrl }}
-                            style={{ width: '100%', height: '100%' }}
-                            resizeMode="cover"
-                          />
-                        ) : (
-                          <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center' }}>
-                            <Ionicons name="storefront" size={24} color="#94a3b8" />
-                          </View>
-                        )}
-                      </View>
-                    </View>
-                  </View>
-
-                  <Text style={{ fontSize: 11, color: '#64748b', maxWidth: 72, textAlign: 'center' }} numberOfLines={1}>
-                    {businessStories.businessName || `Business ${index + 1}`}
-                  </Text>
-                </TouchableOpacity>
-              );
-            })}
-          </ScrollView>
-        )}
-      </View>
-
-      {/* Videos Recomendados */}
-      <View style={{ paddingVertical: 20, borderBottomWidth: 1, borderBottomColor: '#f1f5f9' }}>
-        <View style={{ paddingHorizontal: 16, marginBottom: 16 }}>
-          <Text style={{ fontSize: 20, fontWeight: '700', color: '#0f172a' }}>
-            Videos Recomendados
-          </Text>
-        </View>
-        <ScrollView
-          horizontal
-          showsHorizontalScrollIndicator={false}
-          contentContainerStyle={{ paddingHorizontal: 16, gap: 12 }}
-        >
-          {videos.slice(0, 3).map((video, index) => (
-            <TouchableOpacity
-              key={video.id}
-              activeOpacity={0.9}
-              onPress={() => {
-                setVideoViewerVideos(videos);
-                setSelectedVideoIndex(index);
-                setVideoViewerVisible(true);
-              }}
-              style={{
-                width: 140,
-                height: 200,
-                borderRadius: 12,
-                overflow: 'hidden',
-                backgroundColor: '#f8fafc'
-              }}
-            >
-              {video.thumbnailUrl ? (
-                <Image
-                  source={{ uri: video.thumbnailUrl }}
-                  style={{ width: '100%', height: '100%' }}
-                  resizeMode="cover"
-                />
-              ) : (
-                <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center', backgroundColor: '#e2e8f0' }}>
-                  <Ionicons name="play-circle" size={48} color="#94a3b8" />
-                </View>
-              )}
-              {/* Play icon overlay */}
-              <View style={{
-                position: 'absolute',
-                top: 0,
-                left: 0,
-                right: 0,
-                bottom: 0,
-                justifyContent: 'center',
-                alignItems: 'center'
-              }}>
-                <View style={{
-                  width: 48,
-                  height: 48,
-                  borderRadius: 24,
-                  backgroundColor: 'rgba(0, 0, 0, 0.4)',
-                  justifyContent: 'center',
-                  alignItems: 'center'
-                }}>
-                  <Ionicons name="play" size={24} color="#ffffff" />
-                </View>
-              </View>
-            </TouchableOpacity>
-          ))}
-          {videos.length === 0 && (
-            <View style={{ paddingHorizontal: 16, paddingVertical: 40 }}>
-              <Text style={{ color: '#94a3b8', fontSize: 14 }}>
-                No hay videos disponibles
-              </Text>
-            </View>
-          )}
-        </ScrollView>
-      </View>
 
       {/* Negocios Destacados (Featured Businesses) */}
       <View style={{ paddingVertical: 20, borderBottomWidth: 1, borderBottomColor: '#f1f5f9' }}>
@@ -605,46 +489,6 @@ export default function ClientHomeScreen() {
           ))}
         </View>
       </View>
-
-      {/* Categories */}
-      <View style={{ paddingBottom: 24, borderTopWidth: 1, borderTopColor: '#f1f5f9', paddingTop: 20 }}>
-        <View style={{ paddingHorizontal: 16, marginBottom: 16 }}>
-          <Text style={{ fontSize: 20, fontWeight: '700', color: '#0f172a' }}>
-            Categorías
-          </Text>
-        </View>
-        <ScrollView
-          horizontal
-          showsHorizontalScrollIndicator={false}
-          contentContainerStyle={{ paddingHorizontal: 16, gap: 12 }}
-        >
-          {categories.map((category) => (
-            <TouchableOpacity
-              key={category.id}
-              activeOpacity={0.8}
-              style={{
-                paddingHorizontal: 20,
-                paddingVertical: 12,
-                borderRadius: 24,
-                borderWidth: 1.5,
-                borderColor: '#e2e8f0',
-                backgroundColor: '#ffffff'
-              }}
-            >
-              <Text style={{ fontSize: 15, fontWeight: '600', color: '#334155' }}>
-                {category.name}
-              </Text>
-            </TouchableOpacity>
-          ))}
-        </ScrollView>
-      </View>
-
-      {/* Story Viewer Modal */}
-      <StoryViewer
-        visible={storyViewerVisible}
-        stories={selectedStories}
-        onClose={() => setStoryViewerVisible(false)}
-      />
 
       {/* Video Viewer Modal */}
       <VideoViewer

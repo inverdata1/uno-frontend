@@ -12,7 +12,7 @@ import {
   View,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
-import { SafeAreaView } from 'react-native-safe-area-context';
+import { SafeAreaProvider, SafeAreaView } from 'react-native-safe-area-context';
 import { Text } from '../../../../shared/components/ui/text';
 import { useAuthStore } from '../../../../core/auth/stores/auth-store';
 import { colors } from '../../../../shared/utils/colors';
@@ -155,7 +155,10 @@ export const CommentsModal = ({ visible, postId, onClose }) => {
 
   return (
     <Modal visible={visible} animationType="slide" presentationStyle="pageSheet" onRequestClose={onClose}>
-      <SafeAreaView style={{ flex: 1, backgroundColor: '#ffffff' }} edges={['top']}>
+      {/* Carries its own provider so insets resolve wherever this is mounted,
+          including from inside another Modal (iOS has no hardware back). */}
+      <SafeAreaProvider>
+      <SafeAreaView style={{ flex: 1, backgroundColor: '#ffffff' }} edges={['top', 'bottom']}>
         {/* Header */}
         <View style={{
           flexDirection: 'row',
@@ -269,6 +272,7 @@ export const CommentsModal = ({ visible, postId, onClose }) => {
           </View>
         </KeyboardAvoidingView>
       </SafeAreaView>
+      </SafeAreaProvider>
     </Modal>
   );
 };

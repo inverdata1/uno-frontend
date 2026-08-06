@@ -653,16 +653,37 @@ export default function PostViewer({
         animationType="fade"
         onRequestClose={() => setFullscreenVisible(false)}
       >
+        {/* Own provider: this Modal renders outside the one above, and without a
+            provider SafeAreaView reports zero insets, hiding the close button
+            under the notch on iOS (where there is no hardware back button). */}
+        <SafeAreaProvider>
         <View style={{ flex: 1, backgroundColor: '#000' }}>
-          <SafeAreaView style={{ flex: 1 }}>
+          <SafeAreaView style={{ flex: 1 }} edges={['top', 'bottom']}>
             <View style={{
               flexDirection: 'row',
-              justifyContent: 'flex-end',
+              justifyContent: 'space-between',
+              alignItems: 'center',
               padding: 16,
               zIndex: 10
             }}>
               <TouchableOpacity
                 onPress={() => setFullscreenVisible(false)}
+                hitSlop={{ top: 12, bottom: 12, left: 12, right: 12 }}
+                style={{
+                  width: 40,
+                  height: 40,
+                  borderRadius: 20,
+                  backgroundColor: 'rgba(255,255,255,0.2)',
+                  alignItems: 'center',
+                  justifyContent: 'center'
+                }}
+              >
+                <Ionicons name="arrow-back" size={24} color="#fff" />
+              </TouchableOpacity>
+
+              <TouchableOpacity
+                onPress={() => setFullscreenVisible(false)}
+                hitSlop={{ top: 12, bottom: 12, left: 12, right: 12 }}
                 style={{
                   width: 40,
                   height: 40,
@@ -726,6 +747,7 @@ export default function PostViewer({
             )}
           </SafeAreaView>
         </View>
+        </SafeAreaProvider>
       </Modal>
 
       {/* Custom Menu Modal */}
@@ -735,6 +757,7 @@ export default function PostViewer({
         animationType="fade"
         onRequestClose={() => setMenuVisible(false)}
       >
+        <SafeAreaProvider>
         <Pressable
           style={{
             flex: 1,
@@ -781,6 +804,7 @@ export default function PostViewer({
             </View>
           </SafeAreaView>
         </Pressable>
+        </SafeAreaProvider>
       </Modal>
 
       {/* Comments Modal */}

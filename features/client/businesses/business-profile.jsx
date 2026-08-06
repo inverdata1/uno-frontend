@@ -7,6 +7,7 @@ import { Text } from '../../../shared/components/ui';
 import { useProducts } from '../../shared/products/hooks/use-products';
 import { usePosts } from '../../shared/social/hooks/use-posts';
 import ProductDetailModal from '../products/product-detail-modal';
+import PostViewer from '../../shared/social/posts/post-viewer';
 
 const { width } = Dimensions.get('window');
 
@@ -21,6 +22,8 @@ export default function BusinessProfile({ business, onClose }) {
   const [contentFilter, setContentFilter] = useState('all');
   const [selectedProductId, setSelectedProductId] = useState(null);
   const [productDetailVisible, setProductDetailVisible] = useState(false);
+  const [selectedPost, setSelectedPost] = useState(null);
+  const [postViewerVisible, setPostViewerVisible] = useState(false);
 
   // Fetch products and posts using hooks
   const { data: products = [], isLoading: isLoadingProducts } = useProducts({
@@ -55,7 +58,8 @@ export default function BusinessProfile({ business, onClose }) {
   };
 
   const handleContentPress = (content) => {
-    console.log('Open content:', content.id);
+    setSelectedPost(content);
+    setPostViewerVisible(true);
   };
 
   const filteredContent = contentPosts.filter((post) => {
@@ -63,6 +67,13 @@ export default function BusinessProfile({ business, onClose }) {
     if (contentFilter === 'photos') return post.type === 'image';
     return true;
   });
+
+  // Posts are saved without a thumbnail, so fall back to the first media item
+  const getPostThumbnail = (post) => {
+    if (post?.thumbnailUrl) return post.thumbnailUrl;
+    const firstMedia = Array.isArray(post?.media) ? post.media[0] : null;
+    return typeof firstMedia === 'string' ? firstMedia : firstMedia?.url;
+  };
 
   const cardWidth = (width - 48) / 2;
 
@@ -73,21 +84,26 @@ export default function BusinessProfile({ business, onClose }) {
       {/* Floating Header Buttons - Instagram Style */}
       <View style={{ position: 'absolute', left: 0, right: 0, top: 0, zIndex: 50 }}>
         <SafeAreaView edges={['top']}>
+          {/* Dark pills keep these readable over any cover photo */}
           <View className="flex-row items-center justify-between px-3 py-2">
             <TouchableOpacity
               onPress={handleBack}
-              className="w-10 h-10 items-center justify-center"
+              className="w-10 h-10 items-center justify-center rounded-full"
+              style={{ backgroundColor: 'rgba(0, 0, 0, 0.45)' }}
               activeOpacity={0.6}
+              hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
             >
-              <Ionicons name="arrow-back" size={26} color="#000000" />
+              <Ionicons name="arrow-back" size={24} color="#ffffff" />
             </TouchableOpacity>
 
             <View className="flex-row items-center" style={{ gap: 16 }}>
               <TouchableOpacity
-                className="w-10 h-10 items-center justify-center"
+                className="w-10 h-10 items-center justify-center rounded-full"
+                style={{ backgroundColor: 'rgba(0, 0, 0, 0.45)' }}
                 activeOpacity={0.6}
+                hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
               >
-                <Ionicons name="ellipsis-vertical" size={22} color="#000000" />
+                <Ionicons name="ellipsis-vertical" size={20} color="#ffffff" />
               </TouchableOpacity>
             </View>
           </View>
@@ -101,9 +117,9 @@ export default function BusinessProfile({ business, onClose }) {
       >
         {/* Full-Bleed Cover Image */}
         <View className="relative" style={{ width, height: 240, backgroundColor: '#f3f4f6' }}>
-          {business?.coverImageUrl ? (
+          {business?.bannerUrl || business?.coverImageUrl ? (
             <Image
-              source={{ uri: business.coverImageUrl }}
+              source={{ uri: business.bannerUrl || business.coverImageUrl }}
               style={{ width: '100%', height: '100%' }}
               resizeMode="cover"
             />
@@ -450,9 +466,9 @@ export default function BusinessProfile({ business, onClose }) {
                       height: ((width - 4) / 2) * 1.5,
                     }}
                   >
-                    {content.thumbnailUrl ? (
+                    {getPostThumbnail(content) ? (
                       <Image
-                        source={{ uri: content.thumbnailUrl }}
+                        source={{ uri: getPostThumbnail(content) }}
                         style={{ width: '100%', height: '100%' }}
                         resizeMode="cover"
                       />
@@ -514,6 +530,24 @@ export default function BusinessProfile({ business, onClose }) {
           setSelectedProductId(null);
         }}
       />
+
+      {/* Post Viewer Modal */}
+      {selectedPost && (
+        <PostViewer
+          visible={postViewerVisible}
+          post={selectedPost}
+          businessData={{ name: business?.name, logo: business?.logoUrl }}
+          onClose={() => {
+            setPostViewerVisible(false);
+            setSelectedPost(null);
+          }}
+          onProductPress={(product) => {
+            setPostViewerVisible(false);
+            setSelectedPost(null);
+            handleProductPress(product);
+          }}
+        />
+      )}
     </SafeAreaView>
   );
 }

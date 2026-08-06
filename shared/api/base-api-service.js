@@ -1,5 +1,6 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { API_CONFIG } from '../config/api-config';
+import { normalizeMediaUrls } from '../utils/media-url';
 
 /**
  * Base service class for API operations
@@ -38,9 +39,9 @@ export class BaseApiService {
       }
 
       if (response.status === 204) return null;
-      
+
       const json = await response.json();
-      return json;
+      return normalizeMediaUrls(json);
     } catch (error) {
       console.error(`❌ HTTP Error [${options.method || 'GET'} ${this.resourceName}${endpoint}]:`, error);
       throw error;

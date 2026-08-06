@@ -2,6 +2,7 @@ import axios from 'axios';
 import { firebaseClient } from '../api';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { API_CONFIG } from './api-config';
+import { normalizeMediaUrls } from '../utils/media-url';
 
 // Configuration flags
 const USE_FIREBASE = false; // Set to false to route requests to NestJS backend via Axios
@@ -43,6 +44,14 @@ axiosClient.interceptors.request.use(
 axiosClient.interceptors.response.use(
   (response) => {
     console.log(`✅ HTTP Response: ${response.status} ${response.config.url}`);
+
+    // Uploaded media is persisted with an absolute URL containing whatever host
+    // the backend had at upload time, which goes stale as soon as the LAN IP
+    // changes. Repoint those URLs at the host we are actually talking to.
+    if (response.data) {
+      response.data = normalizeMediaUrls(response.data);
+    }
+
     return response;
   },
   (error) => {

@@ -7,6 +7,10 @@ export const authService = {
    * Register a new user
    */
   async signUp({ firstName, lastName, email, phone, dateOfBirth, password, selectedUserType = 'client', businessData, preferences }) {
+    // Only a user created by this very call may be rolled back; reading the id
+    // back from storage would target a previously signed-in account instead.
+    let createdUserId = null;
+
     try {
       // 1. Prepare userTypes structure
       const userTypes = {};
@@ -42,24 +46,6 @@ export const authService = {
       };
 
       if (selectedUserType === 'business' && businessData) {
-        console.log('📊 Uploading business media for registration...');
-
-        let logoUrl = null;
-        let bannerUrl = null;
-
-        if (businessData.logoUri) {
-          console.log('📤 Uploading business logo...');
-          // Using uid: temp since user is not yet created, fallback will be used
-          const logoResult = await uploadMedia(businessData.logoUri, 'BUSINESS_LOGO', { mimeType: businessData.logoMimeType }, null, { uid: 'temp' });
-          logoUrl = logoResult.url;
-        }
-
-        if (businessData.bannerUri) {
-          console.log('📤 Uploading business banner...');
-          const bannerResult = await uploadMedia(businessData.bannerUri, 'BUSINESS_BANNER', { mimeType: businessData.bannerMimeType }, null, { uid: 'temp' });
-          bannerUrl = bannerResult.url;
-        }
-
         registerPayload.businessData = {
           businessName: businessData.businessName,
           businessType: businessData.businessType,
@@ -69,38 +55,76 @@ export const authService = {
           address: businessData.address,
           coordinates: businessData.coordinates || null,
           phone: businessData.phone,
-          logoUrl: logoUrl,
-          bannerUrl: bannerUrl,
         };
       }
-      
+
       const registerResponse = await apiClient.post('/auth/register', registerPayload);
-      
+
       const { user, access_token } = registerResponse.data;
+      createdUserId = user.id;
 
       // 3. Store tokens in AsyncStorage so future requests are authenticated
       await AsyncStorage.setItem('userToken', access_token);
       await AsyncStorage.setItem('userId', user.id);
+
+      // 4. Upload business media now that we hold a token.
+      // /upload/* sits behind the auth guard, so this cannot run before the
+      // account exists - doing so returned "Token no proporcionado".
+      // Failures here leave a usable account without images rather than
+      // aborting a registration that already succeeded.
+      let businessMedia = {};
+      if (selectedUserType === 'business' && businessData && user.currentBusinessId) {
+        try {
+          if (businessData.logoUri) {
+            const logoResult = await uploadMedia(
+              businessData.logoUri,
+              'BUSINESS_LOGO',
+              { mimeType: businessData.logoMimeType },
+              null,
+              { uid: user.id },
+            );
+            businessMedia.logoUrl = logoResult.url;
+          }
+
+          if (businessData.bannerUri) {
+            const bannerResult = await uploadMedia(
+              businessData.bannerUri,
+              'BUSINESS_BANNER',
+              { mimeType: businessData.bannerMimeType },
+              null,
+              { uid: user.id },
+            );
+            businessMedia.bannerUrl = bannerResult.url;
+          }
+
+          if (Object.keys(businessMedia).length > 0) {
+            await apiClient.patch('/businesses/profile', businessMedia, {
+              params: { businessId: user.currentBusinessId },
+            });
+          }
+        } catch (mediaError) {
+          console.warn('Business media upload failed, account kept:', mediaError.message);
+        }
+      }
 
       return {
         user: {
           uid: user.id, // Using 'uid' for backwards compatibility in frontend state
           email: user.email,
           currentBusinessId: user.currentBusinessId,
-          ...user
+          ...user,
+          ...businessMedia
         }
       };
     } catch (error) {
       console.error('Registration error:', error);
       
-      // Rollback: If user was created but subsequent steps failed, delete the user
-      // Check if we reached step 2 (we have a token saved)
-      const storedToken = await AsyncStorage.getItem('userToken');
-      const storedUserId = await AsyncStorage.getItem('userId');
-      if (storedToken && storedUserId) {
-        console.log(`⚠️ Rolling back registration for user ${storedUserId}...`);
+      // Rollback only the account this call created, so a failed attempt made
+      // while another session is stored cannot delete that other account.
+      if (createdUserId) {
+        console.log(`⚠️ Rolling back registration for user ${createdUserId}...`);
         try {
-          await apiClient.delete(`/users/${storedUserId}`);
+          await apiClient.delete(`/users/${createdUserId}`);
           // Clear the partial session
           await AsyncStorage.removeItem('userToken');
           await AsyncStorage.removeItem('userId');

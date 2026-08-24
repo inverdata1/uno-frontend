@@ -69,15 +69,6 @@ export default function ProductDetail({ product, onClose, onBusinessPress, onVid
   const images = parsedImages.length > 0 ? parsedImages : [product?.thumbnailUrl || 'https://via.placeholder.com/400'];
   const variants = product?.variants || [];
 
-  const handleAddToCart = () => {
-    console.log('Adding to cart:', {
-      productId: product?.id,
-      quantity,
-      variants: selectedVariants,
-    });
-    // TODO: Implement add to cart functionality
-  };
-
   const handleBusinessPress = () => {
     // If parent provides onBusinessPress callback, use it (for navigation)
     // Otherwise, navigate to business profile

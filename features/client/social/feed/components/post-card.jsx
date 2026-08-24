@@ -386,6 +386,7 @@ export const PostCard = ({
         onClose={() => setProductsModalVisible(false)}
         taggedProducts={taggedProducts}
         businessId={post.businessId}
+        businessData={businessData}
         onProductPress={onProductPress}
       />
 

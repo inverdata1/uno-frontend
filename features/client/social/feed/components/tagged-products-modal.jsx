@@ -15,13 +15,21 @@ export const TaggedProductsModal = ({
   onClose,
   taggedProducts = [],
   businessId,
+  businessData,
   onProductPress
 }) => {
   const { data: allProducts = [] } = useProducts({ businessId, limit: 50 });
   const addItem = useCartStore(state => state.addItem);
 
   const handleAddToCart = (fullProduct) => {
-    const result = addItem(fullProduct, { businessId });
+    const bName = businessData?.name || businessData?.businessName || fullProduct.business?.businessName || fullProduct.business?.name;
+    const bLogo = businessData?.logo || businessData?.logoUrl || fullProduct.business?.logoUrl || fullProduct.business?.logo;
+
+    const result = addItem(fullProduct, {
+      businessId,
+      businessName: bName,
+      logoUrl: bLogo,
+    });
     if (result.success) {
       Alert.alert(
         '¡Añadido al Carrito!',

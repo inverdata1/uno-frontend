@@ -1,6 +1,7 @@
 import { create } from 'zustand';
 import { createJSONStorage, persist } from 'zustand/middleware';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import { apiClient } from '../config/api-client';
 
 /**
  * Cart Store
@@ -12,6 +13,45 @@ export const useCartStore = create(
     (set, get) => ({
       // Object mapping businessId -> businessCart
       carts: {},
+
+      /**
+       * Enrich business metadata (name and logo) from API if missing
+       */
+      enrichBusinessInfo: async (businessId) => {
+        if (!businessId) return;
+        const state = get();
+        const cart = state.carts[businessId];
+        if (!cart) return;
+
+        // If already has both name and logo, no need to fetch
+        if (cart.businessName && cart.businessName !== 'Negocio' && cart.logoUrl) return;
+
+        try {
+          const res = await apiClient.get('/businesses/profile', { params: { businessId } });
+          const data = res.data;
+          if (data) {
+            const fetchedName = data.businessName || data.name || cart.businessName;
+            const fetchedLogo = data.logoUrl || data.logo || cart.logoUrl;
+
+            set((s) => {
+              const target = s.carts[businessId];
+              if (!target) return s;
+              return {
+                carts: {
+                  ...s.carts,
+                  [businessId]: {
+                    ...target,
+                    businessName: fetchedName || target.businessName,
+                    logoUrl: fetchedLogo || target.logoUrl,
+                  }
+                }
+              };
+            });
+          }
+        } catch (e) {
+          // silent fallback
+        }
+      },
 
       /**
        * Add a product to the cart for a specific business
@@ -34,9 +74,23 @@ export const useCartStore = create(
           };
         }
 
-        const bId = businessInfo.businessId || product.businessId || 'business-general';
-        const bName = businessInfo.businessName || businessInfo.name || product.businessName || 'Negocio';
-        const bLogo = businessInfo.logoUrl || businessInfo.logo || product.businessLogo || null;
+        const bId = businessInfo.businessId || product.businessId || product.business?.id || 'business-general';
+        
+        const bName =
+          businessInfo.businessName ||
+          businessInfo.name ||
+          product.businessName ||
+          product.business?.businessName ||
+          product.business?.name ||
+          'Negocio';
+
+        const bLogo =
+          businessInfo.logoUrl ||
+          businessInfo.logo ||
+          product.businessLogo ||
+          product.business?.logoUrl ||
+          product.business?.logo ||
+          null;
 
         const pId = product.id || product.productId;
         const pName = product.name || product.title || 'Producto';
@@ -55,6 +109,10 @@ export const useCartStore = create(
           logoUrl: bLogo,
           items: []
         };
+
+        // Determine best businessName and logoUrl
+        const finalBName = (bName && bName !== 'Negocio') ? bName : currentCart.businessName;
+        const finalBLogo = bLogo || currentCart.logoUrl;
 
         const existingItemIndex = currentCart.items.findIndex(item => item.productId === pId);
         let updatedItems = [...currentCart.items];
@@ -89,18 +147,25 @@ export const useCartStore = create(
             ...state.carts,
             [bId]: {
               businessId: bId,
-              businessName: bName,
-              logoUrl: bLogo || currentCart.logoUrl,
+              businessName: finalBName,
+              logoUrl: finalBLogo,
               items: updatedItems
             }
           }
         });
 
+        // Async background fetch if missing business metadata
+        if ((!finalBName || finalBName === 'Negocio' || !finalBLogo) && bId && bId !== 'business-general') {
+          setTimeout(() => {
+            get().enrichBusinessInfo(bId);
+          }, 0);
+        }
+
         return {
           success: true,
-          businessName: bName,
+          businessName: finalBName,
           productName: pName,
-          message: `¡"${pName}" añadido al carrito de ${bName}!`
+          message: `¡"${pName}" añadido al carrito de ${finalBName}!`,
         };
       },
 

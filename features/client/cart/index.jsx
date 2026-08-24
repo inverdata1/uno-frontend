@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { View, ScrollView, Image, TouchableOpacity, Alert, Modal } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
@@ -18,6 +18,7 @@ export default function CartsScreen() {
   const removeItem = useCartStore(state => state.removeItem);
   const clearBusinessCart = useCartStore(state => state.clearBusinessCart);
   const clearAllCarts = useCartStore(state => state.clearAllCarts);
+  const enrichBusinessInfo = useCartStore(state => state.enrichBusinessInfo);
   const totalItemsCount = useTotalCartCount();
 
   const [checkoutModalVisible, setCheckoutModalVisible] = useState(false);
@@ -25,6 +26,15 @@ export default function CartsScreen() {
   const [deliveryMethod, setDeliveryMethod] = useState('delivery'); // 'delivery' | 'pickup'
 
   const businessList = Object.values(carts);
+
+  // Auto-enrich any business cart missing name or logo
+  useEffect(() => {
+    businessList.forEach((cart) => {
+      if ((!cart.businessName || cart.businessName === 'Negocio' || !cart.logoUrl) && cart.businessId) {
+        enrichBusinessInfo(cart.businessId);
+      }
+    });
+  }, [businessList.length]);
 
   const handlePromptClearBusiness = (businessId, businessName) => {
     Alert.alert(

@@ -151,10 +151,11 @@ export default function ProductDetail({ product, onClose, onBusinessPress, onVid
   const handleAddToCart = () => {
     if (!product) return;
     const businessName = product.business?.businessName || product.business?.name || 'Negocio';
+    const logoUrl = product.business?.logoUrl || product.business?.logo || null;
     const businessId = product.businessId || product.business?.id;
 
     for (let i = 0; i < quantity; i++) {
-      const res = addItem(product, { businessId, businessName });
+      const res = addItem(product, { businessId, businessName, logoUrl });
       if (!res.success) {
         Alert.alert('Producto No Disponible', res.message);
         return;

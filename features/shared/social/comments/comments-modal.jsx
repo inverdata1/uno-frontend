@@ -17,6 +17,7 @@ import { Text } from '../../../../shared/components/ui/text';
 import { useAuthStore } from '../../../../core/auth/stores/auth-store';
 import { colors } from '../../../../shared/utils/colors';
 import { useComments, useCreateComment, useDeleteComment } from '../hooks/use-comments';
+import UserProfileModal from '../../chat/user-profile-modal';
 
 const getAuthorName = (comment) => {
   const user = comment?.user;
@@ -112,16 +113,24 @@ export const CommentsModal = ({ visible, postId, onClose }) => {
         marginLeft: comment.depth * 36,
       }}
     >
-      <View style={{
-        width: 32,
-        height: 32,
-        borderRadius: 16,
-        backgroundColor: '#f3f4f6',
-        alignItems: 'center',
-        justifyContent: 'center',
-        overflow: 'hidden',
-        marginRight: 10
-      }}>
+      <TouchableOpacity
+        onPress={() => setSelectedUserProfile({
+          id: comment.userId,
+          name: getAuthorName(comment),
+          avatar: comment.user?.avatarUrl || null,
+        })}
+        activeOpacity={0.7}
+        style={{
+          width: 32,
+          height: 32,
+          borderRadius: 16,
+          backgroundColor: '#f3f4f6',
+          alignItems: 'center',
+          justifyContent: 'center',
+          overflow: 'hidden',
+          marginRight: 10
+        }}
+      >
         {comment.user?.avatarUrl ? (
           <Image source={{ uri: comment.user.avatarUrl }} style={{ width: '100%', height: '100%' }} />
         ) : (
@@ -129,11 +138,20 @@ export const CommentsModal = ({ visible, postId, onClose }) => {
             {getAuthorName(comment).charAt(0).toUpperCase()}
           </Text>
         )}
-      </View>
+      </TouchableOpacity>
 
       <View style={{ flex: 1 }}>
         <Text style={{ fontSize: 13, color: '#111827', lineHeight: 18 }}>
-          <Text style={{ fontWeight: '700' }}>{getAuthorName(comment)} </Text>
+          <Text
+            onPress={() => setSelectedUserProfile({
+              id: comment.userId,
+              name: getAuthorName(comment),
+              avatar: comment.user?.avatarUrl || null,
+            })}
+            style={{ fontWeight: '700' }}
+          >
+            {getAuthorName(comment)}{' '}
+          </Text>
           {comment.content}
         </Text>
         <View style={{ flexDirection: 'row', alignItems: 'center', marginTop: 4, gap: 16 }}>
@@ -273,6 +291,15 @@ export const CommentsModal = ({ visible, postId, onClose }) => {
         </KeyboardAvoidingView>
       </SafeAreaView>
       </SafeAreaProvider>
+
+      {/* User Profile Modal when clicking a comment author */}
+      {selectedUserProfile && (
+        <UserProfileModal
+          visible={Boolean(selectedUserProfile)}
+          onClose={() => setSelectedUserProfile(null)}
+          targetUser={selectedUserProfile}
+        />
+      )}
     </Modal>
   );
 };

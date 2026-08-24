@@ -8,6 +8,7 @@ import { useProducts } from '../../shared/products/hooks/use-products';
 import { usePosts } from '../../shared/social/hooks/use-posts';
 import ProductDetailModal from '../products/product-detail-modal';
 import PostViewer from '../../shared/social/posts/post-viewer';
+import ConversationModal from '../../shared/chat/conversation-modal';
 
 const { width } = Dimensions.get('window');
 
@@ -18,6 +19,7 @@ const { width } = Dimensions.get('window');
 export default function BusinessProfile({ business, onClose }) {
   const router = useRouter();
   const [activeTab, setActiveTab] = useState('shop');
+  const [chatModalVisible, setChatModalVisible] = useState(false);
   const [isFollowing, setIsFollowing] = useState(business?.isFollowing || false);
   const [contentFilter, setContentFilter] = useState('all');
   const [selectedProductId, setSelectedProductId] = useState(null);
@@ -244,6 +246,7 @@ export default function BusinessProfile({ business, onClose }) {
             </TouchableOpacity>
 
             <TouchableOpacity
+              onPress={() => setChatModalVisible(true)}
               className="flex-1 bg-gray-100 rounded-xl items-center justify-center"
               style={{ paddingVertical: 14 }}
               activeOpacity={0.8}
@@ -548,6 +551,18 @@ export default function BusinessProfile({ business, onClose }) {
           }}
         />
       )}
+
+      {/* Conversation Chat Modal with this Business */}
+      <ConversationModal
+        visible={chatModalVisible}
+        onClose={() => setChatModalVisible(false)}
+        targetParticipant={{
+          id: business?.id,
+          type: 'business',
+          name: business?.name || business?.businessName || 'Negocio',
+          avatar: business?.logoUrl || business?.logo || null,
+        }}
+      />
     </SafeAreaView>
   );
 }

@@ -29,6 +29,7 @@ export default function ClientTabsLayout() {
     { label: 'Descubre', path: '/client', icon: 'compass' },
     { label: 'Feed', path: '/client/feed', icon: 'apps' },
     { label: 'Carritos', path: '/client/cart', icon: 'cart' },
+    { label: 'Chats', path: '/client/chats', icon: 'chatbubbles' },
     { label: 'Perfil', path: '/client/profile', icon: 'person' },
   ];
 
@@ -82,6 +83,15 @@ export default function ClientTabsLayout() {
                 fontSize: 11,
                 fontWeight: '700',
               }
+            }}
+          />
+
+          {/* Chats Tab */}
+          <Tabs.Screen
+            name="chats"
+            options={{
+              title: 'Chats',
+              tabBarIcon: ({ focused }) => getTabIcon('chatbubbles', focused),
             }}
           />
 

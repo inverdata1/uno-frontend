@@ -177,7 +177,7 @@ export default function ConversationModal({
               borderRadius: 20,
               backgroundColor: '#ef4444',
               alignItems: 'center',
-              justify.content: 'center',
+              justifyContent: 'center',
               overflow: 'hidden',
               marginRight: 12
             }}>

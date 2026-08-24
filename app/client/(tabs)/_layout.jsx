@@ -8,14 +8,17 @@ import { Platform, useWindowDimensions, View } from 'react-native';
 import { WebSidebar } from '../../../shared/components/layout/web-sidebar';
 import { useState, useEffect } from 'react';
 
+import { useTotalCartCount } from '../../../shared/stores/cart-store';
+
 /**
  * Client Tabs Layout
- * Tabs: Home, Feed, Orders, Profile
+ * Tabs: Home, Feed, Carritos, Profile
  */
 export default function ClientTabsLayout() {
   const insets = useSafeAreaInsets();
   const { userTypeSwitcherVisible, closeUserTypeSwitcher } = useAppStore();
   const { width } = useWindowDimensions();
+  const totalCartCount = useTotalCartCount();
   
   const [isMounted, setIsMounted] = useState(false);
   useEffect(() => setIsMounted(true), []);
@@ -25,6 +28,7 @@ export default function ClientTabsLayout() {
   const clientRoutes = [
     { label: 'Descubre', path: '/client', icon: 'compass' },
     { label: 'Feed', path: '/client/feed', icon: 'apps' },
+    { label: 'Carritos', path: '/client/cart', icon: 'cart' },
     { label: 'Perfil', path: '/client/profile', icon: 'person' },
   ];
 
@@ -63,6 +67,21 @@ export default function ClientTabsLayout() {
             options={{
               title: 'Feed',
               tabBarIcon: ({ focused }) => getTabIcon('apps', focused),
+            }}
+          />
+
+          {/* Carritos Tab */}
+          <Tabs.Screen
+            name="cart"
+            options={{
+              title: 'Carritos',
+              tabBarIcon: ({ focused }) => getTabIcon('cart', focused),
+              tabBarBadge: totalCartCount > 0 ? totalCartCount : undefined,
+              tabBarBadgeStyle: {
+                backgroundColor: theme.colors.primary[500],
+                fontSize: 11,
+                fontWeight: '700',
+              }
             }}
           />
 

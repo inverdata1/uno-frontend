@@ -8,6 +8,7 @@ import { useProductPosts } from '../../../shared/hooks/use-product-posts';
 import { useCurrentUserType } from '../../../shared/hooks/use-user-type';
 import { colors } from '../../../shared/utils/colors';
 import { useDeleteProduct } from '../../shared/products/hooks/use-products';
+import { useCartStore } from '../../../shared/stores/cart-store';
 
 const { width } = Dimensions.get('window');
 
@@ -148,10 +149,32 @@ export default function ProductDetail({ product, onClose, onBusinessPress, onVid
     );
   };
 
+  const addItem = useCartStore((state) => state.addItem);
+
   const handleEdit = () => {
     setMenuVisible(false);
     // TODO: Navigate to edit product screen
     console.log('Edit product:', product.id);
+  };
+
+  const handleAddToCart = () => {
+    if (!product) return;
+    const businessName = product.business?.businessName || product.business?.name || 'Negocio';
+    const businessId = product.businessId || product.business?.id;
+
+    for (let i = 0; i < quantity; i++) {
+      const res = addItem(product, { businessId, businessName });
+      if (!res.success) {
+        Alert.alert('Producto No Disponible', res.message);
+        return;
+      }
+    }
+
+    Alert.alert(
+      '¡Añadido al Carrito!',
+      `Se agregaron ${quantity} unidad(es) de "${product.name}" al carrito de ${businessName}.`,
+      [{ text: 'Entendido' }]
+    );
   };
 
   return (

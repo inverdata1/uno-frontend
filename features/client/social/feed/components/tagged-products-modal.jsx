@@ -4,6 +4,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { Text } from '../../../../../shared/components/ui/text';
 import { useProducts } from '../../../../shared/products/hooks/use-products';
 import { colors } from '../../../../../shared/utils/colors';
+import { useCartStore } from '../../../../../shared/stores/cart-store';
 
 /**
  * TaggedProductsModal Component
@@ -17,13 +18,23 @@ export const TaggedProductsModal = ({
   onProductPress
 }) => {
   const { data: allProducts = [] } = useProducts({ businessId, limit: 50 });
+  const addItem = useCartStore(state => state.addItem);
 
-  const handleAddToCart = (productName) => {
-    Alert.alert(
-      'Carrito de Compras',
-      `¡${productName} ha sido añadido a tu carrito!`,
-      [{ text: 'Entendido', style: 'default' }]
-    );
+  const handleAddToCart = (fullProduct) => {
+    const result = addItem(fullProduct, { businessId });
+    if (result.success) {
+      Alert.alert(
+        '¡Añadido al Carrito!',
+        result.message,
+        [{ text: 'Genial', style: 'default' }]
+      );
+    } else {
+      Alert.alert(
+        'Producto No Disponible',
+        result.message || 'Este producto no está disponible en este momento.',
+        [{ text: 'Entendido', style: 'default' }]
+      );
+    }
   };
 
   return (
@@ -185,7 +196,7 @@ export const TaggedProductsModal = ({
 
                     {/* Add to Cart Button */}
                     <TouchableOpacity
-                      onPress={() => handleAddToCart(name)}
+                      onPress={() => handleAddToCart(fullProduct)}
                       activeOpacity={0.8}
                       style={{
                         backgroundColor: '#ef4444',

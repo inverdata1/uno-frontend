@@ -260,11 +260,6 @@ export const UserTypeSwitcherModal = ({ visible, onClose, onUserTypeSwitch }) =>
       onChange={handleSheetChanges}
       snapPoints={['85%']}
       enablePanDownToClose={true}
-      animationConfigs={{
-        duration: 250,
-      }}
-      activeOffsetY={[-1, 1]}
-      failOffsetX={[-5, 5]}
     >
       <BottomSheetView style={{ flex: 1, paddingBottom: 32 }}>
       {/* Header */}

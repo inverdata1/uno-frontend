@@ -1,10 +1,9 @@
-import React, { useState, useCallback, useRef, useEffect } from 'react';
-import { View, TouchableOpacity, ActivityIndicator, Platform } from 'react-native';
+import React, { useState } from 'react';
+import { View, TouchableOpacity, ActivityIndicator, Platform, Modal, ScrollView } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
-import BottomSheet, { BottomSheetView } from '@gorhom/bottom-sheet';
 import { Text } from '../../ui';
-import { useCurrentUserType, useSwitchUserType, useBusinessContexts, useUserType } from '../../../hooks/use-user-type';
+import { useCurrentUserType, useSwitchUserType, useBusinessContexts } from '../../../hooks/use-user-type';
 import { getUserTypeConfig } from '../../../config/user-types';
 import { colors } from '../../../utils/colors';
 
@@ -13,99 +12,26 @@ export const UserTypeSwitcherModal = ({ visible, onClose, onUserTypeSwitch }) =>
   const { currentUserType, availableUserTypes = [], isLoading } = useCurrentUserType();
   const businessContexts = useBusinessContexts() || [];
   const switchUserTypeMutation = useSwitchUserType();
-  const [selectedUserType, setSelectedUserType] = useState(currentUserType);
-  const [selectedBusiness, setSelectedBusiness] = useState(null);
   const [switchingTo, setSwitchingTo] = useState(null);
-  
-  // State to unmount bottom sheet on Web completely when closed
-  const [shouldRender, setShouldRender] = useState(false);
-  useEffect(() => {
-    if (visible) {
-      setShouldRender(true);
-    } else {
-      const timer = setTimeout(() => setShouldRender(false), 300);
-      return () => clearTimeout(timer);
-    }
-  }, [visible]);
-
-  // Debug logging for business contexts
-  React.useEffect(() => {
-    if (visible) {
-      console.log('📊 UserTypeSwitcher opened - businessContexts from hook:', businessContexts);
-      console.log('📊 businessContexts.length:', businessContexts.length);
-    }
-  }, [visible, businessContexts]);
-
-  // Let's also check what useUserType returns directly
-  const { data: rawUserTypeData } = useUserType();
-  React.useEffect(() => {
-    if (visible) {
-      console.log('📊 RAW userTypeData:', rawUserTypeData);
-      console.log('📊 RAW businessContexts:', rawUserTypeData?.businessContexts);
-    }
-  }, [visible, rawUserTypeData]);
-
-  // Bottom sheet ref
-  const bottomSheetRef = useRef(null);
-
-  // Handle sheet changes
-  const handleSheetChanges = useCallback((index) => {
-    console.log('UserTypeSwitcher bottom sheet index changed to:', index);
-    if (index === -1) {
-      onClose();
-    }
-  }, [onClose]);
-
-  // Effect to control bottom sheet visibility
-  useEffect(() => {
-    if (visible) {
-      bottomSheetRef.current?.snapToIndex(0); // Go to 85% height (first and only snap point)
-    } else {
-      bottomSheetRef.current?.close();
-    }
-  }, [visible]);
 
   const handleUserTypeSwitch = async (userType, businessId = null, branchId = null) => {
-    console.log('🔄 handleUserTypeSwitch called:', { userType, currentUserType, businessId });
-    console.log('🔍 businessContexts:', businessContexts);
-    console.log('🔍 businessContexts.length:', businessContexts.length);
-
     if (userType === currentUserType) {
-      console.log('⏭️ Already on this type, skipping switch');
-      onClose(); // Close the modal even if already on this type
+      onClose();
       return;
     }
 
     try {
       setSwitchingTo(userType);
 
-      // If switching to business and no businessId provided, use first available business
       let finalBusinessId = businessId;
       let finalBranchId = branchId;
 
-      console.log('🧪 Testing condition:', {
-        isBusinessType: userType === 'business',
-        hasNoBusinessId: !businessId,
-        hasBusinessContexts: businessContexts.length > 0,
-        shouldAutoSelect: userType === 'business' && !businessId && businessContexts.length > 0
-      });
-
       if (userType === 'business' && !businessId && businessContexts.length > 0) {
         finalBusinessId = businessContexts[0].businessId;
-        // Use first branch if available
         if (businessContexts[0].branches?.length > 0) {
           finalBranchId = businessContexts[0].branches[0].id;
         }
-        console.log('🔄 Switching to business mode with auto-selected business:', finalBusinessId);
-        console.log('🔄 businessContexts[0]:', businessContexts[0]);
-        console.log('🔄 branches:', businessContexts[0].branches);
       }
-
-      console.log('📤 Sending to API:', {
-        userType,
-        businessId: finalBusinessId,
-        branchId: finalBranchId
-      });
 
       await switchUserTypeMutation.mutateAsync({
         userType,
@@ -113,14 +39,10 @@ export const UserTypeSwitcherModal = ({ visible, onClose, onUserTypeSwitch }) =>
         branchId: finalBranchId
       });
 
-      // Navigate to the new user type section
       router.replace(`/${userType}/(tabs)`);
-
-      // Close immediately to prevent modal from reopening after component switch
       onClose();
       onUserTypeSwitch?.({ userType, businessId: finalBusinessId, branchId: finalBranchId });
 
-      // Reset switching state after a small delay
       setTimeout(() => {
         setSwitchingTo(null);
       }, 300);
@@ -130,8 +52,6 @@ export const UserTypeSwitcherModal = ({ visible, onClose, onUserTypeSwitch }) =>
     }
   };
 
-  // Use the standardized getUserTypeConfig utility
-
   const UserTypeCard = ({ userType, isActive, onPress, isAvailable }) => {
     const config = getUserTypeConfig(userType);
     const isSwitching = switchingTo === userType;
@@ -140,9 +60,7 @@ export const UserTypeSwitcherModal = ({ visible, onClose, onUserTypeSwitch }) =>
     return (
       <TouchableOpacity
         onPress={() => !isDisabled && onPress(userType)}
-        style={{
-          marginBottom: 12
-        }}
+        style={{ marginBottom: 12 }}
         activeOpacity={0.95}
         disabled={isDisabled}
       >
@@ -249,110 +167,105 @@ export const UserTypeSwitcherModal = ({ visible, onClose, onUserTypeSwitch }) =>
     );
   };
 
-  if (!shouldRender && Platform.OS === 'web') {
-    return null;
-  }
-
   return (
-    <BottomSheet
-      ref={bottomSheetRef}
-      index={-1}
-      onChange={handleSheetChanges}
-      snapPoints={['85%']}
-      enablePanDownToClose={true}
+    <Modal
+      visible={!!visible}
+      transparent
+      animationType="slide"
+      onRequestClose={onClose}
     >
-      <BottomSheetView style={{ flex: 1, paddingBottom: 32 }}>
-      {/* Header */}
-      <View style={{
-        flexDirection: 'row',
-        alignItems: 'center',
-        justifyContent: 'space-between',
-        paddingHorizontal: 24,
-        marginBottom: 24
-      }}>
-        <View>
-          <Text style={{
-            fontSize: 24,
-            fontWeight: '700',
-            color: colors.text.primary,
-            marginBottom: 4
+      <View style={{ flex: 1, backgroundColor: 'rgba(0,0,0,0.5)', justifyContent: 'flex-end' }}>
+        <TouchableOpacity style={{ flex: 1 }} activeOpacity={1} onPress={onClose} />
+        <View style={{
+          backgroundColor: colors.bg.primary,
+          borderTopLeftRadius: 24,
+          borderTopRightRadius: 24,
+          maxHeight: '85%',
+          paddingTop: 12,
+          paddingBottom: Platform.OS === 'ios' ? 40 : 24,
+          shadowColor: '#000',
+          shadowOffset: { width: 0, height: -4 },
+          shadowOpacity: 0.15,
+          shadowRadius: 12,
+          elevation: 16
+        }}>
+          {/* Grab handle */}
+          <View style={{ alignItems: 'center', marginBottom: 12 }}>
+            <View style={{ width: 40, height: 4, borderRadius: 2, backgroundColor: '#d1d5db' }} />
+          </View>
+
+          {/* Header */}
+          <View style={{
+            flexDirection: 'row',
+            alignItems: 'center',
+            justifyContent: 'space-between',
+            paddingHorizontal: 24,
+            marginBottom: 20
           }}>
-            ¿Qué vas a hacer?
-          </Text>
-          <Text style={{
-            fontSize: 16,
-            color: colors.text.secondary
-          }}>
-            Selecciona tu actividad
-          </Text>
+            <View>
+              <Text style={{
+                fontSize: 22,
+                fontWeight: '700',
+                color: colors.text.primary,
+                marginBottom: 2
+              }}>
+                ¿Qué vas a hacer?
+              </Text>
+              <Text style={{
+                fontSize: 14,
+                color: colors.text.secondary
+              }}>
+                Selecciona tu actividad
+              </Text>
+            </View>
+
+            <TouchableOpacity
+              onPress={onClose}
+              style={{
+                width: 36,
+                height: 36,
+                borderRadius: 18,
+                backgroundColor: colors.bg.secondary || '#f3f4f6',
+                alignItems: 'center',
+                justifyContent: 'center',
+              }}
+            >
+              <Ionicons name="close" size={20} color={colors.text.secondary || '#6b7280'} />
+            </TouchableOpacity>
+          </View>
+
+          {/* Modes */}
+          <ScrollView
+            showsVerticalScrollIndicator={false}
+            contentContainerStyle={{ paddingHorizontal: 24, paddingBottom: 16 }}
+          >
+            {isLoading ? (
+              <View style={{ alignItems: 'center', paddingVertical: 40 }}>
+                <ActivityIndicator size="small" color={colors.primary?.main || '#3b82f6'} style={{ marginBottom: 12 }} />
+                <Text style={{ fontSize: 14, color: colors.text.secondary }}>
+                  Cargando modos disponibles...
+                </Text>
+              </View>
+            ) : availableUserTypes.length > 0 ? (
+              availableUserTypes.map((userType) => (
+                <UserTypeCard
+                  key={userType}
+                  userType={userType}
+                  isActive={currentUserType === userType}
+                  isAvailable={true}
+                  onPress={handleUserTypeSwitch}
+                />
+              ))
+            ) : (
+              <View style={{ alignItems: 'center', paddingVertical: 40 }}>
+                <Text style={{ fontSize: 14, color: colors.text.secondary, textAlign: 'center' }}>
+                  No hay modos disponibles
+                </Text>
+              </View>
+            )}
+          </ScrollView>
         </View>
-
-        <TouchableOpacity
-          onPress={onClose}
-          style={{
-            width: 40,
-            height: 40,
-            borderRadius: 20,
-            backgroundColor: colors.bg.primary,
-            alignItems: 'center',
-            justifyContent: 'center',
-            shadowColor: '#000',
-            shadowOffset: { width: 0, height: 2 },
-            shadowOpacity: 0.1,
-            shadowRadius: 8,
-            elevation: 4
-          }}
-        >
-          <Ionicons name="close" size={20} color="#6b7280" />
-        </TouchableOpacity>
       </View>
-
-      {/* Modes */}
-      <View style={{
-        paddingHorizontal: 24,
-        paddingBottom: 32
-      }}>
-        {isLoading ? (
-          // Loading state
-          <View style={{
-            alignItems: 'center',
-            paddingVertical: 40
-          }}>
-            <Text style={{
-              fontSize: 16,
-              color: colors.text.secondary
-            }}>
-              Cargando modos disponibles...
-            </Text>
-          </View>
-        ) : availableUserTypes.length > 0 ? (
-          availableUserTypes.map((userType) => (
-            <UserTypeCard
-              key={userType}
-              userType={userType}
-              isActive={currentUserType === userType}
-              isAvailable={true}
-              onPress={handleUserTypeSwitch}
-            />
-          ))
-        ) : (
-          // No modes available
-          <View style={{
-            alignItems: 'center',
-            paddingVertical: 40
-          }}>
-            <Text style={{
-              fontSize: 16,
-              color: colors.text.secondary,
-              textAlign: 'center'
-            }}>
-              No hay modos disponibles
-            </Text>
-          </View>
-        )}
-
-      </View>
-      </BottomSheetView>
-    </BottomSheet>
+    </Modal>
   );
 };

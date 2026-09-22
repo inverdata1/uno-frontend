@@ -6,7 +6,12 @@ import { Ionicons } from '@expo/vector-icons';
 // videos. react-native's Image renders those as blank.
 import { Image } from 'expo-image';
 import * as DocumentPicker from 'expo-document-picker';
-import * as MediaLibrary from 'expo-media-library';
+let MediaLibrary = null;
+try {
+  MediaLibrary = require('expo-media-library');
+} catch (e) {
+  console.warn('expo-media-library not available natively in this environment:', e.message);
+}
 import { Text } from '../../../../../../shared/components/ui';
 import { colors } from '../../../../../../shared/utils/colors';
 
@@ -31,6 +36,7 @@ export function MediaSelectionStep({ selectedMedia, onMediaChange, onNext, onClo
   const [resolvingId, setResolvingId] = useState(null);
   useEffect(() => {
     const initGallery = async () => {
+      if (!MediaLibrary || typeof MediaLibrary.getPermissionsAsync !== 'function') return;
       try {
         let status = await MediaLibrary.getPermissionsAsync(false, ['photo', 'video']);
         if (!status.granted && status.canAskAgain) {
@@ -49,10 +55,11 @@ export function MediaSelectionStep({ selectedMedia, onMediaChange, onNext, onClo
   }, []);
 
   const loadGalleryAssets = async () => {
+    if (!MediaLibrary || typeof MediaLibrary.getAssetsAsync !== 'function') return;
     try {
       let mediaType = [];
-      if (allowedMediaTypes.includes('image')) mediaType.push(MediaLibrary.MediaType.photo);
-      if (allowedMediaTypes.includes('video')) mediaType.push(MediaLibrary.MediaType.video);
+      if (allowedMediaTypes.includes('image')) mediaType.push(MediaLibrary.MediaType?.photo || 'photo');
+      if (allowedMediaTypes.includes('video')) mediaType.push(MediaLibrary.MediaType?.video || 'video');
       
       const { assets } = await MediaLibrary.getAssetsAsync({
         mediaType,

@@ -1,1 +1,2 @@
-export { default } from '../../../features/business/social';
+import BusinessSocialScreen from '../../../features/business/social';
+export default BusinessSocialScreen;

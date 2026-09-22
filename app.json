@@ -7,7 +7,6 @@
     "icon": "./assets/icon.png",
     "scheme": "unodelivery",
     "userInterfaceStyle": "automatic",
-    "newArchEnabled": true,
     "ios": {
       "supportsTablet": true,
       "bundleIdentifier": "com.inverdata.unodelivery",
@@ -22,7 +21,6 @@
       "adaptiveIcon": {
         "backgroundColor": "#E6F4FE"
       },
-      "edgeToEdgeEnabled": true,
       "predictiveBackGestureEnabled": false,
       "package": "com.inverdata.unodelivery",
       "config": {
@@ -66,7 +64,10 @@
         }
       ],
       "expo-web-browser",
-      "expo-font"
+      "expo-font",
+      "@react-native-community/datetimepicker",
+      "expo-image",
+      "expo-status-bar"
     ],
     "experiments": {
       "typedRoutes": true,

@@ -3,9 +3,16 @@ import { DefaultTheme, ThemeProvider, Stack, useRouter, useRootNavigationState, 
 import * as SplashScreen from 'expo-splash-screen';
 import { StatusBar } from 'expo-status-bar';
 import React from 'react';
-import { Platform } from 'react-native';
+import { Platform, View } from 'react-native';
 import 'react-native-get-random-values'; // Must be first import for crypto polyfill
 import 'react-native-reanimated';
+
+// Polyfill for React Native 0.86+ compatibility with @gorhom/bottom-sheet
+if (typeof View !== 'undefined' && View.prototype && !View.prototype.unstable_getBoundingClientRect) {
+  View.prototype.unstable_getBoundingClientRect = function () {
+    return { x: 0, y: 0, width: 0, height: 0, top: 0, left: 0, right: 0, bottom: 0 };
+  };
+}
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 import { BottomSheetModalProvider } from '@gorhom/bottom-sheet';

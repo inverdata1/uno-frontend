@@ -1,6 +1,5 @@
-import { DefaultTheme, ThemeProvider } from '@react-navigation/native';
 import { QueryClientProvider } from '@tanstack/react-query';
-import { Stack, useRouter, useRootNavigationState, useSegments } from 'expo-router';
+import { DefaultTheme, ThemeProvider, Stack, useRouter, useRootNavigationState, useSegments } from 'expo-router';
 import * as SplashScreen from 'expo-splash-screen';
 import { StatusBar } from 'expo-status-bar';
 import React from 'react';

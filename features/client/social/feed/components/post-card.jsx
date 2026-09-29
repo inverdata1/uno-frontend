@@ -152,7 +152,6 @@ export const PostCard = ({
   const formattedTimeAgo = getTimeAgo(createdAt || updatedAt);
   const businessName = businessData?.name || post.businessName || 'Negocio';
   const handleTag = businessName.toLowerCase().replace(/\s+/g, '');
-  const viewsDisplay = formatCount(Math.max((localLikeCount * 3) + 120, 420));
 
   return (
     <View style={{
@@ -198,25 +197,6 @@ export const PostCard = ({
             />
           )}
         </Pressable>
-
-        {/* Top-Right Stats Pill (4.2K style from Reference) */}
-        <View style={{
-          position: 'absolute',
-          top: 12,
-          right: 12,
-          backgroundColor: 'rgba(0, 0, 0, 0.55)',
-          paddingHorizontal: 10,
-          paddingVertical: 5,
-          borderRadius: 14,
-          flexDirection: 'row',
-          alignItems: 'center',
-          gap: 4
-        }}>
-          <Ionicons name={post.type === 'video' ? 'play' : 'eye'} size={13} color="#ffffff" />
-          <Text style={{ color: '#ffffff', fontSize: 12, fontWeight: '700' }}>
-            {viewsDisplay}
-          </Text>
-        </View>
 
         {/* Carousel pagination indicator (e.g. 1/3) */}
         {isCarousel && (

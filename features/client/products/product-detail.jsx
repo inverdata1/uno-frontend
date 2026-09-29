@@ -21,6 +21,7 @@ import { useDeleteProduct, useFavoriteProduct } from '../../shared/products/hook
 import { useCartStore } from '../../../shared/stores/cart-store';
 import PostViewer from '../../shared/social/posts/post-viewer';
 import VideoViewer from '../social/videos/video-viewer';
+import ProductRatingModal from './components/product-rating-modal';
 
 const { width: SCREEN_WIDTH } = Dimensions.get('window');
 const IMAGE_CONTAINER_HEIGHT = 380;
@@ -30,7 +31,7 @@ const IMAGE_CONTAINER_HEIGHT = 380;
  * Redesigned to match the reference layout:
  * - Rounded hero image card with floating back & favorite buttons
  * - Vertical stacked thumbnail gallery on the right with "+N" modal trigger
- * - Product Title, Ratings badge, Reviews and Sales stats
+ * - Product Title, interactive star rating button with purchase verification modal, and "vendidos" stat
  * - Large price with discount badges
  * - Business profile row with "Seguir" button
  * - Segmented tabs for "Descripción" and "Social Media" (posts & videos)
@@ -50,6 +51,8 @@ export default function ProductDetail({
   const [activeTab, setActiveTab] = useState('description'); // 'description' | 'social'
   const [fullScreenImageVisible, setFullScreenImageVisible] = useState(false);
   const [fullScreenImageIndex, setFullScreenImageIndex] = useState(0);
+  const [ratingModalVisible, setRatingModalVisible] = useState(false);
+  const [localRating, setLocalRating] = useState(Number(product?.rating || 0));
 
   // Social viewer modals
   const [selectedPost, setSelectedPost] = useState(null);
@@ -100,8 +103,7 @@ export default function ProductDetail({
     ? Math.round(((originalPrice - currentPrice) / originalPrice) * 100)
     : 0;
 
-  const ratingValue = Number(product?.rating || 0).toFixed(1);
-  const reviewCount = product?.reviewCount || product?.reviewsCount || 0;
+  const ratingValue = Number(localRating || product?.rating || 0).toFixed(1);
   const soldCount = product?.soldCount || product?.orderCount || 0;
 
   // Business info
@@ -344,35 +346,29 @@ export default function ProductDetail({
 
           {/* Ratings & Sales Row */}
           <View style={{ flexDirection: 'row', alignItems: 'center', flexWrap: 'wrap', gap: 8, marginBottom: 12 }}>
-            <View style={{
-              flexDirection: 'row',
-              alignItems: 'center',
-              backgroundColor: '#0f172a',
-              paddingHorizontal: 8,
-              paddingVertical: 3,
-              borderRadius: 10,
-              gap: 4
-            }}>
+            <TouchableOpacity
+              activeOpacity={0.8}
+              onPress={() => setRatingModalVisible(true)}
+              style={{
+                flexDirection: 'row',
+                alignItems: 'center',
+                backgroundColor: '#0f172a',
+                paddingHorizontal: 9,
+                paddingVertical: 4,
+                borderRadius: 12,
+                gap: 5
+              }}
+            >
               <Ionicons name="star" size={13} color="#fbbf24" />
-              <Text style={{ color: '#ffffff', fontSize: 12, fontWeight: '700' }}>
+              <Text style={{ color: '#ffffff', fontSize: 13, fontWeight: '800' }}>
                 {ratingValue}
               </Text>
-            </View>
-
-            <Text style={{ color: '#64748b', fontSize: 13, fontWeight: '500' }}>
-              Ratings
-            </Text>
+            </TouchableOpacity>
 
             <Text style={{ color: '#cbd5e1' }}>•</Text>
 
-            <Text style={{ color: '#64748b', fontSize: 13, fontWeight: '500' }}>
-              {reviewCount >= 1000 ? `${(reviewCount / 1000).toFixed(1)}k` : reviewCount} Reviews
-            </Text>
-
-            <Text style={{ color: '#cbd5e1' }}>•</Text>
-
-            <Text style={{ color: '#64748b', fontSize: 13, fontWeight: '500' }}>
-              {soldCount >= 1000 ? `${(soldCount / 1000).toFixed(1)}k` : soldCount} Sold
+            <Text style={{ color: '#64748b', fontSize: 13, fontWeight: '600' }}>
+              {soldCount} {soldCount === 1 ? 'vendido' : 'vendidos'}
             </Text>
           </View>
 
@@ -828,6 +824,19 @@ export default function ProductDetail({
           onBusinessPress={handleBusinessNavigation}
         />
       )}
+
+      {/* Product Rating Modal */}
+      <ProductRatingModal
+        visible={ratingModalVisible}
+        onClose={() => setRatingModalVisible(false)}
+        productId={product?.id}
+        productName={product?.name || 'Producto'}
+        onRatingSuccess={(data) => {
+          if (data?.rating) {
+            setLocalRating(data.rating);
+          }
+        }}
+      />
     </SafeAreaView>
   );
 }

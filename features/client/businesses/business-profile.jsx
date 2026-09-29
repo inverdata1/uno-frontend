@@ -1,6 +1,6 @@
 import { Ionicons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
-import { useState } from 'react';
+import { useState, useMemo } from 'react';
 import { Dimensions, Image, ScrollView, StatusBar, TouchableOpacity, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Text } from '../../../shared/components/ui';
@@ -37,6 +37,17 @@ export default function BusinessProfile({ business, onClose }) {
     businessId: business?.id,
     limit: 50
   });
+
+  const averageProductRating = useMemo(() => {
+    if (products && products.length > 0) {
+      const ratedProducts = products.filter(p => Number(p.rating || 0) > 0);
+      if (ratedProducts.length > 0) {
+        const total = ratedProducts.reduce((sum, p) => sum + Number(p.rating || 0), 0);
+        return (total / ratedProducts.length).toFixed(1);
+      }
+    }
+    return Number(business?.rating || 0).toFixed(1);
+  }, [products, business?.rating]);
 
   console.log('[BusinessProfile] Products:', products?.length || 0);
   console.log('[BusinessProfile] Posts:', contentPosts?.length || 0);
@@ -177,10 +188,7 @@ export default function BusinessProfile({ business, onClose }) {
             <View className="flex-row items-center">
               <Ionicons name="star" size={16} color="#fbbf24" />
               <Text className="text-sm font-semibold text-gray-900 ml-1">
-                {String(business?.rating || '4.8')}
-              </Text>
-              <Text className="text-sm text-gray-500 ml-1">
-                ({String(business?.reviewsCount || '127')})
+                {averageProductRating}
               </Text>
             </View>
             <View className="w-1 h-1 rounded-full bg-gray-300" />

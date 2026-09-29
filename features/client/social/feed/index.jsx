@@ -18,24 +18,13 @@ import { usePosts, useLikePost, useSavePost } from '../../../../features/shared/
 import { useStories } from '../../../../features/shared/social/hooks/use-stories';
 import { useBusinesses } from '../../../../features/shared/social/hooks/use-businesses';
 
-const CATEGORIES = [
-  { id: 'all', label: 'Para ti' },
-  { id: 'comida', label: 'Comida' },
-  { id: 'moda', label: 'Moda & Outfits' },
-  { id: 'tecnologia', label: 'Tecnología' },
-  { id: 'mercado', label: 'Supermercado' },
-  { id: 'belleza', label: 'Belleza' },
-  { id: 'hogar', label: 'Hogar' },
-];
-
 /**
  * Feed Screen
  * Modern social feed:
- * - Top header with user avatar, search, and notifications (points pill removed)
+ * - Top header with user avatar, search, and notifications bell leading to /client/notifications
  * - Stories row only showing stories from businesses followed by the client (with empty state)
- * - "Siguiendo" section with category pills filter
  * - High quality Post Cards with tagged products and direct cart integration
- * - Full-screen immersive Video Reel viewer
+ * - Full-screen immersive Video Reel viewer with product links
  */
 export default function FeedScreen() {
   const router = useRouter();
@@ -44,7 +33,6 @@ export default function FeedScreen() {
   const queryClient = useQueryClient();
   
   const [refreshing, setRefreshing] = useState(false);
-  const [activeCategory, setActiveCategory] = useState('all');
   const [storyViewerVisible, setStoryViewerVisible] = useState(false);
   const [selectedStories, setSelectedStories] = useState([]);
   const [postViewerVisible, setPostViewerVisible] = useState(false);
@@ -92,20 +80,6 @@ export default function FeedScreen() {
 
     return storiesData.filter(item => followedBusinessIds.includes(item.businessId));
   }, [storiesData, followedBusinessIds]);
-
-  // Filter posts by active category
-  const filteredPosts = useMemo(() => {
-    if (!posts || posts.length === 0) return [];
-    if (activeCategory === 'all') return posts;
-
-    return posts.filter(post => {
-      const b = post.business || businessMap[post.businessId];
-      const categoryName = (b?.category?.name || b?.categoryName || post.category || '').toLowerCase();
-      const captionText = (post.caption || '').toLowerCase();
-      
-      return categoryName.includes(activeCategory) || captionText.includes(activeCategory);
-    });
-  }, [posts, activeCategory, businessMap]);
 
   // Extract all video posts for the VideoViewer carousel
   const allVideoPosts = useMemo(() => {
@@ -156,6 +130,8 @@ export default function FeedScreen() {
 
   const handleBusinessPress = (businessId) => {
     if (businessId) {
+      setPostViewerVisible(false);
+      setVideoViewerVisible(false);
       router.push(`/client/business/${businessId}`);
     }
   };
@@ -163,6 +139,10 @@ export default function FeedScreen() {
   const handleProductPress = (productOrId) => {
     const productId = typeof productOrId === 'object' ? (productOrId.id || productOrId.productId) : productOrId;
     if (productId) {
+      setPostViewerVisible(false);
+      setSelectedPost(null);
+      setVideoViewerVisible(false);
+      setSelectedVideo(null);
       router.push(`/client/product/${productId}`);
     }
   };
@@ -170,7 +150,7 @@ export default function FeedScreen() {
   const renderHeader = () => {
     return (
       <View style={{ backgroundColor: '#ffffff', marginBottom: 12 }}>
-        {/* Top Header Row with Avatar, App Logo/Title, and Actions (points pill removed) */}
+        {/* Top Header Row with Avatar, App Logo/Title, and Actions */}
         <View style={{
           flexDirection: 'row',
           alignItems: 'center',
@@ -236,7 +216,7 @@ export default function FeedScreen() {
             </TouchableOpacity>
 
             <TouchableOpacity
-              onPress={() => router.push('/client/chats')}
+              onPress={() => router.push('/client/notifications')}
               style={{
                 width: 38,
                 height: 38,
@@ -316,47 +296,6 @@ export default function FeedScreen() {
             </View>
           )}
         </View>
-
-        {/* Following Header & Category Filter Pills */}
-        <View style={{ paddingHorizontal: 16, paddingTop: 14, paddingBottom: 10 }}>
-          <Text style={{ fontSize: 22, fontWeight: '800', color: '#0f172a', letterSpacing: -0.3, marginBottom: 12 }}>
-            Siguiendo
-          </Text>
-
-          {/* Categories Horizontal Scroll */}
-          <ScrollView
-            horizontal
-            showsHorizontalScrollIndicator={false}
-            contentContainerStyle={{ gap: 8 }}
-          >
-            {CATEGORIES.map((cat) => {
-              const isSelected = activeCategory === cat.id;
-              return (
-                <TouchableOpacity
-                  key={cat.id}
-                  onPress={() => setActiveCategory(cat.id)}
-                  activeOpacity={0.8}
-                  style={{
-                    paddingHorizontal: 14,
-                    paddingVertical: 7,
-                    borderRadius: 20,
-                    backgroundColor: isSelected ? '#ef4444' : '#f1f5f9',
-                    borderWidth: 1,
-                    borderColor: isSelected ? '#ef4444' : '#e2e8f0',
-                  }}
-                >
-                  <Text style={{
-                    fontSize: 13,
-                    fontWeight: isSelected ? '700' : '600',
-                    color: isSelected ? '#ffffff' : '#475569',
-                  }}>
-                    {cat.label}
-                  </Text>
-                </TouchableOpacity>
-              );
-            })}
-          </ScrollView>
-        </View>
       </View>
     );
   };
@@ -395,7 +334,7 @@ export default function FeedScreen() {
         <Ionicons name="images-outline" size={36} color="#94a3b8" />
       </View>
       <Text style={{ fontSize: 18, fontWeight: '700', color: '#334155', marginBottom: 8, textAlign: 'center' }}>
-        No hay publicaciones en esta categoría
+        No hay publicaciones en este momento
       </Text>
       <Text style={{ fontSize: 14, color: '#64748b', textAlign: 'center', lineHeight: 20 }}>
         Las publicaciones y novedades de los negocios aparecerán aquí en tu feed.
@@ -415,7 +354,7 @@ export default function FeedScreen() {
   return (
     <SafeAreaView style={{ flex: 1, backgroundColor: '#f8fafc' }} edges={['top']}>
       <FlatList
-        data={filteredPosts}
+        data={posts}
         renderItem={renderPost}
         keyExtractor={(item, idx) => item?.id || `feed-${idx}`}
         ListHeaderComponent={renderHeader}
@@ -464,6 +403,8 @@ export default function FeedScreen() {
             setVideoViewerVisible(false);
             setSelectedVideo(null);
           }}
+          onBusinessPress={handleBusinessPress}
+          onProductPress={handleProductPress}
         />
       )}
 

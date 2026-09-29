@@ -37,6 +37,7 @@ function VideoItem({
   onCommentPress,
   onOpenProducts,
   onAddToCart,
+  onProductPress,
 }) {
   const { user } = useAuthStore();
   const [localIsLiked, setLocalIsLiked] = useState(Boolean(video?.isLiked));
@@ -388,30 +389,35 @@ function VideoItem({
             shadowRadius: 6,
             elevation: 5
           }}>
-            {/* Product Thumbnail */}
-            <View style={{ width: 42, height: 42, borderRadius: 8, backgroundColor: '#f1f5f9', overflow: 'hidden' }}>
-              {firstTaggedProduct.thumbnailUrl || firstTaggedProduct.imageUrl ? (
-                <Image
-                  source={{ uri: firstTaggedProduct.thumbnailUrl || firstTaggedProduct.imageUrl }}
-                  style={{ width: '100%', height: '100%' }}
-                  resizeMode="cover"
-                />
-              ) : (
-                <View style={{ flex: 1, alignItems: 'center', justifyContent: 'center' }}>
-                  <Ionicons name="pricetag" size={18} color="#ef4444" />
-                </View>
-              )}
-            </View>
+            {/* Product Thumbnail & Details (Clickable to open Product Detail) */}
+            <TouchableOpacity
+              activeOpacity={0.7}
+              onPress={() => onProductPress?.(firstTaggedProduct)}
+              style={{ flexDirection: 'row', alignItems: 'center', flex: 1, gap: 10 }}
+            >
+              <View style={{ width: 42, height: 42, borderRadius: 8, backgroundColor: '#f1f5f9', overflow: 'hidden' }}>
+                {firstTaggedProduct.thumbnailUrl || firstTaggedProduct.imageUrl ? (
+                  <Image
+                    source={{ uri: firstTaggedProduct.thumbnailUrl || firstTaggedProduct.imageUrl }}
+                    style={{ width: '100%', height: '100%' }}
+                    resizeMode="cover"
+                  />
+                ) : (
+                  <View style={{ flex: 1, alignItems: 'center', justifyContent: 'center' }}>
+                    <Ionicons name="pricetag" size={18} color="#ef4444" />
+                  </View>
+                )}
+              </View>
 
-            {/* Product Info */}
-            <View style={{ flex: 1 }}>
-              <Text style={{ fontSize: 13, fontWeight: '700', color: '#0f172a' }} numberOfLines={1}>
-                {firstTaggedProduct.name || firstTaggedProduct.title || 'Producto'}
-              </Text>
-              <Text style={{ fontSize: 12, fontWeight: '800', color: '#ef4444', marginTop: 1 }}>
-                ${firstTaggedProduct.discountPrice || firstTaggedProduct.price || '0.00'}
-              </Text>
-            </View>
+              <View style={{ flex: 1 }}>
+                <Text style={{ fontSize: 13, fontWeight: '700', color: '#0f172a' }} numberOfLines={1}>
+                  {firstTaggedProduct.name || firstTaggedProduct.title || 'Producto'}
+                </Text>
+                <Text style={{ fontSize: 12, fontWeight: '800', color: '#ef4444', marginTop: 1 }}>
+                  ${firstTaggedProduct.discountPrice || firstTaggedProduct.price || '0.00'}
+                </Text>
+              </View>
+            </TouchableOpacity>
 
             {/* Direct Quick Add Button */}
             <TouchableOpacity
@@ -448,6 +454,7 @@ export default function VideoViewer({
   initialVideoId,
   onClose,
   onBusinessPress,
+  onProductPress,
 }) {
   const [currentIndex, setCurrentIndex] = useState(0);
   const [isPaused, setIsPaused] = useState(false);
@@ -526,6 +533,10 @@ export default function VideoViewer({
         onCommentPress={() => setCommentsPostId(video.id)}
         onOpenProducts={() => setProductsModalData(video)}
         onAddToCart={(product) => handleAddToCart(product, video)}
+        onProductPress={(product) => {
+          onClose();
+          onProductPress?.(product);
+        }}
       />
     );
   };
@@ -593,6 +604,11 @@ export default function VideoViewer({
               businessData={{
                 name: productsModalData.businessName,
                 logo: productsModalData.logoUrl
+              }}
+              onProductPress={(product) => {
+                setProductsModalData(null);
+                onClose();
+                onProductPress?.(product);
               }}
             />
           )}

@@ -2,118 +2,125 @@ import React from 'react';
 import { View, Image, Pressable } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import { Text } from '../../../../../shared/components/ui/text';
-import { cn } from '../../../../../shared/utils/cn';
 
 /**
  * StoryRing Component
- * Instagram-style story avatar with gradient ring
- *
- * @param {object} business - Business data
- * @param {boolean} hasUnviewed - Whether there are unviewed stories
- * @param {function} onPress - Callback when story is pressed
- * @param {string} size - 'sm' | 'md' | 'lg' (default: md)
+ * Beautiful circular story avatar with adequate spacing and gradient ring
  */
 export const StoryRing = ({
-  business,
-  hasUnviewed = false,
+  imageUrl,
+  name = 'Negocio',
+  hasUnseenStories = false,
   onPress,
-  size = 'md',
-  className
+  size = 60,
 }) => {
-  const sizes = {
-    sm: {
-      container: 'w-14 h-14',
-      image: 'w-12 h-12',
-      text: 'text-xs',
-      gradient: 58,
-      imageSize: 48
-    },
-    md: {
-      container: 'w-20 h-20',
-      image: 'w-[72px] h-[72px]',
-      text: 'text-xs',
-      gradient: 82,
-      imageSize: 72
-    },
-    lg: {
-      container: 'w-24 h-24',
-      image: 'w-[88px] h-[88px]',
-      text: 'text-sm',
-      gradient: 98,
-      imageSize: 88
-    }
-  };
-
-  const config = sizes[size];
+  const ringSize = size + 8;
 
   return (
-    <View className={cn('items-center mr-3', className)}>
-      <Pressable onPress={onPress}>
-        {hasUnviewed ? (
-          // Story ring with gradient
+    <View style={{ alignItems: 'center', width: 72, marginHorizontal: 4 }}>
+      <Pressable onPress={onPress} activeOpacity={0.8} style={{ alignItems: 'center' }}>
+        {hasUnseenStories ? (
+          // Active unviewed story - Gradient ring (UNO Red & Orange)
           <LinearGradient
-            colors={['#F58529', '#DD2A7B', '#8134AF', '#515BD4']}
+            colors={['#ef4444', '#f97316', '#ec4899']}
             start={{ x: 0, y: 0 }}
             end={{ x: 1, y: 1 }}
             style={{
-              width: config.gradient,
-              height: config.gradient,
-              borderRadius: config.gradient / 2,
-              padding: 2,
+              width: ringSize,
+              height: ringSize,
+              borderRadius: ringSize / 2,
+              padding: 2.5,
               justifyContent: 'center',
-              alignItems: 'center'
+              alignItems: 'center',
             }}
           >
             <View style={{
               backgroundColor: '#ffffff',
-              borderRadius: (config.gradient - 4) / 2,
+              borderRadius: (ringSize - 5) / 2,
               padding: 2,
               justifyContent: 'center',
-              alignItems: 'center'
+              alignItems: 'center',
             }}>
-              <Image
-                source={{ uri: business?.logo }}
-                style={{
-                  width: config.imageSize,
-                  height: config.imageSize,
-                  borderRadius: config.imageSize / 2,
-                  backgroundColor: '#e5e7eb'
-                }}
-              />
+              {imageUrl ? (
+                <Image
+                  source={{ uri: imageUrl }}
+                  style={{
+                    width: size,
+                    height: size,
+                    borderRadius: size / 2,
+                    backgroundColor: '#e2e8f0',
+                  }}
+                  resizeMode="cover"
+                />
+              ) : (
+                <View style={{
+                  width: size,
+                  height: size,
+                  borderRadius: size / 2,
+                  backgroundColor: '#ef4444',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                }}>
+                  <Text style={{ color: '#ffffff', fontWeight: '700', fontSize: 18 }}>
+                    {name.charAt(0).toUpperCase()}
+                  </Text>
+                </View>
+              )}
             </View>
           </LinearGradient>
         ) : (
-          // Viewed story - gray ring
+          // Viewed story or following account - Clean subtle border
           <View style={{
-            width: config.gradient,
-            height: config.gradient,
-            borderRadius: config.gradient / 2,
+            width: ringSize,
+            height: ringSize,
+            borderRadius: ringSize / 2,
+            borderWidth: 1.5,
+            borderColor: '#cbd5e1',
             padding: 2,
-            borderWidth: 2,
-            borderColor: '#d1d5db',
             justifyContent: 'center',
-            alignItems: 'center'
+            alignItems: 'center',
           }}>
-            <Image
-              source={{ uri: business?.logo }}
-              style={{
-                width: config.imageSize,
-                height: config.imageSize,
-                borderRadius: config.imageSize / 2,
-                backgroundColor: '#e5e7eb'
-              }}
-            />
+            {imageUrl ? (
+              <Image
+                source={{ uri: imageUrl }}
+                style={{
+                  width: size,
+                  height: size,
+                  borderRadius: size / 2,
+                  backgroundColor: '#e2e8f0',
+                }}
+                resizeMode="cover"
+              />
+            ) : (
+              <View style={{
+                width: size,
+                height: size,
+                borderRadius: size / 2,
+                backgroundColor: '#cbd5e1',
+                alignItems: 'center',
+                justifyContent: 'center',
+              }}>
+                <Text style={{ color: '#ffffff', fontWeight: '700', fontSize: 18 }}>
+                  {name.charAt(0).toUpperCase()}
+                </Text>
+              </View>
+            )}
           </View>
         )}
       </Pressable>
 
-      {/* Business Name */}
+      {/* Business Name Label */}
       <Text
-        className={cn('mt-1 text-center', config.text)}
+        style={{
+          fontSize: 11,
+          color: '#334155',
+          marginTop: 6,
+          textAlign: 'center',
+          width: 70,
+        }}
         numberOfLines={1}
-        style={{ maxWidth: config.imageSize + 10 }}
       >
-        {business?.name}
+        {name}
       </Text>
     </View>
   );
@@ -121,29 +128,48 @@ export const StoryRing = ({
 
 /**
  * AddStoryButton Component
- * Plus button for creating a new story
  */
-export const AddStoryButton = ({ onPress, businessName, size = 'md' }) => {
-  const sizes = {
-    sm: { container: 'w-14 h-14', icon: 20 },
-    md: { container: 'w-20 h-20', icon: 24 },
-    lg: { container: 'w-24 h-24', icon: 28 }
-  };
-
-  const config = sizes[size];
+export const AddStoryButton = ({ onPress, size = 60 }) => {
+  const ringSize = size + 8;
 
   return (
-    <View className="items-center mr-3">
-      <Pressable onPress={onPress}>
-        <View className={cn('bg-gray-100 rounded-full items-center justify-center border-2 border-dashed border-gray-300', config.container)}>
-          <View className="bg-blue-500 rounded-full p-1">
-            <Text className="text-white font-bold" style={{ fontSize: config.icon }}>
+    <View style={{ alignItems: 'center', width: 72, marginHorizontal: 4 }}>
+      <Pressable onPress={onPress} activeOpacity={0.8} style={{ alignItems: 'center' }}>
+        <View style={{
+          width: ringSize,
+          height: ringSize,
+          borderRadius: ringSize / 2,
+          borderWidth: 2,
+          borderStyle: 'dashed',
+          borderColor: '#94a3b8',
+          backgroundColor: '#f8fafc',
+          alignItems: 'center',
+          justifyContent: 'center',
+        }}>
+          <View style={{
+            width: 28,
+            height: 28,
+            borderRadius: 14,
+            backgroundColor: '#ef4444',
+            alignItems: 'center',
+            justifyContent: 'center',
+          }}>
+            <Text style={{ color: '#ffffff', fontWeight: '700', fontSize: 18, marginTop: -2 }}>
               +
             </Text>
           </View>
         </View>
       </Pressable>
-      <Text className="text-xs mt-1 text-center" numberOfLines={1}>
+      <Text
+        style={{
+          fontSize: 11,
+          color: '#64748b',
+          marginTop: 6,
+          textAlign: 'center',
+          width: 70,
+        }}
+        numberOfLines={1}
+      >
         Tu historia
       </Text>
     </View>

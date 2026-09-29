@@ -1,7 +1,7 @@
 import React, { useState, useMemo } from 'react';
 import { View, FlatList, RefreshControl, ScrollView, ActivityIndicator, Pressable, TouchableOpacity, Image } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { useQueryClient } from '@tanstack/react-query';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { PostCard } from './components/post-card';
@@ -10,13 +10,13 @@ import { StoryRing, AddStoryButton } from './components/story-ring';
 import { Text } from '../../../../shared/components/ui/text';
 import { useAuthStore } from '../../../../core/auth/stores/auth-store';
 import { useCurrentUserType } from '../../../../shared/hooks/use-user-type';
+import { apiClient } from '../../../../shared/config/api-client';
 import StoryViewer from '../../../shared/social/stories/story-viewer';
 import PostViewer from '../../../shared/social/posts/post-viewer';
 import VideoViewer from '../videos/video-viewer';
 import { usePosts, useLikePost, useSavePost } from '../../../../features/shared/social/hooks/use-posts';
 import { useStories } from '../../../../features/shared/social/hooks/use-stories';
 import { useBusinesses } from '../../../../features/shared/social/hooks/use-businesses';
-import { colors } from '../../../../shared/utils/colors';
 
 const CATEGORIES = [
   { id: 'all', label: 'Para ti' },
@@ -30,10 +30,10 @@ const CATEGORIES = [
 
 /**
  * Feed Screen
- * Modern social feed matching the reference layout:
- * - Top header with user avatar, loyalty points pill, notifications and search
- * - Top Stories / Following accounts horizontal carousel
- * - "Following" section with category pills filter
+ * Modern social feed:
+ * - Top header with user avatar, search, and notifications (points pill removed)
+ * - Stories row only showing stories from businesses followed by the client (with empty state)
+ * - "Siguiendo" section with category pills filter
  * - High quality Post Cards with tagged products and direct cart integration
  * - Full-screen immersive Video Reel viewer
  */
@@ -53,14 +53,30 @@ export default function FeedScreen() {
   const [selectedVideo, setSelectedVideo] = useState(null);
   const [commentsPostId, setCommentsPostId] = useState(null);
 
-  // Domain queries
+  // Queries
   const { data: posts = [], isLoading: postsLoading } = usePosts({ userId: user?.id, limit: 50 });
   const { data: storiesData = [], isLoading: storiesLoading } = useStories();
   const { data: businesses = [], isLoading: businessesLoading } = useBusinesses();
+  
+  // Followed businesses query
+  const { data: followedBusinessIds = [] } = useQuery({
+    queryKey: ['followed-businesses', user?.id],
+    queryFn: async () => {
+      if (!user?.id) return [];
+      try {
+        const res = await apiClient.get('/businesses/following', { params: { userId: user.id } });
+        return Array.isArray(res.data) ? res.data : [];
+      } catch (e) {
+        return [];
+      }
+    },
+    enabled: Boolean(user?.id)
+  });
+
   const likeMutation = useLikePost();
   const saveMutation = useSavePost();
 
-  // Create business lookup map for O(1) access
+  // Business lookup map for O(1) access
   const businessMap = useMemo(() => {
     const map = {};
     businesses.forEach(business => {
@@ -68,6 +84,14 @@ export default function FeedScreen() {
     });
     return map;
   }, [businesses]);
+
+  // Stories filtered: ONLY stories from followed businesses
+  const followedStories = useMemo(() => {
+    if (!storiesData || storiesData.length === 0) return [];
+    if (!followedBusinessIds || followedBusinessIds.length === 0) return [];
+
+    return storiesData.filter(item => followedBusinessIds.includes(item.businessId));
+  }, [storiesData, followedBusinessIds]);
 
   // Filter posts by active category
   const filteredPosts = useMemo(() => {
@@ -96,6 +120,7 @@ export default function FeedScreen() {
       queryClient.invalidateQueries({ queryKey: ['posts'] }),
       queryClient.invalidateQueries({ queryKey: ['stories'] }),
       queryClient.invalidateQueries({ queryKey: ['businesses'] }),
+      queryClient.invalidateQueries({ queryKey: ['followed-businesses'] }),
     ]);
     setRefreshing(false);
   };
@@ -145,7 +170,7 @@ export default function FeedScreen() {
   const renderHeader = () => {
     return (
       <View style={{ backgroundColor: '#ffffff', marginBottom: 12 }}>
-        {/* Top Header Row with Avatar, Points Badge, and Actions */}
+        {/* Top Header Row with Avatar, App Logo/Title, and Actions (points pill removed) */}
         <View style={{
           flexDirection: 'row',
           alignItems: 'center',
@@ -154,16 +179,16 @@ export default function FeedScreen() {
           paddingTop: 10,
           paddingBottom: 12,
         }}>
-          {/* Left: User Avatar & Points Pill */}
-          <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10 }}>
+          {/* Left: User Avatar & App Greeting */}
+          <View style={{ flexDirection: 'row', alignItems: 'center', gap: 12 }}>
             <TouchableOpacity
               onPress={() => router.push('/client/profile')}
               style={{
-                width: 38,
-                height: 38,
-                borderRadius: 19,
+                width: 40,
+                height: 40,
+                borderRadius: 20,
                 overflow: 'hidden',
-                borderWidth: 1.5,
+                borderWidth: 2,
                 borderColor: '#ef4444',
                 backgroundColor: '#f1f5f9',
                 alignItems: 'center',
@@ -182,21 +207,12 @@ export default function FeedScreen() {
               )}
             </TouchableOpacity>
 
-            {/* Loyalty points pill (Reference: 20 points) */}
-            <View style={{
-              flexDirection: 'row',
-              alignItems: 'center',
-              backgroundColor: '#f8fafc',
-              borderWidth: 1,
-              borderColor: '#e2e8f0',
-              paddingHorizontal: 10,
-              paddingVertical: 5,
-              borderRadius: 20,
-              gap: 4
-            }}>
-              <Ionicons name="flash" size={13} color="#f59e0b" />
-              <Text style={{ fontSize: 12, fontWeight: '700', color: '#1e293b' }}>
-                20 puntos
+            <View>
+              <Text style={{ fontSize: 11, fontWeight: '600', color: '#64748b' }}>
+                Bienvenido
+              </Text>
+              <Text style={{ fontSize: 15, fontWeight: '800', color: '#0f172a' }}>
+                {user?.displayName || user?.firstName || 'Explorador'}
               </Text>
             </View>
           </View>
@@ -206,9 +222,9 @@ export default function FeedScreen() {
             <TouchableOpacity
               onPress={() => router.push('/client')}
               style={{
-                width: 36,
-                height: 36,
-                borderRadius: 18,
+                width: 38,
+                height: 38,
+                borderRadius: 19,
                 backgroundColor: '#f8fafc',
                 alignItems: 'center',
                 justifyContent: 'center',
@@ -216,15 +232,15 @@ export default function FeedScreen() {
                 borderColor: '#e2e8f0'
               }}
             >
-              <Ionicons name="search" size={17} color="#475569" />
+              <Ionicons name="search" size={18} color="#475569" />
             </TouchableOpacity>
 
             <TouchableOpacity
               onPress={() => router.push('/client/chats')}
               style={{
-                width: 36,
-                height: 36,
-                borderRadius: 18,
+                width: 38,
+                height: 38,
+                borderRadius: 19,
                 backgroundColor: '#f8fafc',
                 alignItems: 'center',
                 justifyContent: 'center',
@@ -233,12 +249,11 @@ export default function FeedScreen() {
                 position: 'relative'
               }}
             >
-              <Ionicons name="notifications-outline" size={18} color="#475569" />
-              {/* Notification Badge Dot */}
+              <Ionicons name="notifications-outline" size={19} color="#475569" />
               <View style={{
                 position: 'absolute',
-                top: 7,
-                right: 7,
+                top: 8,
+                right: 8,
                 width: 7,
                 height: 7,
                 borderRadius: 3.5,
@@ -248,60 +263,57 @@ export default function FeedScreen() {
           </View>
         </View>
 
-        {/* Stories / Following Accounts Horizontal Bar */}
-        <View style={{ paddingVertical: 8, borderBottomWidth: 1, borderBottomColor: '#f1f5f9' }}>
+        {/* Stories / Following Accounts Bar with Generous Spacing and Empty State */}
+        <View style={{ paddingVertical: 10, borderBottomWidth: 1, borderBottomColor: '#f1f5f9' }}>
           {storiesLoading ? (
             <View style={{ paddingHorizontal: 16, paddingVertical: 12 }}>
               <ActivityIndicator size="small" color="#ef4444" />
             </View>
-          ) : (
+          ) : followedStories.length > 0 ? (
             <ScrollView
               horizontal
               showsHorizontalScrollIndicator={false}
-              contentContainerStyle={{ paddingHorizontal: 12, gap: 12 }}
+              contentContainerStyle={{ paddingHorizontal: 14, gap: 14 }}
             >
               {currentUserType === 'business' && (
-                <AddStoryButton onPress={handleCreateStory} />
+                <AddStoryButton onPress={handleCreateStory} size={60} />
               )}
-              {storiesData.map((businessStories) => {
+              {followedStories.map((businessStories) => {
                 const business = businessMap[businessStories.businessId] || {};
                 const name = business.name || business.businessName || 'Negocio';
                 const shortName = name.split(' ')[0];
 
                 return (
-                  <Pressable
+                  <StoryRing
                     key={businessStories.businessId}
                     onPress={() => handleStoryPress(businessStories)}
-                    style={{ alignItems: 'center', width: 62 }}
-                  >
-                    <StoryRing
-                      imageUrl={business.logo || business.logoUrl}
-                      name={shortName}
-                      hasUnseenStories={true}
-                    />
-                  </Pressable>
-                );
-              })}
-
-              {/* If no active stories, show top featured businesses as following avatars */}
-              {storiesData.length === 0 && businesses.slice(0, 8).map((business) => {
-                const name = business.name || business.businessName || 'Negocio';
-                const shortName = name.split(' ')[0];
-                return (
-                  <Pressable
-                    key={business.id}
-                    onPress={() => handleBusinessPress(business.id)}
-                    style={{ alignItems: 'center', width: 62 }}
-                  >
-                    <StoryRing
-                      imageUrl={business.logo || business.logoUrl}
-                      name={shortName}
-                      hasUnseenStories={false}
-                    />
-                  </Pressable>
+                    imageUrl={business.logo || business.logoUrl}
+                    name={shortName}
+                    hasUnseenStories={true}
+                    size={60}
+                  />
                 );
               })}
             </ScrollView>
+          ) : (
+            // Empty State when client does not follow businesses with active stories
+            <View style={{
+              flexDirection: 'row',
+              alignItems: 'center',
+              paddingHorizontal: 16,
+              paddingVertical: 12,
+              gap: 10,
+              backgroundColor: '#f8fafc',
+              marginHorizontal: 16,
+              borderRadius: 12,
+              borderWidth: 1,
+              borderColor: '#e2e8f0'
+            }}>
+              <Ionicons name="sparkles-outline" size={18} color="#94a3b8" />
+              <Text style={{ fontSize: 13, color: '#64748b', fontWeight: '500' }}>
+                No hay historias disponibles en este momento
+              </Text>
+            </View>
           )}
         </View>
 

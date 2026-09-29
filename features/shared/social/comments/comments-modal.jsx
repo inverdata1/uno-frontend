@@ -64,6 +64,7 @@ export const CommentsModal = ({ visible, postId, onClose }) => {
   const { user } = useAuthStore();
   const [text, setText] = useState('');
   const [replyingTo, setReplyingTo] = useState(null);
+  const [selectedUserProfile, setSelectedUserProfile] = useState(null);
 
   const { data, isLoading } = useComments(postId);
   const createComment = useCreateComment();

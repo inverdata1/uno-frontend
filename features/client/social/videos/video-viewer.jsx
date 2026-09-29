@@ -1,26 +1,76 @@
-import { Ionicons } from '@expo/vector-icons';
-import { BottomSheetModalProvider } from '@gorhom/bottom-sheet';
+import React, { useEffect, useRef, useState, useMemo } from 'react';
+import {
+  Dimensions,
+  FlatList,
+  Image,
+  Modal,
+  Pressable,
+  StatusBar,
+  TouchableOpacity,
+  View,
+  Share,
+  Alert,
+  Animated,
+  Easing
+} from 'react-native';
 import { VideoView, useVideoPlayer } from 'expo-video';
-import { useEffect, useRef, useState } from 'react';
-import { Dimensions, FlatList, Image, Modal, Pressable, StatusBar, TouchableOpacity, View } from 'react-native';
-import { GestureHandlerRootView } from 'react-native-gesture-handler';
+import { Ionicons } from '@expo/vector-icons';
 import { SafeAreaProvider, SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
-import { Text } from '../../../../shared/components/ui';
-import ProductsBottomSheet from './products-bottom-sheet';
+import { Text } from '../../../../shared/components/ui/text';
+import { useAuthStore } from '../../../../core/auth/stores/auth-store';
+import { apiClient } from '../../../../shared/config/api-client';
+import { useCartStore } from '../../../../shared/stores/cart-store';
+import { TaggedProductsModal } from '../feed/components/tagged-products-modal';
+import { CommentsModal } from '../../../shared/social/comments/comments-modal';
 
 const { height: SCREEN_HEIGHT, width: SCREEN_WIDTH } = Dimensions.get('window');
 
 /**
- * VideoItem Component
- * Individual video with its own player
+ * Single Video Item Component for Immersive Reel Feed
  */
-function VideoItem({ video, isActive, isPaused, onTogglePause, onLike, onSave, onShare, onProfilePress, onProductPress, taggedProduct, totalProducts, onShowAllProducts }) {
-  const player = useVideoPlayer(video.media[0]?.url, (player) => {
-    player.loop = true;
-    player.muted = false;
+function VideoItem({
+  video,
+  isActive,
+  isPaused,
+  onTogglePause,
+  onProfilePress,
+  onCommentPress,
+  onOpenProducts,
+  onAddToCart,
+}) {
+  const { user } = useAuthStore();
+  const [localIsLiked, setLocalIsLiked] = useState(Boolean(video?.isLiked));
+  const [localLikeCount, setLocalLikeCount] = useState(Number(video?.likeCount || 0));
+
+  // Spinning Vinyl Record Animation for Music
+  const spinValue = useRef(new Animated.Value(0)).current;
+
+  useEffect(() => {
+    if (isActive && !isPaused) {
+      Animated.loop(
+        Animated.timing(spinValue, {
+          toValue: 1,
+          duration: 4000,
+          easing: Easing.linear,
+          useNativeDriver: true,
+        })
+      ).start();
+    } else {
+      spinValue.stopAnimation();
+    }
+  }, [isActive, isPaused]);
+
+  const spin = spinValue.interpolate({
+    inputRange: [0, 1],
+    outputRange: ['0deg', '360deg'],
   });
 
-  // Control playback based on active state
+  const mediaUrl = video?.media?.[0]?.url || (typeof video?.media === 'string' ? video.media : null);
+  const player = useVideoPlayer(mediaUrl, (playerInstance) => {
+    playerInstance.loop = true;
+    playerInstance.muted = false;
+  });
+
   useEffect(() => {
     if (isActive && !isPaused) {
       player.play();
@@ -29,17 +79,70 @@ function VideoItem({ video, isActive, isPaused, onTogglePause, onLike, onSave, o
     }
   }, [isActive, isPaused, player]);
 
+  const handleToggleLike = async () => {
+    const nextIsLiked = !localIsLiked;
+    const nextCount = nextIsLiked ? localLikeCount + 1 : Math.max(0, localLikeCount - 1);
+    setLocalIsLiked(nextIsLiked);
+    setLocalLikeCount(nextCount);
+
+    try {
+      await apiClient.patch(`/posts/${video.id}/like`, { userId: user?.id });
+    } catch (e) {
+      setLocalIsLiked(!nextIsLiked);
+      setLocalLikeCount(localLikeCount);
+    }
+  };
+
+  const handleShare = async () => {
+    try {
+      await Share.share({
+        message: `¡Mira este video de ${video.businessName || 'UNO Delivery'}!`,
+      });
+    } catch (error) {
+      console.log('Error sharing:', error);
+    }
+  };
+
+  // Safely parse tagged products
+  const taggedProducts = useMemo(() => {
+    if (Array.isArray(video.taggedProducts)) return video.taggedProducts;
+    if (typeof video.taggedProducts === 'string') {
+      try {
+        const parsed = JSON.parse(video.taggedProducts);
+        return Array.isArray(parsed) ? parsed : [];
+      } catch (e) {
+        return [];
+      }
+    }
+    return [];
+  }, [video.taggedProducts]);
+
+  const firstTaggedProduct = taggedProducts.length > 0
+    ? (taggedProducts[0].product || taggedProducts[0])
+    : null;
+
+  const businessName = video.businessName || video.business?.businessName || video.business?.name || 'Negocio';
+  const handleTag = businessName.toLowerCase().replace(/\s+/g, '');
+  const musicTitle = video.audioTitle || `Sonido original - @${handleTag}`;
+
   return (
     <View style={{ height: SCREEN_HEIGHT, width: SCREEN_WIDTH, backgroundColor: '#000000', overflow: 'hidden' }}>
       {/* Video Player */}
-      <VideoView
-        player={player}
-        style={{ width: SCREEN_WIDTH, height: SCREEN_HEIGHT }}
-        contentFit="cover"
-        nativeControls={false}
-      />
+      {mediaUrl ? (
+        <VideoView
+          player={player}
+          style={{ width: SCREEN_WIDTH, height: SCREEN_HEIGHT }}
+          contentFit="cover"
+          nativeControls={false}
+        />
+      ) : (
+        <View style={{ flex: 1, backgroundColor: '#111827', alignItems: 'center', justifyContent: 'center' }}>
+          <Ionicons name="videocam-off-outline" size={48} color="#6b7280" />
+          <Text style={{ color: '#9ca3af', marginTop: 12 }}>Video no disponible</Text>
+        </View>
+      )}
 
-      {/* Tap overlay for pause/play */}
+      {/* Tap Overlay for Pause/Play */}
       <Pressable
         onPress={onTogglePause}
         style={{
@@ -49,179 +152,286 @@ function VideoItem({ video, isActive, isPaused, onTogglePause, onLike, onSave, o
           right: 0,
           bottom: 0,
           justifyContent: 'center',
-          alignItems: 'center'
+          alignItems: 'center',
         }}
       >
         {isPaused && (
           <View style={{
-            width: 80,
-            height: 80,
-            borderRadius: 40,
-            backgroundColor: 'rgba(0, 0, 0, 0.5)',
+            width: 72,
+            height: 72,
+            borderRadius: 36,
+            backgroundColor: 'rgba(0, 0, 0, 0.6)',
             justifyContent: 'center',
-            alignItems: 'center'
+            alignItems: 'center',
           }}>
-            <Ionicons name="play" size={40} color="#ffffff" />
+            <Ionicons name="play" size={36} color="#ffffff" style={{ marginLeft: 3 }} />
           </View>
         )}
       </Pressable>
 
-      {/* Right Side Actions */}
+      {/* Top Audio / Music Pill (Matching Reference) */}
+      <View style={{
+        position: 'absolute',
+        top: 50,
+        left: 60,
+        right: 60,
+        alignItems: 'center',
+        zIndex: 20
+      }}>
+        <View style={{
+          flexDirection: 'row',
+          alignItems: 'center',
+          backgroundColor: 'rgba(0, 0, 0, 0.45)',
+          paddingHorizontal: 12,
+          paddingVertical: 6,
+          borderRadius: 20,
+          gap: 6,
+          maxWidth: '90%'
+        }}>
+          <Ionicons name="musical-notes" size={14} color="#ffffff" />
+          <Text style={{ color: '#ffffff', fontSize: 12, fontWeight: '600' }} numberOfLines={1}>
+            {musicTitle}
+          </Text>
+        </View>
+      </View>
+
+      {/* Right Rotating Audio Disc (Matching Reference Image 1 & 2) */}
+      <View style={{
+        position: 'absolute',
+        top: 50,
+        right: 16,
+        alignItems: 'center',
+        zIndex: 20
+      }}>
+        <Animated.View style={{
+          transform: [{ rotate: spin }],
+          width: 36,
+          height: 36,
+          borderRadius: 18,
+          backgroundColor: '#1e293b',
+          borderWidth: 2,
+          borderColor: '#ffffff',
+          overflow: 'hidden',
+          alignItems: 'center',
+          justifyContent: 'center'
+        }}>
+          {video.logoUrl || video.business?.logoUrl ? (
+            <Image
+              source={{ uri: video.logoUrl || video.business?.logoUrl }}
+              style={{ width: '100%', height: '100%' }}
+              resizeMode="cover"
+            />
+          ) : (
+            <Ionicons name="disc" size={24} color="#ffffff" />
+          )}
+        </Animated.View>
+      </View>
+
+      {/* Right Side Action Column (Matching Reference) */}
       <View style={{
         position: 'absolute',
         right: 12,
-        bottom: 100,
+        bottom: 80,
         alignItems: 'center',
-        gap: 24,
-        zIndex: 10
+        gap: 18,
+        zIndex: 15,
       }}>
-        {/* Profile Picture */}
-        <TouchableOpacity onPress={onProfilePress}>
+        {/* Business Avatar with + Follow Icon */}
+        <TouchableOpacity
+          onPress={onProfilePress}
+          activeOpacity={0.8}
+          style={{ position: 'relative', marginBottom: 6 }}
+        >
           <View style={{
-            width: 48,
-            height: 48,
-            borderRadius: 24,
-            backgroundColor: '#d1d5db',
+            width: 46,
+            height: 46,
+            borderRadius: 23,
+            backgroundColor: '#ef4444',
             borderWidth: 2,
             borderColor: '#ffffff',
             overflow: 'hidden',
+            alignItems: 'center',
             justifyContent: 'center',
-            alignItems: 'center'
           }}>
-            {video.logoUrl ? (
+            {video.logoUrl || video.business?.logoUrl ? (
               <Image
-                source={{ uri: video.logoUrl }}
+                source={{ uri: video.logoUrl || video.business?.logoUrl }}
                 style={{ width: '100%', height: '100%' }}
                 resizeMode="cover"
               />
             ) : (
-              <Text style={{ color: '#6b7280', fontSize: 18, fontWeight: '700' }}>
-                {(video.businessName || 'B').charAt(0).toUpperCase()}
+              <Text style={{ color: '#ffffff', fontSize: 18, fontWeight: '700' }}>
+                {businessName.charAt(0).toUpperCase()}
               </Text>
             )}
+          </View>
+          {/* Follow Plus Badge */}
+          <View style={{
+            position: 'absolute',
+            bottom: -6,
+            alignSelf: 'center',
+            width: 20,
+            height: 20,
+            borderRadius: 10,
+            backgroundColor: '#ef4444',
+            borderWidth: 1.5,
+            borderColor: '#ffffff',
+            alignItems: 'center',
+            justifyContent: 'center',
+          }}>
+            <Ionicons name="add" size={14} color="#ffffff" />
           </View>
         </TouchableOpacity>
 
         {/* Like Button */}
-        <TouchableOpacity onPress={onLike} style={{ alignItems: 'center' }}>
-          <Ionicons name="heart-outline" size={32} color="#ffffff" />
-          <Text style={{ color: '#ffffff', fontSize: 12, marginTop: 4, fontWeight: '600' }}>
-            {video.likeCount || 0}
+        <TouchableOpacity onPress={handleToggleLike} activeOpacity={0.7} style={{ alignItems: 'center' }}>
+          <Ionicons
+            name={localIsLiked ? 'heart' : 'heart-outline'}
+            size={32}
+            color={localIsLiked ? '#ef4444' : '#ffffff'}
+          />
+          <Text style={{ color: '#ffffff', fontSize: 12, marginTop: 2, fontWeight: '700' }}>
+            {formatCount(localLikeCount)}
           </Text>
         </TouchableOpacity>
 
-        {/* Save Button */}
-        <TouchableOpacity onPress={onSave} style={{ alignItems: 'center' }}>
-          <Ionicons name="bookmark-outline" size={32} color="#ffffff" />
-          <Text style={{ color: '#ffffff', fontSize: 12, marginTop: 4, fontWeight: '600' }}>
-            {video.saveCount || 0}
+        {/* Comment Button */}
+        <TouchableOpacity onPress={onCommentPress} activeOpacity={0.7} style={{ alignItems: 'center' }}>
+          <Ionicons name="chatbubble-ellipses-outline" size={30} color="#ffffff" />
+          <Text style={{ color: '#ffffff', fontSize: 12, marginTop: 2, fontWeight: '700' }}>
+            {formatCount(video.commentCount || 0)}
           </Text>
         </TouchableOpacity>
 
         {/* Share Button */}
-        <TouchableOpacity onPress={onShare} style={{ alignItems: 'center' }}>
-          <Ionicons name="paper-plane-outline" size={32} color="#ffffff" />
-          <Text style={{ color: '#ffffff', fontSize: 12, marginTop: 4, fontWeight: '600' }}>
-            {video.shareCount || 0}
+        <TouchableOpacity onPress={handleShare} activeOpacity={0.7} style={{ alignItems: 'center' }}>
+          <Ionicons name="paper-plane-outline" size={28} color="#ffffff" />
+          <Text style={{ color: '#ffffff', fontSize: 12, marginTop: 2, fontWeight: '700' }}>
+            {formatCount(video.shareCount || 0)}
           </Text>
         </TouchableOpacity>
+
+        {/* Tagged Products Shopping Bag Button */}
+        {taggedProducts.length > 0 && (
+          <TouchableOpacity
+            onPress={onOpenProducts}
+            activeOpacity={0.8}
+            style={{
+              width: 44,
+              height: 44,
+              borderRadius: 22,
+              backgroundColor: '#ef4444',
+              alignItems: 'center',
+              justifyContent: 'center',
+              borderWidth: 2,
+              borderColor: '#ffffff',
+              shadowColor: '#000',
+              shadowOffset: { width: 0, height: 2 },
+              shadowOpacity: 0.3,
+              shadowRadius: 4,
+              elevation: 4
+            }}
+          >
+            <Ionicons name="bag-handle" size={20} color="#ffffff" />
+            <View style={{
+              position: 'absolute',
+              top: -4,
+              right: -4,
+              backgroundColor: '#ffffff',
+              borderRadius: 8,
+              paddingHorizontal: 4,
+              paddingVertical: 1,
+            }}>
+              <Text style={{ fontSize: 9, fontWeight: '800', color: '#ef4444' }}>
+                {taggedProducts.length}
+              </Text>
+            </View>
+          </TouchableOpacity>
+        )}
       </View>
 
-      {/* Bottom Caption & Tagged Products */}
+      {/* Bottom Info Overlay (Matching Reference) */}
       <View style={{
         position: 'absolute',
-        bottom: 0,
+        bottom: 24,
         left: 0,
         right: 80,
         paddingHorizontal: 16,
-        paddingBottom: 32,
-        zIndex: 10
+        zIndex: 15,
       }}>
-        {/* Caption */}
-        <View style={{ marginBottom: 12 }}>
-          <Text style={{ color: '#ffffff', fontSize: 15, fontWeight: '600', marginBottom: 4 }}>
-            {video.businessName || 'Business'}
+        {/* Username Handle */}
+        <TouchableOpacity onPress={onProfilePress} activeOpacity={0.8}>
+          <Text style={{ color: '#ffffff', fontSize: 16, fontWeight: '800', marginBottom: 6 }}>
+            @{handleTag}
           </Text>
-          <Text style={{ color: '#ffffff', fontSize: 14, lineHeight: 20 }} numberOfLines={3}>
-            {video.caption || 'Check out this video!'}
-          </Text>
-        </View>
+        </TouchableOpacity>
 
-        {/* Tagged Products */}
-        {taggedProduct && (
-          <View>
+        {/* Caption */}
+        {video.caption ? (
+          <Text style={{ color: 'rgba(255, 255, 255, 0.92)', fontSize: 13, lineHeight: 18, marginBottom: 12 }} numberOfLines={3}>
+            {video.caption}
+          </Text>
+        ) : null}
+
+        {/* Prominent Quick-Add Tagged Product Banner */}
+        {firstTaggedProduct && (
+          <View style={{
+            backgroundColor: 'rgba(255, 255, 255, 0.95)',
+            borderRadius: 14,
+            padding: 8,
+            flexDirection: 'row',
+            alignItems: 'center',
+            gap: 10,
+            shadowColor: '#000',
+            shadowOffset: { width: 0, height: 2 },
+            shadowOpacity: 0.25,
+            shadowRadius: 6,
+            elevation: 5
+          }}>
+            {/* Product Thumbnail */}
+            <View style={{ width: 42, height: 42, borderRadius: 8, backgroundColor: '#f1f5f9', overflow: 'hidden' }}>
+              {firstTaggedProduct.thumbnailUrl || firstTaggedProduct.imageUrl ? (
+                <Image
+                  source={{ uri: firstTaggedProduct.thumbnailUrl || firstTaggedProduct.imageUrl }}
+                  style={{ width: '100%', height: '100%' }}
+                  resizeMode="cover"
+                />
+              ) : (
+                <View style={{ flex: 1, alignItems: 'center', justifyContent: 'center' }}>
+                  <Ionicons name="pricetag" size={18} color="#ef4444" />
+                </View>
+              )}
+            </View>
+
+            {/* Product Info */}
+            <View style={{ flex: 1 }}>
+              <Text style={{ fontSize: 13, fontWeight: '700', color: '#0f172a' }} numberOfLines={1}>
+                {firstTaggedProduct.name || firstTaggedProduct.title || 'Producto'}
+              </Text>
+              <Text style={{ fontSize: 12, fontWeight: '800', color: '#ef4444', marginTop: 1 }}>
+                ${firstTaggedProduct.discountPrice || firstTaggedProduct.price || '0.00'}
+              </Text>
+            </View>
+
+            {/* Direct Quick Add Button */}
             <TouchableOpacity
-              onPress={() => onProductPress(taggedProduct)}
+              onPress={() => onAddToCart(firstTaggedProduct)}
+              activeOpacity={0.8}
               style={{
-                backgroundColor: 'rgba(255, 255, 255, 0.2)',
-                paddingHorizontal: 16,
-                paddingVertical: 12,
-                borderRadius: 12,
-                borderWidth: 1,
-                borderColor: 'rgba(255, 255, 255, 0.3)',
+                backgroundColor: '#ef4444',
+                paddingHorizontal: 10,
+                paddingVertical: 6,
+                borderRadius: 8,
                 flexDirection: 'row',
                 alignItems: 'center',
-                gap: 12
+                gap: 4
               }}
             >
-              <View style={{
-                width: 48,
-                height: 48,
-                borderRadius: 8,
-                backgroundColor: 'rgba(255, 255, 255, 0.3)',
-                overflow: 'hidden'
-              }}>
-                {taggedProduct.thumbnailUrl ? (
-                  <Image
-                    source={{ uri: taggedProduct.thumbnailUrl }}
-                    style={{ width: '100%', height: '100%' }}
-                    resizeMode="cover"
-                  />
-                ) : (
-                  <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center' }}>
-                    <Ionicons name="image-outline" size={24} color="rgba(255, 255, 255, 0.6)" />
-                  </View>
-                )}
-              </View>
-              <View style={{ flex: 1 }}>
-                <Text style={{ color: '#ffffff', fontSize: 14, fontWeight: '600' }} numberOfLines={1}>
-                  {taggedProduct.name}
-                </Text>
-                <Text style={{ color: 'rgba(255, 255, 255, 0.8)', fontSize: 12 }}>
-                  ${taggedProduct.price}
-                </Text>
-              </View>
-              <Ionicons name="chevron-forward" size={20} color="#ffffff" />
+              <Ionicons name="cart" size={13} color="#ffffff" />
+              <Text style={{ fontSize: 11, fontWeight: '700', color: '#ffffff' }}>
+                + Carrito
+              </Text>
             </TouchableOpacity>
-
-            {/* Multiple products indicator - Tappable */}
-            {totalProducts > 1 && (
-              <TouchableOpacity
-                onPress={onShowAllProducts}
-                activeOpacity={0.7}
-                style={{
-                  marginTop: 8,
-                  flexDirection: 'row',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  gap: 6,
-                  paddingVertical: 6,
-                  paddingHorizontal: 12,
-                  borderRadius: 12,
-                  backgroundColor: 'rgba(255, 255, 255, 0.15)'
-                }}
-              >
-                <Ionicons name="bag-outline" size={14} color="rgba(255, 255, 255, 0.9)" />
-                <Text style={{
-                  color: 'rgba(255, 255, 255, 0.9)',
-                  fontSize: 12,
-                  fontWeight: '600'
-                }}>
-                  + {totalProducts - 1} {totalProducts - 1 === 1 ? 'producto más' : 'productos más'}
-                </Text>
-                <Ionicons name="chevron-forward" size={14} color="rgba(255, 255, 255, 0.9)" />
-              </TouchableOpacity>
-            )}
           </View>
         )}
       </View>
@@ -230,211 +440,178 @@ function VideoItem({ video, isActive, isPaused, onTogglePause, onLike, onSave, o
 }
 
 /**
- * VideoViewer Component
- * TikTok-style full-screen vertical video feed
- *
- * @param {boolean} visible - Whether the modal is visible
- * @param {array} videos - Array of video posts
- * @param {number} initialIndex - Starting video index
- * @param {function} onClose - Callback when viewer closes
- * @param {function} onShowAllProducts - Callback when user wants to see all tagged products
- * @param {function} onProductPress - Callback when user selects a product
- * @param {boolean} productsBottomSheetVisible - Whether products bottom sheet is visible
- * @param {array} taggedProducts - Products to show in bottom sheet
- * @param {function} onCloseBottomSheet - Callback when bottom sheet closes
- * @param {function} onProductSelectFromSheet - Callback when product selected from sheet
+ * Main VideoViewer Modal Component
  */
 export default function VideoViewer({
   visible,
   videos = [],
-  initialIndex = 0,
+  initialVideoId,
   onClose,
-  onShowAllProducts,
-  onProductPress,
   onBusinessPress,
-  productsBottomSheetVisible = false,
-  taggedProducts = [],
-  onCloseBottomSheet,
-  onProductSelectFromSheet
 }) {
-  const [currentIndex, setCurrentIndex] = useState(initialIndex);
+  const [currentIndex, setCurrentIndex] = useState(0);
   const [isPaused, setIsPaused] = useState(false);
+  const [commentsPostId, setCommentsPostId] = useState(null);
+  const [productsModalData, setProductsModalData] = useState(null);
   const flatListRef = useRef(null);
-  const insets = useSafeAreaInsets();
+  const addItem = useCartStore(state => state.addItem);
 
-  // Calculate actual viewport height including bottom inset
-  const viewportHeight = SCREEN_HEIGHT + insets.bottom;
-
-  // Reset to initial index when modal opens
+  // Set initial scroll index based on initialVideoId
   useEffect(() => {
-    if (visible) {
-      setCurrentIndex(initialIndex);
-      setIsPaused(false);
+    if (visible && initialVideoId && videos.length > 0) {
+      const idx = videos.findIndex(v => v.id === initialVideoId);
+      if (idx >= 0) {
+        setCurrentIndex(idx);
+        setTimeout(() => {
+          flatListRef.current?.scrollToIndex({ index: idx, animated: false });
+        }, 100);
+      }
     }
-  }, [visible, initialIndex]);
+  }, [visible, initialVideoId, videos]);
 
-  // Handle Android back button
-  const handleModalClose = () => {
-    // If bottom sheet is open, close it first
-    if (productsBottomSheetVisible && onCloseBottomSheet) {
-      onCloseBottomSheet();
-      return true; // Prevent default back behavior
-    }
-    // Otherwise close the video viewer
-    onClose();
-    return true;
-  };
-
-  // Handle viewable items change (when user scrolls)
   const onViewableItemsChanged = useRef(({ viewableItems }) => {
     if (viewableItems.length > 0) {
-      const visibleIndex = viewableItems[0].index;
-      setCurrentIndex(visibleIndex);
+      setCurrentIndex(viewableItems[0].index);
     }
   }).current;
 
-  // Require 75% visibility before switching videos (more resistance)
   const viewabilityConfig = useRef({
     itemVisiblePercentThreshold: 75,
     minimumViewTime: 100
   }).current;
 
-  const handleLike = () => {
-    // TODO: Toggle like
-    console.log('Toggle like');
-  };
+  const handleAddToCart = (product, video) => {
+    const businessId = video.businessId;
+    const businessName = video.businessName || video.business?.businessName || video.business?.name;
+    const logoUrl = video.logoUrl || video.business?.logoUrl;
 
-  const handleSave = () => {
-    // TODO: Toggle save
-    console.log('Toggle save');
-  };
+    const result = addItem(product, {
+      businessId,
+      businessName,
+      logoUrl,
+    });
 
-  const handleShare = () => {
-    // TODO: Share video
-    console.log('Share video');
-  };
-
-  const handleProfilePress = (video) => {
-    if (onBusinessPress && video?.businessId) {
-      onBusinessPress(video.businessId);
+    if (result.success) {
+      Alert.alert(
+        '¡Añadido al Carrito!',
+        result.message,
+        [{ text: 'Genial', style: 'default' }]
+      );
     } else {
-      console.log('Go to profile', video?.businessId);
+      Alert.alert(
+        'Producto No Disponible',
+        result.message || 'Este producto no está disponible en este momento.',
+        [{ text: 'Entendido', style: 'default' }]
+      );
     }
   };
 
-  const handleProductPress = (product) => {
-    // Product is already populated with full data
-    if (product && onProductPress) {
-      setIsPaused(true); // Pause video when opening product
-      onProductPress(product);
-    } else {
-      console.log('Product not available');
-    }
-  };
+  const currentVideo = videos[currentIndex] || {};
 
-  const handleShowAllProducts = (products) => {
-    if (onShowAllProducts) {
-      setIsPaused(true); // Pause video when showing products
-      onShowAllProducts(products);
-    }
-  };
-
-  const renderVideo = ({ item: video, index }) => {
+  const renderVideoItem = ({ item: video, index }) => {
     const isActive = index === currentIndex;
 
-    // Get first tagged product (extract product object from tag)
-    const taggedProduct = video.taggedProducts && video.taggedProducts.length > 0
-      ? video.taggedProducts[0].product
-      : null;
-
-    const totalProducts = video.taggedProducts ? video.taggedProducts.length : 0;
-
     return (
-      <View style={{ height: viewportHeight, width: SCREEN_WIDTH }}>
-        <VideoItem
-          video={video}
-          isActive={isActive}
-          isPaused={isPaused}
-          onTogglePause={() => setIsPaused(!isPaused)}
-          onLike={handleLike}
-          onSave={handleSave}
-          onShare={handleShare}
-          onProfilePress={() => handleProfilePress(video)}
-          onProductPress={handleProductPress}
-          taggedProduct={taggedProduct}
-          totalProducts={totalProducts}
-          onShowAllProducts={() => handleShowAllProducts(video.taggedProducts)}
-        />
-      </View>
+      <VideoItem
+        video={video}
+        isActive={isActive}
+        isPaused={isPaused}
+        onTogglePause={() => setIsPaused(!isPaused)}
+        onProfilePress={() => {
+          if (video.businessId) {
+            onClose();
+            onBusinessPress?.(video.businessId);
+          }
+        }}
+        onCommentPress={() => setCommentsPostId(video.id)}
+        onOpenProducts={() => setProductsModalData(video)}
+        onAddToCart={(product) => handleAddToCart(product, video)}
+      />
     );
   };
 
   return (
-    <>
-      <Modal
-        visible={visible}
-        animationType="slide"
-        onRequestClose={handleModalClose}
-        statusBarTranslucent
-        presentationStyle="overFullScreen"
-      >
-        <SafeAreaProvider>
-        <GestureHandlerRootView style={{ flex: 1 }}>
-          <BottomSheetModalProvider>
-            <StatusBar barStyle="light-content" translucent backgroundColor="transparent" />
-            <View style={{ flex: 1, backgroundColor: '#000000' }}>
-          {/* Top Bar */}
-          <SafeAreaView edges={['top']} style={{ position: 'absolute', top: 0, left: 0, right: 0, zIndex: 20 }}>
-            <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', paddingHorizontal: 16, paddingVertical: 12 }}>
-              <TouchableOpacity onPress={onClose} style={{ width: 40, height: 40, justifyContent: 'center', alignItems: 'center' }}>
-                <Ionicons name="close" size={28} color="#ffffff" />
-              </TouchableOpacity>
-              <Text style={{ color: '#ffffff', fontSize: 16, fontWeight: '600' }}>
-                Videos
-              </Text>
-              <View style={{ width: 40 }} />
-            </View>
+    <Modal
+      visible={visible}
+      animationType="slide"
+      onRequestClose={onClose}
+      statusBarTranslucent
+      presentationStyle="overFullScreen"
+    >
+      <SafeAreaProvider>
+        <StatusBar barStyle="light-content" translucent backgroundColor="transparent" />
+        <View style={{ flex: 1, backgroundColor: '#000000' }}>
+          {/* Top Close Button */}
+          <SafeAreaView edges={['top']} style={{ position: 'absolute', top: 0, left: 0, zIndex: 30 }}>
+            <TouchableOpacity
+              onPress={onClose}
+              style={{
+                width: 40,
+                height: 40,
+                borderRadius: 20,
+                backgroundColor: 'rgba(0, 0, 0, 0.4)',
+                justifyContent: 'center',
+                alignItems: 'center',
+                marginLeft: 12,
+                marginTop: 6
+              }}
+            >
+              <Ionicons name="chevron-back" size={24} color="#ffffff" />
+            </TouchableOpacity>
           </SafeAreaView>
 
+          {/* Full Screen Vertical FlatList */}
           <FlatList
-            style={{ flex: 1 }}
             ref={flatListRef}
             data={videos}
-            renderItem={renderVideo}
-            keyExtractor={(item) => item.id}
+            renderItem={renderVideoItem}
+            keyExtractor={(item, idx) => item?.id || `reel-${idx}`}
             pagingEnabled
             showsVerticalScrollIndicator={false}
-            snapToInterval={viewportHeight}
+            snapToInterval={SCREEN_HEIGHT}
             snapToAlignment="start"
-            decelerationRate={0.98}
-            scrollEventThrottle={16}
+            decelerationRate="fast"
             onViewableItemsChanged={onViewableItemsChanged}
             viewabilityConfig={viewabilityConfig}
-            initialScrollIndex={initialIndex}
-            getItemLayout={(data, index) => ({
-              length: viewportHeight,
-              offset: viewportHeight * index,
+            getItemLayout={(_, index) => ({
+              length: SCREEN_HEIGHT,
+              offset: SCREEN_HEIGHT * index,
               index
             })}
             windowSize={3}
             maxToRenderPerBatch={1}
             removeClippedSubviews={true}
-            overScrollMode="never"
           />
 
-            </View>
-
-            {/* Products Bottom Sheet - Inside Modal */}
-            <ProductsBottomSheet
-              visible={productsBottomSheetVisible}
-              products={taggedProducts}
-              onClose={onCloseBottomSheet}
-              onProductSelect={onProductSelectFromSheet}
+          {/* Tagged Products Drawer */}
+          {productsModalData && (
+            <TaggedProductsModal
+              visible={Boolean(productsModalData)}
+              onClose={() => setProductsModalData(null)}
+              taggedProducts={productsModalData.taggedProducts || []}
+              businessId={productsModalData.businessId}
+              businessData={{
+                name: productsModalData.businessName,
+                logo: productsModalData.logoUrl
+              }}
             />
-          </BottomSheetModalProvider>
-        </GestureHandlerRootView>
-        </SafeAreaProvider>
-      </Modal>
-    </>
+          )}
+
+          {/* Comments Modal */}
+          <CommentsModal
+            visible={Boolean(commentsPostId)}
+            postId={commentsPostId}
+            onClose={() => setCommentsPostId(null)}
+          />
+        </View>
+      </SafeAreaProvider>
+    </Modal>
   );
 }
+
+const formatCount = (count) => {
+  if (!count) return '0';
+  if (count < 1000) return count.toString();
+  if (count < 1000000) return `${(count / 1000).toFixed(1)}k`;
+  return `${(count / 1000000).toFixed(1)}m`;
+};

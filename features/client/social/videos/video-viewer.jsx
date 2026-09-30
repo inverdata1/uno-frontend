@@ -15,6 +15,7 @@ import {
 } from 'react-native';
 import { VideoView, useVideoPlayer } from 'expo-video';
 import { Ionicons } from '@expo/vector-icons';
+import { useQueryClient } from '@tanstack/react-query';
 import { SafeAreaProvider, SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Text } from '../../../../shared/components/ui/text';
 import { useAuthStore } from '../../../../core/auth/stores/auth-store';
@@ -96,7 +97,13 @@ function VideoItem({
     }
   }, [isActive, isPaused, player]);
 
+  const queryClient = useQueryClient();
+
   const handleToggleLike = async () => {
+    if (!user?.id) {
+      Alert.alert('Inicia sesión', 'Debes iniciar sesión para dar me gusta y guardar en favoritos');
+      return;
+    }
     const nextIsLiked = !localIsLiked;
     const nextCount = nextIsLiked ? localLikeCount + 1 : Math.max(0, localLikeCount - 1);
     setLocalIsLiked(nextIsLiked);
@@ -104,6 +111,8 @@ function VideoItem({
 
     try {
       await apiClient.patch(`/posts/${video.id}/like`, { userId: user?.id });
+      queryClient.invalidateQueries({ queryKey: ['favorites'] });
+      queryClient.invalidateQueries({ queryKey: ['user-profile'] });
     } catch (e) {
       setLocalIsLiked(!nextIsLiked);
       setLocalLikeCount(localLikeCount);

@@ -338,7 +338,12 @@ export default function ClientProfileScreen() {
             marginBottom: 20,
             gap: 12
           }}>
-            <View style={{ flex: 1, alignItems: 'center' }}>
+            {/* Pedidos */}
+            <TouchableOpacity
+              onPress={() => router.push('/client/orders')}
+              activeOpacity={0.7}
+              style={{ flex: 1, alignItems: 'center' }}
+            >
               <Text style={{
                 fontSize: 20,
                 fontWeight: '700',
@@ -353,11 +358,16 @@ export default function ClientProfileScreen() {
               }}>
                 Pedidos
               </Text>
-            </View>
+            </TouchableOpacity>
 
             <View style={{ width: 1, backgroundColor: colors.border.light }} />
 
-            <View style={{ flex: 1, alignItems: 'center' }}>
+            {/* Favoritos */}
+            <TouchableOpacity
+              onPress={() => router.push('/client/favorites')}
+              activeOpacity={0.7}
+              style={{ flex: 1, alignItems: 'center' }}
+            >
               <Text style={{
                 fontSize: 20,
                 fontWeight: '700',
@@ -372,11 +382,16 @@ export default function ClientProfileScreen() {
               }}>
                 Favoritos
               </Text>
-            </View>
+            </TouchableOpacity>
 
             <View style={{ width: 1, backgroundColor: colors.border.light }} />
 
-            <View style={{ flex: 1, alignItems: 'center' }}>
+            {/* Seguidos */}
+            <TouchableOpacity
+              onPress={() => router.push('/client/following')}
+              activeOpacity={0.7}
+              style={{ flex: 1, alignItems: 'center' }}
+            >
               <Text style={{
                 fontSize: 20,
                 fontWeight: '700',
@@ -391,7 +406,7 @@ export default function ClientProfileScreen() {
               }}>
                 Seguidos
               </Text>
-            </View>
+            </TouchableOpacity>
           </View>
 
           {/* Action Buttons */}
@@ -509,9 +524,9 @@ export default function ClientProfileScreen() {
 
             <View style={{ height: 1, backgroundColor: colors.border.light }} />
 
-            {/* Seguidos */}
+            {/* Negocios Seguidos */}
             <TouchableOpacity
-              onPress={() => Alert.alert('Próximamente', 'Función en desarrollo')}
+              onPress={() => router.push('/client/following')}
               style={{ flexDirection: 'row', alignItems: 'center', gap: 12 }}
             >
               <View style={{

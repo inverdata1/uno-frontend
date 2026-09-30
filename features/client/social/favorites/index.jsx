@@ -2,9 +2,11 @@ import { Ionicons } from '@expo/vector-icons';
 import { useMemo, useState } from 'react';
 import { ActivityIndicator, Dimensions, Image, ScrollView, TextInput, TouchableOpacity, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import { useRouter } from 'expo-router';
 import { Text } from '../../../../shared/components/ui';
 import { useAuthStore } from '../../../../core/auth/stores/auth-store';
 import { colors } from '../../../../shared/utils/colors';
+import { resolveMediaUrl } from '../../../../shared/utils/media-url';
 import {
   useFavorites,
   useToggleFavoritePost,
@@ -18,6 +20,7 @@ const { width } = Dimensions.get('window');
  * Shows the user's favorited posts and products (backed by the Favorite model)
  */
 export default function FavoritesScreen({ onPostPress, onProductPress }) {
+  const router = useRouter();
   const { user } = useAuthStore();
   const [searchQuery, setSearchQuery] = useState('');
   const [activeTab, setActiveTab] = useState('all'); // 'all', 'posts', 'products'
@@ -26,11 +29,12 @@ export default function FavoritesScreen({ onPostPress, onProductPress }) {
   const togglePost = useToggleFavoritePost();
   const toggleProduct = useToggleFavoriteProduct();
 
-  const savedPosts = data?.posts;
-  const savedProducts = data?.products;
+  const savedPosts = data?.posts || [];
+  const savedProducts = data?.products || [];
+  const totalCount = savedPosts.length + savedProducts.length;
 
   const filteredPosts = useMemo(() => {
-    const posts = savedPosts || [];
+    const posts = savedPosts;
     if (activeTab === 'products') return [];
     if (!searchQuery) return posts;
     const q = searchQuery.toLowerCase();
@@ -43,7 +47,7 @@ export default function FavoritesScreen({ onPostPress, onProductPress }) {
   }, [savedPosts, searchQuery, activeTab]);
 
   const filteredProducts = useMemo(() => {
-    const products = savedProducts || [];
+    const products = savedProducts;
     if (activeTab === 'posts') return [];
     if (!searchQuery) return products;
     const q = searchQuery.toLowerCase();
@@ -73,39 +77,77 @@ export default function FavoritesScreen({ onPostPress, onProductPress }) {
   };
 
   const getPostThumbnail = (post) => {
-    if (post.thumbnailUrl) return post.thumbnailUrl;
+    if (post.thumbnailUrl) return resolveMediaUrl(post.thumbnailUrl);
     const firstMedia = Array.isArray(post.media) ? post.media[0] : null;
-    return typeof firstMedia === 'string' ? firstMedia : firstMedia?.url;
+    const raw = typeof firstMedia === 'string' ? firstMedia : firstMedia?.url;
+    return resolveMediaUrl(raw);
   };
 
   const postCardWidth = (width - 36) / 3; // 3 columns
   const productCardWidth = (width - 48) / 2; // 2 columns
 
   return (
-    <SafeAreaView className="flex-1 bg-white" edges={['top']}>
+    <SafeAreaView style={{ flex: 1, backgroundColor: '#ffffff' }} edges={['top']}>
       <ScrollView
-        className="flex-1"
+        style={{ flex: 1 }}
         showsVerticalScrollIndicator={false}
         contentContainerStyle={{ paddingBottom: 100 }}
         stickyHeaderIndices={[1]} // Make search and tabs sticky
       >
         {/* Header */}
-        <View className="px-4 pt-3 pb-4 border-b border-gray-100">
-          <Text className="text-3xl font-bold text-red-500">Favoritos</Text>
+        <View style={{
+          flexDirection: 'row',
+          alignItems: 'center',
+          paddingHorizontal: 16,
+          paddingVertical: 12,
+          borderBottomWidth: 1,
+          borderBottomColor: '#f1f5f9',
+          gap: 12
+        }}>
+          <TouchableOpacity
+            onPress={() => router.back()}
+            style={{
+              width: 38,
+              height: 38,
+              borderRadius: 19,
+              backgroundColor: '#f8fafc',
+              alignItems: 'center',
+              justifyContent: 'center'
+            }}
+          >
+            <Ionicons name="arrow-back" size={22} color="#111827" />
+          </TouchableOpacity>
+          <View style={{ flex: 1 }}>
+            <Text style={{ fontSize: 22, fontWeight: '800', color: '#111827' }}>
+              Favoritos
+            </Text>
+            <Text style={{ fontSize: 13, color: '#64748b' }}>
+              {totalCount} {totalCount === 1 ? 'elemento guardado' : 'elementos guardados'}
+            </Text>
+          </View>
         </View>
 
         {/* Search and Filters - Sticky */}
-        <View className="bg-white">
+        <View style={{ backgroundColor: '#ffffff' }}>
           {/* Search Bar */}
-          <View className="px-4 pt-3">
-            <View className="bg-gray-50 rounded-lg p-3 flex-row items-center">
-              <Ionicons name="search" size={18} color="#64748b" className="mr-2" />
+          <View style={{ paddingHorizontal: 16, paddingTop: 12 }}>
+            <View style={{
+              backgroundColor: '#f8fafc',
+              borderRadius: 14,
+              paddingHorizontal: 12,
+              paddingVertical: 10,
+              flexDirection: 'row',
+              alignItems: 'center',
+              borderWidth: 1,
+              borderColor: '#e2e8f0'
+            }}>
+              <Ionicons name="search" size={18} color="#64748b" style={{ marginRight: 8 }} />
               <TextInput
                 value={searchQuery}
                 onChangeText={setSearchQuery}
                 placeholder="Buscar en favoritos..."
                 placeholderTextColor="#94a3b8"
-                className="text-gray-900 text-base flex-1"
+                style={{ fontSize: 15, color: '#0f172a', flex: 1 }}
               />
               {searchQuery.length > 0 && (
                 <TouchableOpacity onPress={() => setSearchQuery('')}>
@@ -116,47 +158,65 @@ export default function FavoritesScreen({ onPostPress, onProductPress }) {
           </View>
 
           {/* Tabs */}
-          <View className="flex-row px-4 py-3 gap-2 border-b border-gray-100">
+          <View style={{
+            flexDirection: 'row',
+            paddingHorizontal: 16,
+            paddingVertical: 12,
+            gap: 8,
+            borderBottomWidth: 1,
+            borderBottomColor: '#f1f5f9'
+          }}>
             <TouchableOpacity
               onPress={() => setActiveTab('all')}
-              className={`px-4 py-2 rounded-full ${
-                activeTab === 'all' ? 'bg-gray-900' : 'bg-gray-50'
-              }`}
+              style={{
+                paddingHorizontal: 16,
+                paddingVertical: 8,
+                borderRadius: 20,
+                backgroundColor: activeTab === 'all' ? '#111827' : '#f1f5f9'
+              }}
             >
-              <Text
-                className={`text-sm font-semibold ${
-                  activeTab === 'all' ? 'text-white' : 'text-gray-600'
-                }`}
-              >
-                Todos
+              <Text style={{
+                fontSize: 13,
+                fontWeight: '700',
+                color: activeTab === 'all' ? '#ffffff' : '#64748b'
+              }}>
+                Todos ({totalCount})
               </Text>
             </TouchableOpacity>
+
             <TouchableOpacity
               onPress={() => setActiveTab('posts')}
-              className={`px-4 py-2 rounded-full ${
-                activeTab === 'posts' ? 'bg-gray-900' : 'bg-gray-50'
-              }`}
+              style={{
+                paddingHorizontal: 16,
+                paddingVertical: 8,
+                borderRadius: 20,
+                backgroundColor: activeTab === 'posts' ? '#111827' : '#f1f5f9'
+              }}
             >
-              <Text
-                className={`text-sm font-semibold ${
-                  activeTab === 'posts' ? 'text-white' : 'text-gray-600'
-                }`}
-              >
-                Publicaciones
+              <Text style={{
+                fontSize: 13,
+                fontWeight: '700',
+                color: activeTab === 'posts' ? '#ffffff' : '#64748b'
+              }}>
+                Publicaciones ({savedPosts.length})
               </Text>
             </TouchableOpacity>
+
             <TouchableOpacity
               onPress={() => setActiveTab('products')}
-              className={`px-4 py-2 rounded-full ${
-                activeTab === 'products' ? 'bg-gray-900' : 'bg-gray-50'
-              }`}
+              style={{
+                paddingHorizontal: 16,
+                paddingVertical: 8,
+                borderRadius: 20,
+                backgroundColor: activeTab === 'products' ? '#111827' : '#f1f5f9'
+              }}
             >
-              <Text
-                className={`text-sm font-semibold ${
-                  activeTab === 'products' ? 'text-white' : 'text-gray-600'
-                }`}
-              >
-                Productos
+              <Text style={{
+                fontSize: 13,
+                fontWeight: '700',
+                color: activeTab === 'products' ? '#ffffff' : '#64748b'
+              }}>
+                Productos ({savedProducts.length})
               </Text>
             </TouchableOpacity>
           </View>

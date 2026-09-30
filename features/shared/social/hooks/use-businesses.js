@@ -46,6 +46,22 @@ export const useFollowingBusinesses = (userId) => {
 };
 
 /**
+ * Fetch list of full business entities that the user is currently following
+ */
+export const useFollowedBusinesses = (userId) => {
+  return useQuery({
+    queryKey: ['followed-businesses-full', userId || 'anonymous'],
+    queryFn: async () => {
+      if (!userId) return [];
+      const res = await apiClient.get('/businesses/followed', { params: { userId } });
+      return Array.isArray(res.data) ? res.data : [];
+    },
+    enabled: !!userId,
+    staleTime: 30 * 1000,
+  });
+};
+
+/**
  * Toggle follow/unfollow a business
  */
 export const useToggleFollowBusiness = () => {
@@ -61,8 +77,12 @@ export const useToggleFollowBusiness = () => {
       queryClient.invalidateQueries({ queryKey: ['businesses'] });
       queryClient.invalidateQueries({ queryKey: ['feed-stories'] });
       queryClient.invalidateQueries({ queryKey: ['followed-businesses'] });
+      queryClient.invalidateQueries({ queryKey: ['followed-businesses-full', userId] });
+      queryClient.invalidateQueries({ queryKey: ['followed-businesses-full'] });
       queryClient.invalidateQueries({ queryKey: ['following-businesses', userId] });
+      queryClient.invalidateQueries({ queryKey: ['following-businesses'] });
       queryClient.invalidateQueries({ queryKey: ['user-profile', userId] });
+      queryClient.invalidateQueries({ queryKey: ['user-profile'] });
     },
   });
 };

@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { View, Image, Pressable, ScrollView, Dimensions, Share, Alert, TouchableOpacity } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
+import { useQueryClient } from '@tanstack/react-query';
 import { Text } from '../../../../../shared/components/ui/text';
 import { useAuthStore } from '../../../../../core/auth/stores/auth-store';
 import { apiClient } from '../../../../../shared/config/api-client';
@@ -35,6 +36,7 @@ export const PostCard = ({
   className
 }) => {
   const { user } = useAuthStore();
+  const queryClient = useQueryClient();
   
   if (!post) return null;
 
@@ -86,6 +88,10 @@ export const PostCard = ({
   }, [post?.isLiked, post?.likeCount, isLiked]);
 
   const handleToggleLike = async () => {
+    if (!user?.id) {
+      Alert.alert('Inicia sesión', 'Debes iniciar sesión para dar me gusta y guardar en favoritos');
+      return;
+    }
     const nextIsLiked = !localIsLiked;
     const nextCount = nextIsLiked ? localLikeCount + 1 : Math.max(0, localLikeCount - 1);
     
@@ -101,6 +107,8 @@ export const PostCard = ({
           setLocalLikeCount(res.data.likeCount);
           setLocalIsLiked(res.data.isLiked);
         }
+        queryClient.invalidateQueries({ queryKey: ['favorites'] });
+        queryClient.invalidateQueries({ queryKey: ['user-profile'] });
       }
     } catch (err) {
       setLocalIsLiked(!nextIsLiked);

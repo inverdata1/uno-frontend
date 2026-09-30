@@ -25,6 +25,11 @@ export const useToggleFavoritePost = () => {
     },
     onSuccess: (_data, { userId }) => {
       queryClient.invalidateQueries({ queryKey: ['favorites', userId] });
+      queryClient.invalidateQueries({ queryKey: ['favorites'] });
+      queryClient.invalidateQueries({ queryKey: ['posts'] });
+      queryClient.invalidateQueries({ queryKey: ['feed-stories'] });
+      queryClient.invalidateQueries({ queryKey: ['user-profile', userId] });
+      queryClient.invalidateQueries({ queryKey: ['user-profile'] });
     },
   });
 };
@@ -41,6 +46,11 @@ export const useToggleFavoriteProduct = () => {
     },
     onSuccess: (_data, { userId }) => {
       queryClient.invalidateQueries({ queryKey: ['favorites', userId] });
+      queryClient.invalidateQueries({ queryKey: ['favorites'] });
+      queryClient.invalidateQueries({ queryKey: ['products'] });
+      queryClient.invalidateQueries({ queryKey: ['product-detail'] });
+      queryClient.invalidateQueries({ queryKey: ['user-profile', userId] });
+      queryClient.invalidateQueries({ queryKey: ['user-profile'] });
     },
   });
 };

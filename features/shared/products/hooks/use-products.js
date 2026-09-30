@@ -118,15 +118,16 @@ export const useFavoriteProduct = () => {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: async (productId) => {
-      return apiClient.post('/favorites/toggle', {
-        itemType: 'product',
-        itemId: productId
-      }).then(res => res.data);
+    mutationFn: async (payload) => {
+      const productId = typeof payload === 'object' ? payload.productId : payload;
+      const userId = typeof payload === 'object' ? payload.userId : undefined;
+      return apiClient.post(`/products/${productId}/favorite`, { userId }).then(res => res.data);
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['favorites'] });
       queryClient.invalidateQueries({ queryKey: ['products'] });
+      queryClient.invalidateQueries({ queryKey: ['product-detail'] });
+      queryClient.invalidateQueries({ queryKey: ['user-profile'] });
     },
   });
 };

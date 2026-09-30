@@ -120,9 +120,14 @@ export default function ProductDetail({
   const businessLogo = business?.logoUrl || business?.logo || product?.businessLogo || null;
 
   const handleFavoriteToggle = () => {
-    setIsFavorited(!isFavorited);
+    if (!user?.id) {
+      Alert.alert('Inicia sesión', 'Debes iniciar sesión para guardar productos en tus favoritos.');
+      return;
+    }
+    const nextState = !isFavorited;
+    setIsFavorited(nextState);
     if (product?.id) {
-      favoriteMutation.mutate(product.id);
+      favoriteMutation.mutate({ productId: product.id, userId: user.id });
     }
   };
 

@@ -1,4 +1,4 @@
-import { useQuery } from '@tanstack/react-query';
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { apiClient } from '../../../../shared/config/api-client';
 
 /**
@@ -18,13 +18,33 @@ export const useBusinesses = ({ limit = 20 } = {}) => {
 };
 
 /**
- * Fetch a single business by ID
+ * Fetch a single business by ID (with user follow status if userId is provided)
  */
-export const useBusiness = (businessId) => {
+export const useBusiness = (businessId, userId) => {
   return useQuery({
-    queryKey: ['businesses', businessId],
-    queryFn: () => apiClient.get('/businesses/profile', { params: { businessId } }).then(res => res.data),
+    queryKey: ['business-profile', businessId, userId || 'anonymous'],
+    queryFn: () => apiClient.get('/businesses/profile', { params: { businessId, userId } }).then(res => res.data),
     enabled: !!businessId,
-    staleTime: 5 * 60 * 1000,
+    staleTime: 30 * 1000,
+  });
+};
+
+/**
+ * Toggle follow/unfollow a business
+ */
+export const useToggleFollowBusiness = () => {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async ({ businessId, userId }) => {
+      const res = await apiClient.post(`/businesses/${businessId}/follow`, { userId });
+      return res.data;
+    },
+    onSuccess: (data, { businessId, userId }) => {
+      queryClient.invalidateQueries({ queryKey: ['business-profile', businessId] });
+      queryClient.invalidateQueries({ queryKey: ['businesses'] });
+      queryClient.invalidateQueries({ queryKey: ['feed-stories'] });
+      queryClient.invalidateQueries({ queryKey: ['following-businesses', userId] });
+    },
   });
 };

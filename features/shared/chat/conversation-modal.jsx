@@ -51,18 +51,19 @@ export function parseProductFromMessage(item) {
     }
   }
 
-  // 3. Fallback: Parse embedded [PRODUCT:{...}] tag from message content
-  if (typeof item.content === 'string' && item.content.includes('[PRODUCT:')) {
-    try {
-      const match = item.content.match(/\[PRODUCT:(.*?)\]/);
-      if (match && match[1]) {
-        const parsed = JSON.parse(match[1]);
+  // 3. Fallback for legacy messages that may have contained JSON in content
+  if (typeof item.content === 'string') {
+    const productIdx = item.content.indexOf('{"type":"product"');
+    if (productIdx !== -1) {
+      try {
+        const rawJson = item.content.substring(productIdx).replace(/\]+$/, '').trim();
+        const parsed = JSON.parse(rawJson);
         if (parsed && typeof parsed === 'object' && (parsed.id || parsed.name)) {
           return parsed;
         }
+      } catch (e) {
+        // ignore
       }
-    } catch (e) {
-      // ignore JSON parse error
     }
   }
 
@@ -70,11 +71,19 @@ export function parseProductFromMessage(item) {
 }
 
 /**
- * Removes embedded [PRODUCT:...] metadata tag from the message content to show clean text
+ * Removes any raw JSON/product metadata from the message content to show clean text
  */
 export function getCleanMessageContent(content) {
   if (!content || typeof content !== 'string') return '';
-  return content.replace(/\[PRODUCT:.*?\]/g, '').trim();
+  const tagIdx = content.indexOf('[PRODUCT:');
+  if (tagIdx !== -1) {
+    return content.substring(0, tagIdx).trim();
+  }
+  const jsonIdx = content.indexOf('{"type":"product"');
+  if (jsonIdx !== -1) {
+    return content.substring(0, jsonIdx).trim();
+  }
+  return content.trim();
 }
 
 /**
@@ -177,13 +186,11 @@ function ConversationContent({
     const trimmed = inputText.trim();
     if ((!trimmed && !currentAttachedProduct) || !conversationId || sending) return;
 
-    const baseText = trimmed || (currentAttachedProduct ? `Hola, me interesa este producto.` : '');
+    const contentToSend = trimmed || (currentAttachedProduct ? `Hola, me interesa ${currentAttachedProduct.name}` : '');
 
     let mediaPayload = null;
-    let contentToSend = baseText;
-
     if (currentAttachedProduct) {
-      const productPayloadObj = {
+      mediaPayload = JSON.stringify({
         type: 'product',
         id: currentAttachedProduct.id,
         name: currentAttachedProduct.name,
@@ -191,11 +198,7 @@ function ConversationContent({
         imageUrl: currentAttachedProduct.imageUrl || currentAttachedProduct.thumbnailUrl,
         businessName: currentAttachedProduct.businessName || targetParticipant.name,
         businessLogo: currentAttachedProduct.businessLogo || targetParticipant.avatar
-      };
-
-      mediaPayload = JSON.stringify(productPayloadObj);
-      // Dual encoding: also append [PRODUCT:{...}] tag to content for 100% database persistence resilience
-      contentToSend = `${baseText} [PRODUCT:${mediaPayload}]`;
+      });
     }
 
     setInputText('');
@@ -231,7 +234,7 @@ function ConversationContent({
       });
 
       if (res.data) {
-        setMessages(prev => prev.map(m => m.id === tempId ? res.data : m));
+        setMessages(prev => prev.map(m => m.id === tempId ? { ...res.data, product: res.data.product || productBackup } : m));
       }
     } catch (err) {
       console.error('Error sending message:', err);

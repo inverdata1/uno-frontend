@@ -1,11 +1,13 @@
 import { Ionicons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
-import { useState, useMemo } from 'react';
-import { Dimensions, Image, ScrollView, StatusBar, TouchableOpacity, View } from 'react-native';
+import { useState, useMemo, useEffect } from 'react';
+import { Dimensions, Image, ScrollView, StatusBar, TouchableOpacity, View, Alert } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Text } from '../../../shared/components/ui';
 import { useProducts } from '../../shared/products/hooks/use-products';
 import { usePosts } from '../../shared/social/hooks/use-posts';
+import { useToggleFollowBusiness } from '../../shared/social/hooks/use-businesses';
+import { useAuthStore } from '../../../core/auth/stores/auth-store';
 import ProductDetailModal from '../products/product-detail-modal';
 import PostViewer from '../../shared/social/posts/post-viewer';
 import ConversationModal from '../../shared/chat/conversation-modal';
@@ -18,14 +20,27 @@ const { width } = Dimensions.get('window');
  */
 export default function BusinessProfile({ business, onClose }) {
   const router = useRouter();
+  const { user } = useAuthStore();
+  const toggleFollowMutation = useToggleFollowBusiness();
+
   const [activeTab, setActiveTab] = useState('shop');
   const [chatModalVisible, setChatModalVisible] = useState(false);
-  const [isFollowing, setIsFollowing] = useState(business?.isFollowing || false);
+  const [isFollowing, setIsFollowing] = useState(Boolean(business?.isFollowing));
+  const [followersCount, setFollowersCount] = useState(business?.followersCount || 0);
   const [contentFilter, setContentFilter] = useState('all');
   const [selectedProductId, setSelectedProductId] = useState(null);
   const [productDetailVisible, setProductDetailVisible] = useState(false);
   const [selectedPost, setSelectedPost] = useState(null);
   const [postViewerVisible, setPostViewerVisible] = useState(false);
+
+  useEffect(() => {
+    if (typeof business?.isFollowing === 'boolean') {
+      setIsFollowing(business.isFollowing);
+    }
+    if (typeof business?.followersCount === 'number') {
+      setFollowersCount(business.followersCount);
+    }
+  }, [business?.isFollowing, business?.followersCount]);
 
   // Fetch products and posts using hooks
   const { data: products = [], isLoading: isLoadingProducts } = useProducts({
@@ -61,8 +76,28 @@ export default function BusinessProfile({ business, onClose }) {
   };
 
   const handleFollowToggle = () => {
-    setIsFollowing(!isFollowing);
-    console.log('Toggle follow:', business?.id);
+    if (!user?.id) {
+      Alert.alert('Inicia sesión', 'Debes iniciar sesión como cliente para seguir este negocio.');
+      return;
+    }
+    if (!business?.id) return;
+
+    const previousState = isFollowing;
+    const nextState = !isFollowing;
+    setIsFollowing(nextState);
+    setFollowersCount(prev => nextState ? prev + 1 : Math.max(0, prev - 1));
+
+    toggleFollowMutation.mutate(
+      { businessId: business.id, userId: user.id },
+      {
+        onError: (err) => {
+          console.error('Error toggling follow:', err);
+          setIsFollowing(previousState);
+          setFollowersCount(prev => previousState ? prev + 1 : Math.max(0, prev - 1));
+          Alert.alert('Error', 'No se pudo actualizar el estado de seguimiento. Intenta de nuevo.');
+        }
+      }
+    );
   };
 
   const handleProductPress = (product) => {
@@ -197,7 +232,7 @@ export default function BusinessProfile({ business, onClose }) {
             </Text>
             <View className="w-1 h-1 rounded-full bg-gray-300" />
             <Text className="text-sm text-gray-600">
-              {String(business?.followersCount || 150)} Seguidores
+              {String(followersCount)} Seguidores
             </Text>
           </View>
 

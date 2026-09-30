@@ -4,6 +4,7 @@ import { useBusiness } from '../../../features/shared/social/hooks/use-businesse
 import { useProducts } from '../../../features/shared/products/hooks/use-products';
 import { useQuery } from '@tanstack/react-query';
 import { apiClient } from '../../../shared/config/api-client';
+import { useAuthStore } from '../../../core/auth/stores/auth-store';
 import BusinessProfile from './business-profile';
 
 /**
@@ -12,8 +13,10 @@ import BusinessProfile from './business-profile';
  * Can be used in modal (with onClose) or as standalone route
  */
 export function BusinessProfileViewer({ businessId, onClose }) {
-  // Fetch business data
-  const { data: business, isLoading: businessLoading, error: businessError } = useBusiness(businessId);
+  const { user } = useAuthStore();
+
+  // Fetch business data with user following status
+  const { data: business, isLoading: businessLoading, error: businessError } = useBusiness(businessId, user?.id);
 
   // Fetch business products
   const { data: products = [], isLoading: productsLoading } = useProducts({
@@ -57,13 +60,14 @@ export function BusinessProfileViewer({ businessId, onClose }) {
     );
   }
 
-  // Combine business data with products and posts
+  // Combine business data with products, posts, and following status
   const businessWithData = {
     ...business,
     name: business.businessName,
     category: business.businessType,
     products: products,
     contentPosts: contentPosts,
+    isFollowing: Boolean(business.isFollowing),
     followersCount: business.followersCount || 0,
     description: business.description || 'Bienvenido a nuestro negocio',
     address: business.address || null,

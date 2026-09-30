@@ -77,6 +77,15 @@ function BusinessChatsContent({ onClose }) {
     return date.toLocaleDateString([], { day: '2-digit', month: '2-digit' });
   };
 
+  const formatLastMessagePreview = (msg) => {
+    if (!msg) return 'Conversación iniciada';
+    const isProduct = msg.includes('[PRODUCT:');
+    const clean = msg.replace(/\[PRODUCT:.*?\]/g, '').trim();
+    if (isProduct && clean) return `🏷️ ${clean}`;
+    if (isProduct) return '🏷️ [Consulta de producto]';
+    return clean || 'Conversación iniciada';
+  };
+
   const topPadding = Math.max(insets.top, Platform.OS === 'ios' ? 44 : (StatusBar.currentHeight || 0));
   const bottomPadding = Math.max(insets.bottom, Platform.OS === 'ios' ? 12 : 8);
 
@@ -228,7 +237,7 @@ function BusinessChatsContent({ onClose }) {
                       }}
                       numberOfLines={1}
                     >
-                      {lastMessage || 'Conversación iniciada'}
+                      {formatLastMessagePreview(lastMessage)}
                     </Text>
 
                     {unreadCount > 0 && (

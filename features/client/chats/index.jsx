@@ -79,6 +79,15 @@ export default function ClientChatsScreen() {
     return date.toLocaleDateString([], { day: '2-digit', month: '2-digit' });
   };
 
+  const formatLastMessagePreview = (msg) => {
+    if (!msg) return 'Inicia la conversación...';
+    const isProduct = msg.includes('[PRODUCT:');
+    const clean = msg.replace(/\[PRODUCT:.*?\]/g, '').trim();
+    if (isProduct && clean) return `🏷️ ${clean}`;
+    if (isProduct) return '🏷️ [Consulta de producto]';
+    return clean || 'Inicia la conversación...';
+  };
+
   return (
     <SafeAreaView style={{ flex: 1, backgroundColor: '#f3f4f6' }} edges={['top']}>
       {/* Top Header */}
@@ -240,7 +249,7 @@ export default function ClientChatsScreen() {
                       }}
                       numberOfLines={1}
                     >
-                      {lastMessage || 'Inicia la conversación...'}
+                      {formatLastMessagePreview(lastMessage)}
                     </Text>
 
                     {unreadCount > 0 && (

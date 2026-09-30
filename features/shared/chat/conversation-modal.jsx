@@ -20,6 +20,64 @@ import { useAuthStore } from '../../../core/auth/stores/auth-store';
 import { useCurrentUserType } from '../../../shared/hooks/use-user-type';
 
 /**
+ * Parses attached product metadata from any format (object, mediaUrl, or embedded content tag)
+ */
+export function parseProductFromMessage(item) {
+  if (!item) return null;
+
+  // 1. Direct object properties
+  if (item.product && typeof item.product === 'object' && (item.product.id || item.product.name)) {
+    return item.product;
+  }
+  if (item.attachedProduct && typeof item.attachedProduct === 'object' && (item.attachedProduct.id || item.attachedProduct.name)) {
+    return item.attachedProduct;
+  }
+
+  // 2. Check mediaUrl or media field
+  const media = item.mediaUrl || item.media;
+  if (media) {
+    if (typeof media === 'object' && (media.type === 'product' || media.id || media.name)) {
+      return media;
+    }
+    if (typeof media === 'string') {
+      try {
+        const parsed = JSON.parse(media);
+        if (parsed && typeof parsed === 'object' && (parsed.type === 'product' || parsed.id || parsed.name)) {
+          return parsed;
+        }
+      } catch (e) {
+        // Not a JSON string
+      }
+    }
+  }
+
+  // 3. Fallback: Parse embedded [PRODUCT:{...}] tag from message content
+  if (typeof item.content === 'string' && item.content.includes('[PRODUCT:')) {
+    try {
+      const match = item.content.match(/\[PRODUCT:(.*?)\]/);
+      if (match && match[1]) {
+        const parsed = JSON.parse(match[1]);
+        if (parsed && typeof parsed === 'object' && (parsed.id || parsed.name)) {
+          return parsed;
+        }
+      }
+    } catch (e) {
+      // ignore JSON parse error
+    }
+  }
+
+  return null;
+}
+
+/**
+ * Removes embedded [PRODUCT:...] metadata tag from the message content to show clean text
+ */
+export function getCleanMessageContent(content) {
+  if (!content || typeof content !== 'string') return '';
+  return content.replace(/\[PRODUCT:.*?\]/g, '').trim();
+}
+
+/**
  * Inner Conversation Content
  * Uses safe area insets to avoid iOS notch/status bar collisions
  */
@@ -119,18 +177,26 @@ function ConversationContent({
     const trimmed = inputText.trim();
     if ((!trimmed && !currentAttachedProduct) || !conversationId || sending) return;
 
-    const contentToSend = trimmed || (currentAttachedProduct ? `Hola, me interesa ${currentAttachedProduct.name}` : '');
-    const mediaPayload = currentAttachedProduct
-      ? JSON.stringify({
-          type: 'product',
-          id: currentAttachedProduct.id,
-          name: currentAttachedProduct.name,
-          price: currentAttachedProduct.price,
-          imageUrl: currentAttachedProduct.imageUrl || currentAttachedProduct.thumbnailUrl,
-          businessName: currentAttachedProduct.businessName || targetParticipant.name,
-          businessLogo: currentAttachedProduct.businessLogo || targetParticipant.avatar
-        })
-      : null;
+    const baseText = trimmed || (currentAttachedProduct ? `Hola, me interesa este producto.` : '');
+
+    let mediaPayload = null;
+    let contentToSend = baseText;
+
+    if (currentAttachedProduct) {
+      const productPayloadObj = {
+        type: 'product',
+        id: currentAttachedProduct.id,
+        name: currentAttachedProduct.name,
+        price: currentAttachedProduct.price,
+        imageUrl: currentAttachedProduct.imageUrl || currentAttachedProduct.thumbnailUrl,
+        businessName: currentAttachedProduct.businessName || targetParticipant.name,
+        businessLogo: currentAttachedProduct.businessLogo || targetParticipant.avatar
+      };
+
+      mediaPayload = JSON.stringify(productPayloadObj);
+      // Dual encoding: also append [PRODUCT:{...}] tag to content for 100% database persistence resilience
+      contentToSend = `${baseText} [PRODUCT:${mediaPayload}]`;
+    }
 
     setInputText('');
     const productBackup = currentAttachedProduct;
@@ -148,6 +214,7 @@ function ConversationContent({
       receiverType: targetParticipant.type || 'user',
       content: contentToSend,
       mediaUrl: mediaPayload,
+      product: productBackup,
       createdAt: new Date().toISOString()
     };
 
@@ -189,19 +256,6 @@ function ConversationContent({
     if (!dateStr) return '';
     const d = new Date(dateStr);
     return d.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
-  };
-
-  const parseProductFromMedia = (mediaUrl) => {
-    if (!mediaUrl || typeof mediaUrl !== 'string') return null;
-    try {
-      const parsed = JSON.parse(mediaUrl);
-      if (parsed && (parsed.type === 'product' || parsed.id)) {
-        return parsed;
-      }
-    } catch (e) {
-      return null;
-    }
-    return null;
   };
 
   if (!targetParticipant) return null;
@@ -297,14 +351,15 @@ function ConversationContent({
             >
               {messages.map((item) => {
                 const isMine = item.senderId === currentSenderId;
-                const attachedProductData = parseProductFromMedia(item.mediaUrl);
+                const attachedProductData = parseProductFromMessage(item);
+                const cleanContent = getCleanMessageContent(item.content);
 
                 return (
                   <View
                     key={item.id}
                     style={{
                       alignSelf: isMine ? 'flex-end' : 'flex-start',
-                      maxWidth: '82%',
+                      maxWidth: '84%',
                       alignItems: isMine ? 'flex-end' : 'flex-start'
                     }}
                   >
@@ -385,7 +440,7 @@ function ConversationContent({
                     )}
 
                     {/* Text Message Bubble */}
-                    {Boolean(item.content) && (
+                    {Boolean(cleanContent) && (
                       <View
                         style={{
                           backgroundColor: isMine ? '#ef4444' : '#ffffff',
@@ -404,7 +459,7 @@ function ConversationContent({
                         }}
                       >
                         <Text style={{ fontSize: 15, color: isMine ? '#ffffff' : '#0f172a', lineHeight: 20 }}>
-                          {item.content}
+                          {cleanContent}
                         </Text>
                         <Text style={{
                           fontSize: 10,

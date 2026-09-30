@@ -11,6 +11,7 @@ import { Text } from '../../../shared/components/ui';
 import { getUserTypeConfig } from '../../../shared/config/user-types';
 import { useCurrentUserType } from '../../../shared/hooks/use-user-type';
 import { useUserProfile, useUpdateUserProfile } from '../../../shared/hooks/use-user-profile';
+import { useFollowingBusinesses } from '../../shared/social/hooks/use-businesses';
 import { uploadMedia } from '../../../shared/services/media-upload';
 import { useAppStore } from '../../../shared/stores/app-store';
 import { colors, getModeColors } from '../../../shared/utils/colors';
@@ -27,6 +28,7 @@ export default function ClientProfileScreen() {
   const [businessUpgradeModalVisible, setBusinessUpgradeModalVisible] = useState(false);
 
   const { data: profileData } = useUserProfile();
+  const { data: followedBusinesses = [] } = useFollowingBusinesses(user?.id);
   const updateUserProfile = useUpdateUserProfile();
   const [uploadingAvatar, setUploadingAvatar] = useState(false);
   const [uploadingBanner, setUploadingBanner] = useState(false);
@@ -343,7 +345,7 @@ export default function ClientProfileScreen() {
                 color: colors.text.primary,
                 marginBottom: 2
               }}>
-                {user?.ordersCount || 0}
+                {profileData?.ordersCount ?? user?.ordersCount ?? 0}
               </Text>
               <Text style={{
                 fontSize: 12,
@@ -362,7 +364,7 @@ export default function ClientProfileScreen() {
                 color: colors.text.primary,
                 marginBottom: 2
               }}>
-                {user?.favoriteStores?.length || 0}
+                {profileData?.favoritesCount ?? profileData?.favoriteStores?.length ?? user?.favoriteStores?.length ?? 0}
               </Text>
               <Text style={{
                 fontSize: 12,
@@ -381,7 +383,7 @@ export default function ClientProfileScreen() {
                 color: colors.text.primary,
                 marginBottom: 2
               }}>
-                {user?.followingCount || user?.followsCount || 0}
+                {profileData?.followingCount ?? followedBusinesses.length}
               </Text>
               <Text style={{
                 fontSize: 12,

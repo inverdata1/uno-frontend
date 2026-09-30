@@ -30,6 +30,22 @@ export const useBusiness = (businessId, userId) => {
 };
 
 /**
+ * Fetch list of business IDs that the user is currently following
+ */
+export const useFollowingBusinesses = (userId) => {
+  return useQuery({
+    queryKey: ['following-businesses', userId || 'anonymous'],
+    queryFn: async () => {
+      if (!userId) return [];
+      const res = await apiClient.get('/businesses/following', { params: { userId } });
+      return Array.isArray(res.data) ? res.data : [];
+    },
+    enabled: !!userId,
+    staleTime: 30 * 1000,
+  });
+};
+
+/**
  * Toggle follow/unfollow a business
  */
 export const useToggleFollowBusiness = () => {
@@ -44,7 +60,9 @@ export const useToggleFollowBusiness = () => {
       queryClient.invalidateQueries({ queryKey: ['business-profile', businessId] });
       queryClient.invalidateQueries({ queryKey: ['businesses'] });
       queryClient.invalidateQueries({ queryKey: ['feed-stories'] });
+      queryClient.invalidateQueries({ queryKey: ['followed-businesses'] });
       queryClient.invalidateQueries({ queryKey: ['following-businesses', userId] });
+      queryClient.invalidateQueries({ queryKey: ['user-profile', userId] });
     },
   });
 };

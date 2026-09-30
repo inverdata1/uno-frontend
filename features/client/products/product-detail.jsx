@@ -23,6 +23,8 @@ import PostViewer from '../../shared/social/posts/post-viewer';
 import VideoViewer from '../social/videos/video-viewer';
 import ProductRatingModal from './components/product-rating-modal';
 import ConversationModal from '../../shared/chat/conversation-modal';
+import { useAuthStore } from '../../../core/auth/stores/auth-store';
+import { useFollowingBusinesses, useToggleFollowBusiness } from '../../shared/social/hooks/use-businesses';
 
 const { width: SCREEN_WIDTH } = Dimensions.get('window');
 const IMAGE_CONTAINER_HEIGHT = 380;
@@ -63,6 +65,9 @@ export default function ProductDetail({
   const [videoViewerVisible, setVideoViewerVisible] = useState(false);
 
   const { currentUserType, currentContext } = useCurrentUserType();
+  const { user } = useAuthStore();
+  const { data: followedBusinesses = [] } = useFollowingBusinesses(user?.id);
+  const toggleFollowMutation = useToggleFollowBusiness();
   const favoriteMutation = useFavoriteProduct();
   const deleteProductMutation = useDeleteProduct();
   const addItem = useCartStore((state) => state.addItem);
@@ -136,6 +141,18 @@ export default function ProductDetail({
       return;
     }
     setChatModalVisible(true);
+  };
+
+  const isBusinessFollowed = Boolean(businessId && followedBusinesses.includes(businessId));
+
+  const handleToggleFollow = (e) => {
+    e?.stopPropagation?.();
+    if (!user?.id) {
+      Alert.alert('Inicia sesión', 'Debes iniciar sesión como cliente para seguir este negocio.');
+      return;
+    }
+    if (!businessId) return;
+    toggleFollowMutation.mutate({ businessId, userId: user.id });
   };
 
   const handleAddToCart = () => {
@@ -457,16 +474,27 @@ export default function ProductDetail({
               </Text>
             </View>
 
-            <View style={{
-              backgroundColor: '#ef4444',
-              paddingHorizontal: 14,
-              paddingVertical: 6,
-              borderRadius: 20
-            }}>
-              <Text style={{ color: '#ffffff', fontSize: 12, fontWeight: '700' }}>
-                Seguir
+            {/* Follow / Following Badge */}
+            <TouchableOpacity
+              onPress={handleToggleFollow}
+              activeOpacity={0.8}
+              style={{
+                backgroundColor: isBusinessFollowed ? '#f1f5f9' : '#ef4444',
+                paddingHorizontal: 14,
+                paddingVertical: 6,
+                borderRadius: 20,
+                borderWidth: isBusinessFollowed ? 1 : 0,
+                borderColor: '#e2e8f0'
+              }}
+            >
+              <Text style={{
+                color: isBusinessFollowed ? '#475569' : '#ffffff',
+                fontSize: 12,
+                fontWeight: '700'
+              }}>
+                {isBusinessFollowed ? 'Siguiendo' : 'Seguir'}
               </Text>
-            </View>
+            </TouchableOpacity>
           </TouchableOpacity>
 
           {/* Segmented Control: "Descripción" vs "Social Media" vs "Chat" */}

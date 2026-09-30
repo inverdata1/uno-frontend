@@ -22,6 +22,7 @@ import { apiClient } from '../../../../shared/config/api-client';
 import { useCartStore } from '../../../../shared/stores/cart-store';
 import { TaggedProductsModal } from '../feed/components/tagged-products-modal';
 import { CommentsModal } from '../../../shared/social/comments/comments-modal';
+import { useFollowingBusinesses, useToggleFollowBusiness } from '../../../shared/social/hooks/use-businesses';
 
 const { height: SCREEN_HEIGHT, width: SCREEN_WIDTH } = Dimensions.get('window');
 
@@ -40,8 +41,23 @@ function VideoItem({
   onProductPress,
 }) {
   const { user } = useAuthStore();
+  const { data: followedBusinesses = [] } = useFollowingBusinesses(user?.id);
+  const toggleFollowMutation = useToggleFollowBusiness();
   const [localIsLiked, setLocalIsLiked] = useState(Boolean(video?.isLiked));
   const [localLikeCount, setLocalLikeCount] = useState(Number(video?.likeCount || 0));
+
+  const businessId = video.businessId || video.business?.id;
+  const isFollowed = Boolean(businessId && followedBusinesses.includes(businessId));
+
+  const handleFollowPress = (e) => {
+    e?.stopPropagation?.();
+    if (!user?.id) {
+      Alert.alert('Inicia sesión', 'Debes iniciar sesión como cliente para seguir este negocio.');
+      return;
+    }
+    if (!businessId) return;
+    toggleFollowMutation.mutate({ businessId, userId: user.id });
+  };
 
   // Spinning Vinyl Record Animation for Music
   const spinValue = useRef(new Animated.Value(0)).current;
@@ -266,22 +282,28 @@ function VideoItem({
               </Text>
             )}
           </View>
-          {/* Follow Plus Badge */}
-          <View style={{
-            position: 'absolute',
-            bottom: -6,
-            alignSelf: 'center',
-            width: 20,
-            height: 20,
-            borderRadius: 10,
-            backgroundColor: '#ef4444',
-            borderWidth: 1.5,
-            borderColor: '#ffffff',
-            alignItems: 'center',
-            justifyContent: 'center',
-          }}>
-            <Ionicons name="add" size={14} color="#ffffff" />
-          </View>
+          {/* Follow Plus Badge - Hidden when already followed */}
+          {!isFollowed && (
+            <TouchableOpacity
+              onPress={handleFollowPress}
+              activeOpacity={0.8}
+              style={{
+                position: 'absolute',
+                bottom: -6,
+                alignSelf: 'center',
+                width: 20,
+                height: 20,
+                borderRadius: 10,
+                backgroundColor: '#ef4444',
+                borderWidth: 1.5,
+                borderColor: '#ffffff',
+                alignItems: 'center',
+                justifyContent: 'center',
+              }}
+            >
+              <Ionicons name="add" size={14} color="#ffffff" />
+            </TouchableOpacity>
+          )}
         </TouchableOpacity>
 
         {/* Like Button */}

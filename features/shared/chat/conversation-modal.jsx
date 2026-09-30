@@ -41,7 +41,12 @@ export function parseProductFromMessage(item) {
     }
     if (typeof media === 'string') {
       try {
-        const parsed = JSON.parse(media);
+        let parsed = JSON.parse(media);
+        if (typeof parsed === 'string') {
+          try {
+            parsed = JSON.parse(parsed);
+          } catch (e) {}
+        }
         if (parsed && typeof parsed === 'object' && (parsed.type === 'product' || parsed.id || parsed.name)) {
           return parsed;
         }
@@ -57,7 +62,10 @@ export function parseProductFromMessage(item) {
     if (productIdx !== -1) {
       try {
         const rawJson = item.content.substring(productIdx).replace(/\]+$/, '').trim();
-        const parsed = JSON.parse(rawJson);
+        let parsed = JSON.parse(rawJson);
+        if (typeof parsed === 'string') {
+          try { parsed = JSON.parse(parsed); } catch (e) {}
+        }
         if (parsed && typeof parsed === 'object' && (parsed.id || parsed.name)) {
           return parsed;
         }
@@ -175,7 +183,15 @@ function ConversationContent({
         params: { currentParticipantId: currentSenderId }
       });
       if (res.data) {
-        setMessages(res.data);
+        setMessages(prev => {
+          return res.data.map(serverMsg => {
+            const localMsg = prev.find(m => m.id === serverMsg.id);
+            if (localMsg?.product && !serverMsg.mediaUrl) {
+              return { ...serverMsg, product: localMsg.product, mediaUrl: localMsg.mediaUrl };
+            }
+            return serverMsg;
+          });
+        });
       }
     } catch (err) {
       console.error('Error fetching messages:', err);
@@ -234,7 +250,7 @@ function ConversationContent({
       });
 
       if (res.data) {
-        setMessages(prev => prev.map(m => m.id === tempId ? { ...res.data, product: res.data.product || productBackup } : m));
+        setMessages(prev => prev.map(m => m.id === tempId ? { ...res.data, product: res.data.product || productBackup, mediaUrl: res.data.mediaUrl || mediaPayload } : m));
       }
     } catch (err) {
       console.error('Error sending message:', err);

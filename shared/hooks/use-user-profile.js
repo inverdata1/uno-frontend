@@ -13,7 +13,7 @@ export const useUserProfile = () => {
     queryKey: ['user-profile', userId],
     queryFn: () => {
       if (!userId) return null;
-      return apiClient.get('/users/profile').then(res => res.data);
+      return apiClient.get('/users/profile', { params: { userId } }).then(res => res.data);
     },
     enabled: !!userId,
   });

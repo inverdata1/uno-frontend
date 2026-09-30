@@ -68,6 +68,16 @@ export const resolveMediaItemUrl = (item) => {
  */
 export const normalizeMediaUrls = (value) => {
   if (typeof value === 'string') {
+    const trimmed = value.trim();
+    if ((trimmed.startsWith('{') && trimmed.endsWith('}')) || (trimmed.startsWith('[') && trimmed.endsWith(']'))) {
+      try {
+        const parsed = JSON.parse(trimmed);
+        const normalized = normalizeMediaUrls(parsed);
+        return JSON.stringify(normalized);
+      } catch (e) {
+        // Not valid JSON, continue to URL resolution
+      }
+    }
     return value.includes('/uploads/') ? resolveMediaUrl(value) : value;
   }
 

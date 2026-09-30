@@ -51,13 +51,37 @@ export function parseProductFromMessage(item) {
           return parsed;
         }
       } catch (e) {
-        // Not a JSON string
+        // If string contains a JSON substring (e.g. if corrupted or wrapped)
+        const startIdx = media.indexOf('{');
+        const endIdx = media.lastIndexOf('}');
+        if (startIdx !== -1 && endIdx !== -1 && endIdx > startIdx) {
+          try {
+            const sub = media.substring(startIdx, endIdx + 1);
+            let parsed = JSON.parse(sub);
+            if (parsed && typeof parsed === 'object' && (parsed.type === 'product' || parsed.id || parsed.name)) {
+              return parsed;
+            }
+          } catch (e2) {}
+        }
       }
     }
   }
 
   // 3. Fallback for legacy messages that may have contained JSON in content
   if (typeof item.content === 'string') {
+    const tagIdx = item.content.indexOf('[PRODUCT:');
+    if (tagIdx !== -1) {
+      try {
+        const afterTag = item.content.substring(tagIdx + 9);
+        const endTag = afterTag.lastIndexOf(']');
+        const rawJson = endTag !== -1 ? afterTag.substring(0, endTag) : afterTag;
+        let parsed = JSON.parse(rawJson);
+        if (parsed && typeof parsed === 'object' && (parsed.id || parsed.name)) {
+          return parsed;
+        }
+      } catch (e) {}
+    }
+
     const productIdx = item.content.indexOf('{"type":"product"');
     if (productIdx !== -1) {
       try {
@@ -69,9 +93,7 @@ export function parseProductFromMessage(item) {
         if (parsed && typeof parsed === 'object' && (parsed.id || parsed.name)) {
           return parsed;
         }
-      } catch (e) {
-        // ignore
-      }
+      } catch (e) {}
     }
   }
 
@@ -184,10 +206,28 @@ function ConversationContent({
       });
       if (res.data) {
         setMessages(prev => {
+          // Cache known products from local/optimistic state so polling never loses them
+          const productCache = new Map();
+          prev.forEach(m => {
+            const p = parseProductFromMessage(m);
+            if (p) {
+              if (m.id) productCache.set(m.id, p);
+              if (m.createdAt) productCache.set(m.createdAt, p);
+              if (m.content) productCache.set(m.content, p);
+            }
+          });
+
           return res.data.map(serverMsg => {
-            const localMsg = prev.find(m => m.id === serverMsg.id);
-            if (localMsg?.product && !serverMsg.mediaUrl) {
-              return { ...serverMsg, product: localMsg.product, mediaUrl: localMsg.mediaUrl };
+            const parsedServer = parseProductFromMessage(serverMsg);
+            const cachedProduct = productCache.get(serverMsg.id) || productCache.get(serverMsg.createdAt) || (serverMsg.content ? productCache.get(serverMsg.content) : null);
+            const product = parsedServer || cachedProduct || null;
+
+            if (product) {
+              return {
+                ...serverMsg,
+                product,
+                mediaUrl: serverMsg.mediaUrl || (typeof product === 'object' ? JSON.stringify(product) : product)
+              };
             }
             return serverMsg;
           });
@@ -250,7 +290,11 @@ function ConversationContent({
       });
 
       if (res.data) {
-        setMessages(prev => prev.map(m => m.id === tempId ? { ...res.data, product: res.data.product || productBackup, mediaUrl: res.data.mediaUrl || mediaPayload } : m));
+        setMessages(prev => prev.map(m => m.id === tempId ? {
+          ...res.data,
+          product: parseProductFromMessage(res.data) || productBackup,
+          mediaUrl: res.data.mediaUrl || mediaPayload
+        } : m));
       }
     } catch (err) {
       console.error('Error sending message:', err);

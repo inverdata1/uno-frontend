@@ -46,9 +46,15 @@ export const useLikePost = () => {
     mutationFn: async ({ postId, userId }) => {
       return apiClient.patch(`/posts/${postId}/like`, { userId }).then(res => res.data);
     },
-    onSuccess: () => {
+    onSuccess: (_data, { userId }) => {
       // Invalidate all post queries to refresh like status
       queryClient.invalidateQueries({ queryKey: ['posts'] });
+      queryClient.invalidateQueries({ queryKey: ['favorites'] });
+      if (userId) {
+        queryClient.invalidateQueries({ queryKey: ['favorites', userId] });
+        queryClient.invalidateQueries({ queryKey: ['user-profile', userId] });
+      }
+      queryClient.invalidateQueries({ queryKey: ['user-profile'] });
     },
   });
 };

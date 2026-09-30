@@ -16,6 +16,7 @@ import {
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import { SafeAreaProvider, SafeAreaView } from 'react-native-safe-area-context';
 import { Text } from '../../../../shared/components/ui';
+import { useAuthStore } from '../../../../core/auth/stores/auth-store';
 import { useCurrentUserType } from '../../../../shared/hooks/use-user-type';
 import { colors } from '../../../../shared/utils/colors';
 import { useDeletePost, useLikePost, useSavePost } from '../hooks/use-posts';
@@ -171,6 +172,7 @@ export default function PostViewer({
   onBusinessPress,
   onProductPress
 }) {
+  const { user } = useAuthStore();
   const [currentImageIndex, setCurrentImageIndex] = useState(0);
   const [menuVisible, setMenuVisible] = useState(false);
   const [fullscreenVisible, setFullscreenVisible] = useState(false);
@@ -181,6 +183,14 @@ export default function PostViewer({
   const likeMutation = useLikePost();
   const saveMutation = useSavePost();
   const { data: allProducts = [] } = useProducts({ businessId: post?.businessId });
+
+  const [localIsLiked, setLocalIsLiked] = useState(Boolean(post?.isLiked));
+  const [localLikeCount, setLocalLikeCount] = useState(Number(post?.likeCount || 0));
+
+  useEffect(() => {
+    setLocalIsLiked(Boolean(post?.isLiked));
+    setLocalLikeCount(Number(post?.likeCount || 0));
+  }, [post?.id, post?.isLiked, post?.likeCount]);
 
   if (!post) return null;
 
@@ -207,7 +217,7 @@ export default function PostViewer({
 
   const isCarousel = type === 'carousel' && media.length > 1;
 
-  const isLiked = Boolean(post.isLiked);
+  const isLiked = localIsLiked;
   const isSaved = false;
 
   const handleScroll = (event) => {
@@ -257,7 +267,30 @@ export default function PostViewer({
   };
 
   const handleLike = () => {
-    likeMutation.mutate({ postId: post.id, isLiked });
+    if (!user?.id) {
+      Alert.alert('Inicia sesión', 'Debes iniciar sesión para dar me gusta y guardar en favoritos');
+      return;
+    }
+    const nextIsLiked = !localIsLiked;
+    const nextCount = nextIsLiked ? localLikeCount + 1 : Math.max(0, localLikeCount - 1);
+    setLocalIsLiked(nextIsLiked);
+    setLocalLikeCount(nextCount);
+
+    likeMutation.mutate(
+      { postId: post.id, userId: user.id },
+      {
+        onSuccess: (data) => {
+          if (data && typeof data.likeCount === 'number') {
+            setLocalLikeCount(data.likeCount);
+            setLocalIsLiked(data.isLiked);
+          }
+        },
+        onError: () => {
+          setLocalIsLiked(!nextIsLiked);
+          setLocalLikeCount(localLikeCount);
+        }
+      }
+    );
   };
 
   const handleSave = () => {
@@ -477,13 +510,13 @@ export default function PostViewer({
                 {/* Like */}
                 <TouchableOpacity onPress={handleLike} style={{ flexDirection: 'row', alignItems: 'center', gap: 4 }}>
                   <Ionicons
-                    name={isLiked ? 'heart' : 'heart-outline'}
+                    name={localIsLiked ? 'heart' : 'heart-outline'}
                     size={26}
-                    color={isLiked ? '#DC2626' : colors.text.primary}
+                    color={localIsLiked ? '#DC2626' : colors.text.primary}
                   />
-                  {likeCount > 0 && (
+                  {localLikeCount > 0 && (
                     <Text style={{ fontSize: 14, fontWeight: '600', color: colors.text.primary }}>
-                      {formatCount(likeCount)}
+                      {formatCount(localLikeCount)}
                     </Text>
                   )}
                 </TouchableOpacity>

@@ -99,16 +99,20 @@ export const PostCard = ({
     setLocalLikeCount(nextCount);
 
     try {
+      const res = await apiClient.patch(`/posts/${post.id}/like`, { userId: user.id });
+      if (res.data && typeof res.data.likeCount === 'number') {
+        setLocalLikeCount(res.data.likeCount);
+        setLocalIsLiked(res.data.isLiked);
+      }
+      queryClient.invalidateQueries({ queryKey: ['posts'] });
+      queryClient.invalidateQueries({ queryKey: ['favorites'] });
+      queryClient.invalidateQueries({ queryKey: ['user-profile'] });
+      if (user?.id) {
+        queryClient.invalidateQueries({ queryKey: ['favorites', user.id] });
+        queryClient.invalidateQueries({ queryKey: ['user-profile', user.id] });
+      }
       if (onLike) {
-        onLike();
-      } else {
-        const res = await apiClient.patch(`/posts/${post.id}/like`, { userId: user?.id });
-        if (res.data && typeof res.data.likeCount === 'number') {
-          setLocalLikeCount(res.data.likeCount);
-          setLocalIsLiked(res.data.isLiked);
-        }
-        queryClient.invalidateQueries({ queryKey: ['favorites'] });
-        queryClient.invalidateQueries({ queryKey: ['user-profile'] });
+        onLike(res.data);
       }
     } catch (err) {
       setLocalIsLiked(!nextIsLiked);

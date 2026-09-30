@@ -99,10 +99,8 @@ export default function FeedScreen() {
     setRefreshing(false);
   };
 
-  const handleLike = (postId) => {
-    if (user?.id && postId) {
-      likeMutation.mutate({ postId, userId: user.id });
-    }
+  const handleLike = (data) => {
+    // PostCard internally handles like toggle and invalidates cache
   };
 
   const handleSave = (postId, isSaved) => {

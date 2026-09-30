@@ -9,8 +9,7 @@ import { apiClient } from '../../../../../shared/config/api-client';
  * PostOptionsModal Component
  * Displays 3-dots post options menu:
  * 1. Reportar publicación
- * 2. Marcar publicación como favorita (aparece en pestaña Posts Favoritos del Perfil)
- * 3. Marcar productos de este post como favoritos (aparece en pestaña Productos Favoritos del Perfil)
+ * 2. Marcar productos de este post como favoritos (aparece en pestaña Productos Favoritos del Perfil)
  */
 export const PostOptionsModal = ({
   visible,
@@ -29,23 +28,6 @@ export const PostOptionsModal = ({
       'Gracias por ayudarnos a mantener segura la comunidad. Hemos recibido tu reporte y revisaremos este contenido.',
       [{ text: 'Entendido', style: 'default' }]
     );
-  };
-
-  const handleFavoritePost = async () => {
-    onClose();
-    try {
-      if (user?.id && post?.id) {
-        const res = await apiClient.post(`/posts/${post.id}/favorite`, { userId: user.id });
-        Alert.alert(
-          res.data?.isFavorite ? 'Publicación Favorita' : 'Favoritos',
-          res.data?.isFavorite
-            ? '⭐ Publicación guardada en tu lista de Publicaciones Favoritas.'
-            : 'Publicación eliminada de tus Favoritos.'
-        );
-      }
-    } catch (err) {
-      Alert.alert('Publicación Favorita', '⭐ Publicación guardada en tu lista de Favoritos.');
-    }
   };
 
   const handleFavoritePostProducts = async () => {
@@ -129,39 +111,6 @@ export const PostOptionsModal = ({
               </Text>
               <Text style={{ fontSize: 12, color: '#9ca3af' }}>
                 Notificar contenido inapropiado o engañoso
-              </Text>
-            </View>
-          </TouchableOpacity>
-
-          {/* Option 2: Favorite Post */}
-          <TouchableOpacity
-            onPress={handleFavoritePost}
-            activeOpacity={0.7}
-            style={{
-              flexDirection: 'row',
-              alignItems: 'center',
-              paddingVertical: 14,
-              borderBottomWidth: 1,
-              borderBottomColor: '#f3f4f6',
-              gap: 14
-            }}
-          >
-            <View style={{
-              width: 38,
-              height: 38,
-              borderRadius: 12,
-              backgroundColor: '#fffbeb',
-              alignItems: 'center',
-              justifyContent: 'center'
-            }}>
-              <Ionicons name="star" size={20} color="#f59e0b" />
-            </View>
-            <View style={{ flex: 1 }}>
-              <Text style={{ fontSize: 15, fontWeight: '600', color: '#111827' }}>
-                Marcar publicación como favorita
-              </Text>
-              <Text style={{ fontSize: 12, color: '#9ca3af' }}>
-                Guarda este post en tus Publicaciones Favoritas
               </Text>
             </View>
           </TouchableOpacity>

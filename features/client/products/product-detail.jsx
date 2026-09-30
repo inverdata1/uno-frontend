@@ -22,6 +22,7 @@ import { useCartStore } from '../../../shared/stores/cart-store';
 import PostViewer from '../../shared/social/posts/post-viewer';
 import VideoViewer from '../social/videos/video-viewer';
 import ProductRatingModal from './components/product-rating-modal';
+import ConversationModal from '../../shared/chat/conversation-modal';
 
 const { width: SCREEN_WIDTH } = Dimensions.get('window');
 const IMAGE_CONTAINER_HEIGHT = 380;
@@ -53,6 +54,7 @@ export default function ProductDetail({
   const [fullScreenImageIndex, setFullScreenImageIndex] = useState(0);
   const [ratingModalVisible, setRatingModalVisible] = useState(false);
   const [localRating, setLocalRating] = useState(Number(product?.rating || 0));
+  const [chatModalVisible, setChatModalVisible] = useState(false);
 
   // Social viewer modals
   const [selectedPost, setSelectedPost] = useState(null);
@@ -126,6 +128,14 @@ export default function ProductDetail({
       onClose?.();
       router.push(`/client/business/${businessId}`);
     }
+  };
+
+  const handleOpenProductChat = () => {
+    if (!businessId) {
+      Alert.alert('Chat no disponible', 'No se encontró la información del negocio para este producto.');
+      return;
+    }
+    setChatModalVisible(true);
   };
 
   const handleAddToCart = () => {
@@ -459,7 +469,7 @@ export default function ProductDetail({
             </View>
           </TouchableOpacity>
 
-          {/* Segmented Control: "Descripción" vs "Social Media" */}
+          {/* Segmented Control: "Descripción" vs "Social Media" vs "Chat" */}
           <View style={{
             flexDirection: 'row',
             backgroundColor: '#f1f5f9',
@@ -480,7 +490,7 @@ export default function ProductDetail({
               }}
             >
               <Text style={{
-                fontSize: 13,
+                fontSize: 12,
                 fontWeight: activeTab === 'description' ? '700' : '600',
                 color: activeTab === 'description' ? '#ffffff' : '#64748b'
               }}>
@@ -501,11 +511,35 @@ export default function ProductDetail({
               }}
             >
               <Text style={{
-                fontSize: 13,
+                fontSize: 12,
                 fontWeight: activeTab === 'social' ? '700' : '600',
                 color: activeTab === 'social' ? '#ffffff' : '#64748b'
               }}>
                 SOCIAL MEDIA {relatedPosts.length > 0 ? `(${relatedPosts.length})` : ''}
+              </Text>
+            </TouchableOpacity>
+
+            <TouchableOpacity
+              onPress={handleOpenProductChat}
+              activeOpacity={0.8}
+              style={{
+                flex: 1,
+                paddingVertical: 10,
+                borderRadius: 26,
+                backgroundColor: 'transparent',
+                alignItems: 'center',
+                justifyContent: 'center',
+                flexDirection: 'row',
+                gap: 4
+              }}
+            >
+              <Ionicons name="chatbubble-ellipses-outline" size={14} color="#64748b" />
+              <Text style={{
+                fontSize: 12,
+                fontWeight: '600',
+                color: '#64748b'
+              }}>
+                CHAT
               </Text>
             </TouchableOpacity>
           </View>
@@ -837,6 +871,28 @@ export default function ProductDetail({
           }
         }}
       />
+
+      {/* Product Inquiry Chat Modal with Tagged Product */}
+      {chatModalVisible && (
+        <ConversationModal
+          visible={chatModalVisible}
+          onClose={() => setChatModalVisible(false)}
+          targetParticipant={{
+            id: businessId,
+            type: 'business',
+            name: businessName,
+            avatar: businessLogo
+          }}
+          attachedProduct={{
+            id: product?.id,
+            name: product?.name,
+            price: currentPrice,
+            imageUrl: mainImageUrl,
+            businessName: businessName,
+            businessLogo: businessLogo
+          }}
+        />
+      )}
     </SafeAreaView>
   );
 }

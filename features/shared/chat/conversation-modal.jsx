@@ -20,7 +20,9 @@ import { apiClient } from '../../../shared/config/api-client';
 import { useAuthStore } from '../../../core/auth/stores/auth-store';
 import { useCurrentUserType } from '../../../shared/hooks/use-user-type';
 import { getCurrentLocation } from '../../../shared/utils/current-location';
-import { LocationCard, OrderCard, parseChatAttachment } from './chat-attachments';
+import { ImageCard, LocationCard, OrderCard, parseChatAttachment } from './chat-attachments';
+import * as ImagePicker from 'expo-image-picker';
+import { compressImageForUpload } from '../../../shared/utils/compress-image';
 
 /**
  * Parses attached product metadata from any format (object, mediaUrl, or embedded content tag)
@@ -151,6 +153,7 @@ function ConversationContent({
   const [currentAttachedProduct, setCurrentAttachedProduct] = useState(initialAttachedProduct);
   const [sharingLocationFor, setSharingLocationFor] = useState(null); // orderId | 'free' while locating
   const [dismissedLocationPrompt, setDismissedLocationPrompt] = useState(false);
+  const [sendingImage, setSendingImage] = useState(false);
 
   const scrollViewRef = useRef(null);
 
@@ -394,6 +397,65 @@ function ConversationContent({
     }
   };
 
+  /**
+   * Pick a photo, upload it and send it. Clients can tag it as a payment
+   * receipt so the business knows to check it and confirm the payment.
+   */
+  const sendImage = async (kind) => {
+    if (!conversationId || sendingImage) return;
+
+    const permission = await ImagePicker.requestMediaLibraryPermissionsAsync();
+    if (!permission.granted) {
+      Alert.alert('Galería bloqueada', 'Activa el acceso a tus fotos para UNO en los ajustes de tu teléfono.');
+      return;
+    }
+
+    const result = await ImagePicker.launchImageLibraryAsync({ mediaTypes: ['images'], quality: 1 });
+    if (result.canceled || !result.assets?.[0]) return;
+
+    setSendingImage(true);
+    try {
+      const uri = await compressImageForUpload(result.assets[0].uri);
+      const formData = new FormData();
+      const fileName = `chat_${Date.now()}.jpg`;
+      if (Platform.OS === 'web') {
+        // Browsers need a real Blob; the { uri } shape only works on native
+        const blob = await (await fetch(uri)).blob();
+        formData.append('image', blob, fileName);
+      } else {
+        formData.append('image', { uri, name: fileName, type: 'image/jpeg' });
+      }
+      formData.append('productName', kind === 'receipt' ? 'chat_receipt' : 'chat_image');
+
+      const uploadRes = await apiClient.post('/upload/image', formData, {
+        headers: { Accept: 'application/json', 'Content-Type': 'multipart/form-data' }
+      });
+      if (!uploadRes.data?.url) throw new Error('No URL returned from upload');
+
+      await sendAttachmentMessage(
+        kind === 'receipt' ? '🧾 Comprobante de pago' : '📷 Imagen',
+        { type: 'image', url: uploadRes.data.url, kind }
+      );
+    } catch (err) {
+      console.error('Error sending image:', err);
+      Alert.alert('Error', 'No se pudo enviar la imagen. Intenta de nuevo.');
+    } finally {
+      setSendingImage(false);
+    }
+  };
+
+  const handleImagePress = () => {
+    if (currentSenderType !== 'user') {
+      sendImage('photo');
+      return;
+    }
+    Alert.alert('Enviar imagen', '¿Qué quieres enviar?', [
+      { text: 'Cancelar', style: 'cancel' },
+      { text: 'Otra imagen', onPress: () => sendImage('photo') },
+      { text: 'Comprobante de pago', onPress: () => sendImage('receipt') }
+    ]);
+  };
+
   const handleShareLocationPress = () => {
     Alert.alert(
       'Compartir ubicación',
@@ -535,6 +597,10 @@ function ConversationContent({
                       alignItems: isMine ? 'flex-end' : 'flex-start'
                     }}
                   >
+                    {attachment?.type === 'image' && (
+                      <ImageCard image={attachment} isMine={isMine} />
+                    )}
+
                     {attachment?.type === 'location' && (
                       <LocationCard location={attachment} isMine={isMine} />
                     )}
@@ -754,19 +820,33 @@ function ConversationContent({
         <View style={{
           flexDirection: 'row',
           alignItems: 'center',
-          paddingHorizontal: 16,
+          paddingHorizontal: 12,
           paddingVertical: 10,
           borderTopWidth: 1,
           borderTopColor: '#f1f5f9',
           backgroundColor: '#ffffff',
-          gap: 10
+          gap: 6
         }}>
+          <TouchableOpacity
+            onPress={handleImagePress}
+            disabled={!conversationId || sendingImage}
+            activeOpacity={0.7}
+            accessibilityLabel="Enviar imagen"
+            style={{ width: 32, height: 44, alignItems: 'center', justifyContent: 'center' }}
+          >
+            {sendingImage ? (
+              <ActivityIndicator size="small" color="#ef4444" />
+            ) : (
+              <Ionicons name="image-outline" size={24} color="#ef4444" />
+            )}
+          </TouchableOpacity>
+
           <TouchableOpacity
             onPress={handleShareLocationPress}
             disabled={!conversationId || !!sharingLocationFor}
             activeOpacity={0.7}
             accessibilityLabel="Compartir ubicación"
-            style={{ width: 36, height: 44, alignItems: 'center', justifyContent: 'center' }}
+            style={{ width: 32, height: 44, alignItems: 'center', justifyContent: 'center' }}
           >
             {sharingLocationFor === 'free' ? (
               <ActivityIndicator size="small" color="#ef4444" />

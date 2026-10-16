@@ -1,4 +1,5 @@
-import { Image, Linking, TouchableOpacity, View } from 'react-native';
+import { useState } from 'react';
+import { Image, Linking, Modal, TouchableOpacity, View } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { Text } from '../../../shared/components/ui/text';
 import {
@@ -7,11 +8,12 @@ import {
   getOrderStatus,
   getPaymentMethodLabel,
 } from '../../../shared/utils/order-status';
+import { resolveMediaUrl } from '../../../shared/utils/media-url';
 
-export const ATTACHMENT_TYPES = ['order', 'order_status', 'location'];
+export const ATTACHMENT_TYPES = ['order', 'order_status', 'location', 'image'];
 
 /**
- * Order and location messages carry their data as JSON in `mediaUrl`.
+ * Order, location and image messages carry their data as JSON in `mediaUrl`.
  * Returns that payload when the message is one of them, otherwise null.
  */
 export function parseChatAttachment(item) {
@@ -152,5 +154,56 @@ export function LocationCard({ location, isMine }) {
         </View>
       </View>
     </TouchableOpacity>
+  );
+}
+
+/**
+ * Photo sent in the chat (e.g. a payment receipt). Tap to see it full screen.
+ */
+export function ImageCard({ image, isMine }) {
+  const [viewerOpen, setViewerOpen] = useState(false);
+  const uri = resolveMediaUrl(image.url);
+  const isReceipt = image.kind === 'receipt';
+
+  if (!uri) return null;
+
+  return (
+    <>
+      <TouchableOpacity
+        onPress={() => setViewerOpen(true)}
+        activeOpacity={0.9}
+        style={{
+          width: 220, borderRadius: 18, overflow: 'hidden', marginBottom: 6,
+          backgroundColor: isMine ? '#ef4444' : '#ffffff',
+          borderWidth: isMine ? 0 : 1, borderColor: '#e2e8f0',
+        }}
+      >
+        <Image source={{ uri }} style={{ width: '100%', height: 260, backgroundColor: '#e2e8f0' }} resizeMode="cover" />
+        {isReceipt && (
+          <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6, paddingHorizontal: 12, paddingVertical: 8 }}>
+            <Ionicons name="receipt-outline" size={15} color={isMine ? '#ffffff' : '#ef4444'} />
+            <Text style={{ fontSize: 13, fontWeight: '700', color: isMine ? '#ffffff' : '#0f172a' }}>
+              Comprobante de pago
+            </Text>
+          </View>
+        )}
+      </TouchableOpacity>
+
+      <Modal visible={viewerOpen} transparent animationType="fade" onRequestClose={() => setViewerOpen(false)}>
+        <View style={{ flex: 1, backgroundColor: 'rgba(0,0,0,0.95)', justifyContent: 'center' }}>
+          <Image source={{ uri }} style={{ width: '100%', height: '80%' }} resizeMode="contain" />
+          <TouchableOpacity
+            onPress={() => setViewerOpen(false)}
+            accessibilityLabel="Cerrar"
+            style={{
+              position: 'absolute', top: 56, right: 20, width: 40, height: 40, borderRadius: 20,
+              backgroundColor: 'rgba(255,255,255,0.15)', alignItems: 'center', justifyContent: 'center',
+            }}
+          >
+            <Ionicons name="close" size={24} color="#ffffff" />
+          </TouchableOpacity>
+        </View>
+      </Modal>
+    </>
   );
 }

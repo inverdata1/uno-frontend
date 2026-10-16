@@ -9,7 +9,8 @@ import {
   KeyboardAvoidingView,
   Platform,
   ActivityIndicator,
-  StatusBar
+  StatusBar,
+  Alert
 } from 'react-native';
 import { SafeAreaProvider, useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
@@ -18,12 +19,17 @@ import { Text } from '../../../shared/components/ui/text';
 import { apiClient } from '../../../shared/config/api-client';
 import { useAuthStore } from '../../../core/auth/stores/auth-store';
 import { useCurrentUserType } from '../../../shared/hooks/use-user-type';
+import { getCurrentLocation } from '../../../shared/utils/current-location';
+import { LocationCard, OrderCard, parseChatAttachment } from './chat-attachments';
 
 /**
  * Parses attached product metadata from any format (object, mediaUrl, or embedded content tag)
  */
 export function parseProductFromMessage(item) {
   if (!item) return null;
+
+  // Order and location payloads also have ids/names; they are not products
+  if (parseChatAttachment(item)) return null;
 
   // 1. Direct object properties
   if (item.product && typeof item.product === 'object' && (item.product.id || item.product.name)) {
@@ -125,7 +131,8 @@ function ConversationContent({
   targetParticipant, // { id, type: 'user' | 'business', name, avatar }
   initialConversationId = null,
   attachedProduct: initialAttachedProduct = null,
-  onProductPress
+  onProductPress,
+  pendingLocationOrder = null // { id, orderNumber } of a delivery order still missing its location
 }) {
   const insets = useSafeAreaInsets();
   const router = useRouter();
@@ -142,6 +149,8 @@ function ConversationContent({
   const [loading, setLoading] = useState(true);
   const [sending, setSending] = useState(false);
   const [currentAttachedProduct, setCurrentAttachedProduct] = useState(initialAttachedProduct);
+  const [sharingLocationFor, setSharingLocationFor] = useState(null); // orderId | 'free' while locating
+  const [dismissedLocationPrompt, setDismissedLocationPrompt] = useState(false);
 
   const scrollViewRef = useRef(null);
 
@@ -306,6 +315,102 @@ function ConversationContent({
     }
   };
 
+  // Orders whose delivery location this client already sent in this chat
+  const locatedOrderIds = new Set(
+    messages
+      .map(m => (m.senderId === currentSenderId ? parseChatAttachment(m) : null))
+      .filter(a => a?.type === 'location' && a.orderId)
+      .map(a => a.orderId)
+  );
+
+  const sendAttachmentMessage = async (content, payload) => {
+    const mediaPayload = JSON.stringify(payload);
+    const tempId = `temp-${Date.now()}`;
+    setMessages(prev => [...prev, {
+      id: tempId,
+      conversationId,
+      senderId: currentSenderId,
+      senderType: currentSenderType,
+      receiverId: targetParticipant.id,
+      receiverType: targetParticipant.type || 'user',
+      content,
+      mediaUrl: mediaPayload,
+      createdAt: new Date().toISOString()
+    }]);
+
+    try {
+      const res = await apiClient.post(`/chat/conversations/${conversationId}/messages`, {
+        senderId: currentSenderId,
+        senderType: currentSenderType,
+        receiverId: targetParticipant.id,
+        receiverType: targetParticipant.type || 'user',
+        content,
+        mediaUrl: mediaPayload
+      });
+      if (res.data) {
+        setMessages(prev => prev.map(m => m.id === tempId ? { ...res.data, mediaUrl: res.data.mediaUrl || mediaPayload } : m));
+      }
+    } catch (err) {
+      setMessages(prev => prev.filter(m => m.id !== tempId));
+      throw err;
+    }
+  };
+
+  /**
+   * Send the device's current location. When tied to an order it is also
+   * saved as that order's delivery address so the business sees it in Pedidos.
+   */
+  const shareLocation = async (order = null) => {
+    if (!conversationId || sharingLocationFor) return;
+    setSharingLocationFor(order?.orderId || 'free');
+
+    try {
+      const location = await getCurrentLocation();
+
+      await sendAttachmentMessage(
+        order ? `📍 Ubicación de entrega para ${order.orderNumber}` : '📍 Ubicación compartida',
+        {
+          type: 'location',
+          latitude: location.latitude,
+          longitude: location.longitude,
+          address: location.address,
+          orderId: order?.orderId,
+          orderNumber: order?.orderNumber
+        }
+      );
+
+      if (order?.orderId && currentSenderType === 'user') {
+        await apiClient.patch(`/orders/${order.orderId}/delivery-location`, location);
+      }
+    } catch (err) {
+      if (err?.message === 'PERMISSION_DENIED') {
+        Alert.alert('Ubicación desactivada', 'Activa el permiso de ubicación para UNO en los ajustes de tu teléfono.');
+      } else {
+        console.error('Error sharing location:', err);
+        Alert.alert('Error', 'No se pudo compartir tu ubicación. Intenta de nuevo.');
+      }
+    } finally {
+      setSharingLocationFor(null);
+    }
+  };
+
+  const handleShareLocationPress = () => {
+    Alert.alert(
+      'Compartir ubicación',
+      `¿Enviar tu ubicación actual a ${targetParticipant.name}?`,
+      [
+        { text: 'Cancelar', style: 'cancel' },
+        { text: 'Compartir', onPress: () => shareLocation() }
+      ]
+    );
+  };
+
+  const showLocationPrompt =
+    pendingLocationOrder &&
+    currentSenderType === 'user' &&
+    !dismissedLocationPrompt &&
+    !locatedOrderIds.has(pendingLocationOrder.id);
+
   const handleProductCardPress = (productInfo) => {
     if (onProductPress) {
       onProductPress(productInfo);
@@ -415,7 +520,11 @@ function ConversationContent({
               {messages.map((item) => {
                 const isMine = item.senderId === currentSenderId;
                 const attachedProductData = parseProductFromMessage(item);
-                const cleanContent = getCleanMessageContent(item.content);
+                const attachment = parseChatAttachment(item);
+                // Order and location cards already say what the text would
+                const cleanContent = attachment && attachment.type !== 'order_status'
+                  ? ''
+                  : getCleanMessageContent(item.content);
 
                 return (
                   <View
@@ -426,6 +535,26 @@ function ConversationContent({
                       alignItems: isMine ? 'flex-end' : 'flex-start'
                     }}
                   >
+                    {attachment?.type === 'location' && (
+                      <LocationCard location={attachment} isMine={isMine} />
+                    )}
+
+                    {(attachment?.type === 'order' || attachment?.type === 'order_status') && (
+                      <OrderCard
+                        order={attachment}
+                        isStatusUpdate={attachment.type === 'order_status'}
+                        canShareLocation={
+                          attachment.type === 'order' &&
+                          isMine &&
+                          currentSenderType === 'user' &&
+                          attachment.deliveryMethod === 'delivery' &&
+                          !locatedOrderIds.has(attachment.orderId)
+                        }
+                        sharingLocation={sharingLocationFor === attachment.orderId}
+                        onShareLocation={() => shareLocation(attachment)}
+                      />
+                    )}
+
                     {/* Tagged Product Card in Message (Rhode Style from Image 3) */}
                     {attachedProductData && (
                       <TouchableOpacity
@@ -583,6 +712,44 @@ function ConversationContent({
           </View>
         )}
 
+        {showLocationPrompt && (
+          <View style={{
+            flexDirection: 'row',
+            alignItems: 'center',
+            backgroundColor: '#fef2f2',
+            borderTopWidth: 1,
+            borderTopColor: '#fee2e2',
+            paddingHorizontal: 14,
+            paddingVertical: 10,
+            gap: 10
+          }}>
+            <Ionicons name="location" size={22} color="#ef4444" />
+            <View style={{ flex: 1 }}>
+              <Text style={{ fontSize: 13, fontWeight: '700', color: '#0f172a' }}>
+                ¿A dónde enviamos tu pedido?
+              </Text>
+              <Text style={{ fontSize: 12, color: '#991b1b' }}>
+                Comparte tu ubicación para el delivery de {pendingLocationOrder.orderNumber}
+              </Text>
+            </View>
+            <TouchableOpacity
+              onPress={() => shareLocation({ orderId: pendingLocationOrder.id, orderNumber: pendingLocationOrder.orderNumber })}
+              disabled={!!sharingLocationFor}
+              activeOpacity={0.85}
+              style={{ backgroundColor: '#ef4444', paddingHorizontal: 12, paddingVertical: 8, borderRadius: 10 }}
+            >
+              {sharingLocationFor ? (
+                <ActivityIndicator size="small" color="#ffffff" />
+              ) : (
+                <Text style={{ color: '#ffffff', fontSize: 13, fontWeight: '700' }}>Compartir</Text>
+              )}
+            </TouchableOpacity>
+            <TouchableOpacity onPress={() => setDismissedLocationPrompt(true)} hitSlop={8}>
+              <Ionicons name="close" size={18} color="#991b1b" />
+            </TouchableOpacity>
+          </View>
+        )}
+
         {/* Input Compose Bar */}
         <View style={{
           flexDirection: 'row',
@@ -594,6 +761,20 @@ function ConversationContent({
           backgroundColor: '#ffffff',
           gap: 10
         }}>
+          <TouchableOpacity
+            onPress={handleShareLocationPress}
+            disabled={!conversationId || !!sharingLocationFor}
+            activeOpacity={0.7}
+            accessibilityLabel="Compartir ubicación"
+            style={{ width: 36, height: 44, alignItems: 'center', justifyContent: 'center' }}
+          >
+            {sharingLocationFor === 'free' ? (
+              <ActivityIndicator size="small" color="#ef4444" />
+            ) : (
+              <Ionicons name="location-outline" size={24} color="#ef4444" />
+            )}
+          </TouchableOpacity>
+
           <TextInput
             value={inputText}
             onChangeText={setInputText}

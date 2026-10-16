@@ -1,11 +1,14 @@
 import React, { useState, useEffect } from 'react';
-import { View, ScrollView, Image, TouchableOpacity, Alert, Modal } from 'react-native';
+import { View, ScrollView, Image, TouchableOpacity, Alert, Modal, TextInput, ActivityIndicator } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
 import { Text } from '../../../shared/components/ui/text';
 import { useCartStore, useTotalCartCount, getCartSubtotal } from '../../../shared/stores/cart-store';
 import { colors } from '../../../shared/utils/colors';
+import { useCreateOrder } from '../../../shared/hooks/use-orders';
+import { PAYMENT_METHODS } from '../../../shared/utils/order-status';
+import ConversationModal from '../../shared/chat/conversation-modal';
 
 /**
  * CartsScreen Component
@@ -24,6 +27,11 @@ export default function CartsScreen() {
   const [checkoutModalVisible, setCheckoutModalVisible] = useState(false);
   const [selectedBusinessCart, setSelectedBusinessCart] = useState(null);
   const [deliveryMethod, setDeliveryMethod] = useState('delivery'); // 'delivery' | 'pickup'
+  const [paymentMethod, setPaymentMethod] = useState('pago_movil');
+  const [orderNotes, setOrderNotes] = useState('');
+  // After ordering, the chat with the business opens with the order card
+  const [orderChat, setOrderChat] = useState(null); // { participant, pendingLocationOrder }
+  const createOrder = useCreateOrder();
 
   const businessList = Object.values(carts);
 
@@ -60,7 +68,42 @@ export default function CartsScreen() {
 
   const handleOpenCheckout = (cart) => {
     setSelectedBusinessCart(cart);
+    setOrderNotes('');
     setCheckoutModalVisible(true);
+  };
+
+  const handleConfirmOrder = async () => {
+    const cart = selectedBusinessCart;
+    if (!cart || createOrder.isPending) return;
+
+    try {
+      const order = await createOrder.mutateAsync({
+        businessId: cart.businessId,
+        deliveryMethod,
+        paymentMethod,
+        notes: orderNotes,
+        items: cart.items.map(item => ({ productId: item.productId, quantity: item.quantity })),
+      });
+
+      clearBusinessCart(cart.businessId);
+      setCheckoutModalVisible(false);
+      setSelectedBusinessCart(null);
+
+      setOrderChat({
+        participant: {
+          id: cart.businessId,
+          type: 'business',
+          name: cart.businessName || order.business?.businessName || 'Negocio',
+          avatar: cart.logoUrl || order.business?.logoUrl,
+        },
+        pendingLocationOrder: deliveryMethod === 'delivery'
+          ? { id: order.id, orderNumber: order.orderNumber }
+          : null,
+      });
+    } catch (error) {
+      const message = error?.response?.data?.message;
+      Alert.alert('No se pudo crear el pedido', typeof message === 'string' ? message : 'Intenta de nuevo en unos segundos.');
+    }
   };
 
   return (
@@ -353,7 +396,7 @@ export default function CartsScreen() {
                   >
                     <Ionicons name="card-outline" size={18} color="#ffffff" />
                     <Text style={{ color: '#ffffff', fontSize: 15, fontWeight: '700' }}>
-                      Pagar a {cart.businessName}
+                      Pedir a {cart.businessName}
                     </Text>
                   </TouchableOpacity>
                 </View>
@@ -484,47 +527,108 @@ export default function CartsScreen() {
                   </View>
                 </View>
 
-                {/* Pause Notice Box */}
-                <View style={{
-                  backgroundColor: '#fffbeb',
-                  borderWidth: 1,
-                  borderColor: '#fef3c7',
-                  borderRadius: 12,
-                  padding: 14,
-                  marginBottom: 16,
-                  flexDirection: 'row',
-                  gap: 10,
-                  alignItems: 'flex-start'
-                }}>
-                  <Ionicons name="information-circle" size={20} color="#f59e0b" style={{ marginTop: 2 }} />
-                  <View style={{ flex: 1 }}>
-                    <Text style={{ fontSize: 13, fontWeight: '700', color: '#92400e', marginBottom: 2 }}>
-                      Módulo de Cobro en Pausa
-                    </Text>
-                    <Text style={{ fontSize: 12, color: '#b45309', leading: 18 }}>
-                      La funcionalidad de procesamiento de pasarela de pago y cobro en línea se encuentra en pausa de momento según lo programado.
-                    </Text>
-                  </View>
+                {/* Payment method */}
+                <Text style={{ fontSize: 14, fontWeight: '700', color: '#111827', marginBottom: 10 }}>
+                  Método de pago
+                </Text>
+                <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 8, marginBottom: 8 }}>
+                  {PAYMENT_METHODS.map((method) => {
+                    const active = paymentMethod === method.id;
+                    return (
+                      <TouchableOpacity
+                        key={method.id}
+                        onPress={() => setPaymentMethod(method.id)}
+                        activeOpacity={0.8}
+                        style={{
+                          flexBasis: '48%',
+                          flexGrow: 1,
+                          flexDirection: 'row',
+                          alignItems: 'center',
+                          gap: 8,
+                          paddingVertical: 10,
+                          paddingHorizontal: 12,
+                          borderRadius: 12,
+                          borderWidth: 2,
+                          borderColor: active ? '#ef4444' : '#e5e7eb',
+                          backgroundColor: active ? '#fef2f2' : '#ffffff'
+                        }}
+                      >
+                        <Ionicons name={method.icon} size={18} color={active ? '#ef4444' : '#6b7280'} />
+                        <Text style={{ fontSize: 13, fontWeight: '700', color: active ? '#ef4444' : '#374151' }}>
+                          {method.label}
+                        </Text>
+                      </TouchableOpacity>
+                    );
+                  })}
+                </View>
+                <View style={{ flexDirection: 'row', gap: 8, alignItems: 'flex-start', marginBottom: 16 }}>
+                  <Ionicons name="chatbubbles-outline" size={16} color="#6b7280" style={{ marginTop: 1 }} />
+                  <Text style={{ flex: 1, fontSize: 12, color: '#6b7280', lineHeight: 17 }}>
+                    El pago se coordina por chat con el negocio. Al confirmar se abre la conversación con tu pedido
+                    {deliveryMethod === 'delivery' ? ' y podrás compartir tu ubicación de entrega.' : '.'}
+                  </Text>
                 </View>
 
+                {/* Notes */}
+                <Text style={{ fontSize: 14, fontWeight: '700', color: '#111827', marginBottom: 8 }}>
+                  Nota para el negocio (opcional)
+                </Text>
+                <TextInput
+                  value={orderNotes}
+                  onChangeText={setOrderNotes}
+                  placeholder="Ej: sin cebolla, timbre dañado, llamar al llegar…"
+                  placeholderTextColor="#9ca3af"
+                  multiline
+                  maxLength={300}
+                  style={{
+                    minHeight: 60,
+                    borderWidth: 1,
+                    borderColor: '#e5e7eb',
+                    borderRadius: 12,
+                    padding: 12,
+                    fontSize: 14,
+                    color: '#111827',
+                    textAlignVertical: 'top',
+                    marginBottom: 16
+                  }}
+                />
+
                 <TouchableOpacity
-                  onPress={() => setCheckoutModalVisible(false)}
+                  onPress={handleConfirmOrder}
+                  disabled={createOrder.isPending}
                   activeOpacity={0.85}
                   style={{
-                    backgroundColor: '#111827',
+                    backgroundColor: '#ef4444',
                     borderRadius: 12,
                     paddingVertical: 14,
-                    alignItems: 'center'
+                    alignItems: 'center',
+                    flexDirection: 'row',
+                    justifyContent: 'center',
+                    gap: 8,
+                    opacity: createOrder.isPending ? 0.7 : 1
                   }}
                 >
+                  {createOrder.isPending ? (
+                    <ActivityIndicator size="small" color="#ffffff" />
+                  ) : (
+                    <Ionicons name="checkmark-circle" size={20} color="#ffffff" />
+                  )}
                   <Text style={{ color: '#ffffff', fontSize: 15, fontWeight: '700' }}>
-                    Entendido
+                    {createOrder.isPending ? 'Enviando pedido…' : `Confirmar pedido · $${getCartSubtotal(selectedBusinessCart).toFixed(2)}`}
                   </Text>
                 </TouchableOpacity>
               </ScrollView>
             </View>
           </View>
         </Modal>
+      )}
+      {orderChat && (
+        <ConversationModal
+          visible={!!orderChat}
+          onClose={() => setOrderChat(null)}
+          targetParticipant={orderChat.participant}
+          pendingLocationOrder={orderChat.pendingLocationOrder}
+        />
       )}
     </SafeAreaView>
   );

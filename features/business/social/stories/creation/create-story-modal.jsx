@@ -12,6 +12,13 @@ import { useCurrentUserType } from '../../../../../shared/hooks/use-user-type';
 import { useCreateStory } from '../../../../../shared/hooks/use-business-social';
 import { useAuthStore } from '../../../../../core/auth/stores/auth-store';
 import { VideoView, useVideoPlayer } from 'expo-video';
+import * as VideoThumbnails from 'expo-video-thumbnails';
+import { compressImageForUpload } from '../../../../../shared/utils/compress-image';
+
+// iOS hands back .MOV videos, often without a mimeType, so the picker's own
+// `type` is the reliable signal
+const isVideoAsset = (asset) =>
+  asset?.type === 'video' || asset?.mimeType?.startsWith('video/') || /\.(mp4|mov)$/i.test(asset?.uri || '');
 
 export const CreateStoryModal = ({ visible, onClose }) => {
   const [selectedAsset, setSelectedAsset] = useState(null);
@@ -55,8 +62,8 @@ export const CreateStoryModal = ({ visible, onClose }) => {
   };
 
   const uploadMediaWithFallback = async (asset) => {
-    const imageUri = asset.uri;
-    const isVideo = asset.type === 'video' || asset.mimeType?.startsWith('video/') || imageUri.endsWith('.mp4');
+    const isVideo = isVideoAsset(asset);
+    const imageUri = isVideo ? asset.uri : await compressImageForUpload(asset.uri);
     const mediaTypeStr = isVideo ? 'video' : 'image';
     // Parse the extension off the filename only; query strings and iOS' `#<plist>`
     // fragment would otherwise end up baked into the uploaded filename
@@ -80,8 +87,8 @@ export const CreateStoryModal = ({ visible, onClose }) => {
       const formData = new FormData();
       formData.append(isVideo ? 'video' : 'image', {
         uri: imageUri,
-        name: asset.name || `${mediaTypeStr}_${Date.now()}.${ext}`,
-        type: asset.mimeType || (isVideo ? 'video/mp4' : 'image/jpeg')
+        name: `${mediaTypeStr}_${Date.now()}.${ext}`,
+        type: isVideo ? (asset.mimeType || 'video/mp4') : 'image/jpeg'
       });
       formData.append('productName', 'story_media');
       if (businessId) {
@@ -121,7 +128,18 @@ export const CreateStoryModal = ({ visible, onClose }) => {
       // 1. Upload Media
       const uploadedUrl = await uploadMediaWithFallback(selectedAsset);
       
-      const isVideo = selectedAsset.mimeType?.startsWith('video/') || selectedAsset.uri.endsWith('.mp4');
+      const isVideo = isVideoAsset(selectedAsset);
+
+      // A video story needs a still for the story ring / previews
+      let thumbnailUrl;
+      if (isVideo) {
+        try {
+          const { uri: thumbUri } = await VideoThumbnails.getThumbnailAsync(selectedAsset.uri, { time: 500 });
+          thumbnailUrl = await uploadMediaWithFallback({ uri: thumbUri, type: 'image' });
+        } catch (e) {
+          console.warn('Could not create story thumbnail:', e?.message);
+        }
+      }
       
       // Parse tags
       const tagsArray = tags.split(',').map(t => t.trim()).filter(t => t.length > 0);
@@ -132,6 +150,7 @@ export const CreateStoryModal = ({ visible, onClose }) => {
         userId: user?.id,
         mediaUrl: uploadedUrl,
         mediaType: isVideo ? 'video' : 'image',
+        thumbnailUrl,
         tags: tagsArray,
         duration: isVideo ? 30 : 5, // Media duration
         expiresInHours: duration // Story lifetime
@@ -157,7 +176,7 @@ export const CreateStoryModal = ({ visible, onClose }) => {
     }
   };
 
-  const isVideo = selectedAsset?.mimeType?.startsWith('video/') || selectedAsset?.uri?.endsWith('.mp4');
+  const isVideo = isVideoAsset(selectedAsset);
 
   return (
     <Modal

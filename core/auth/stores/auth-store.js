@@ -1,6 +1,7 @@
 import { create } from 'zustand';
 import { authService } from '../services/auth-service';
 import { queryClient } from '../../../shared/config/query-client';
+import { setUnauthorizedHandler } from '../../../shared/config/api-client';
 
 // Auth state store (not persisted - Firebase handles persistence)
 export const useAuthStore = create((set, get) => ({
@@ -128,3 +129,11 @@ export const useAuthStore = create((set, get) => ({
   getUserId: () => get().user?.uid,
   getUserEmail: () => get().user?.email,
 }));
+
+// Session rejected by the backend: sign out so the root layout sends the user
+// back to login, rather than leaving them "logged in" without a token
+setUnauthorizedHandler(() => {
+  if (!useAuthStore.getState().isAuthenticated) return;
+  useAuthStore.setState({ user: null, isAuthenticated: false, isLoading: false });
+  queryClient.clear();
+});

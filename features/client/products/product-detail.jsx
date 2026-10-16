@@ -25,6 +25,7 @@ import ProductRatingModal from './components/product-rating-modal';
 import ConversationModal from '../../shared/chat/conversation-modal';
 import { useAuthStore } from '../../../core/auth/stores/auth-store';
 import { useFollowingBusinesses, useToggleFollowBusiness } from '../../shared/social/hooks/use-businesses';
+import { PostThumbnail } from '../../../shared/components/media/post-thumbnail';
 
 const { width: SCREEN_WIDTH } = Dimensions.get('window');
 const IMAGE_CONTAINER_HEIGHT = 380;
@@ -613,7 +614,6 @@ export default function ProductDetail({
                     contentContainerStyle={{ gap: 12 }}
                   >
                     {relatedPosts.map((post) => {
-                      const thumb = post.thumbnailUrl || (post.media?.[0]?.url || post.media?.[0]) || null;
                       const isVideo = post.type === 'video';
 
                       return (
@@ -630,17 +630,7 @@ export default function ProductDetail({
                             position: 'relative'
                           }}
                         >
-                          {thumb ? (
-                            <Image
-                              source={{ uri: thumb }}
-                              style={{ width: '100%', height: '100%' }}
-                              resizeMode="cover"
-                            />
-                          ) : (
-                            <View style={{ flex: 1, alignItems: 'center', justifyContent: 'center' }}>
-                              <Ionicons name={isVideo ? 'play-circle' : 'image'} size={36} color="#ffffff" />
-                            </View>
-                          )}
+                          <PostThumbnail post={post} iconColor="#ffffff" />
 
                           {/* Overlay Gradient with View Count */}
                           <View style={{

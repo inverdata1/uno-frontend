@@ -14,6 +14,7 @@ import { ref, uploadBytes, getDownloadURL } from 'firebase/storage';
 import { storage } from '../../../../../shared/config/firebase';
 import { apiClient } from '../../../../../shared/config/api-client';
 import * as VideoThumbnails from 'expo-video-thumbnails';
+import { compressImageForUpload } from '../../../../../shared/utils/compress-image';
 
 // Long enough for a real video upload on a slow connection, short enough that a
 // misconfigured bucket doesn't leave the user staring at a spinner
@@ -54,16 +55,17 @@ export function PostCreationFlow({ visible, onClose, initialPost = null, allowed
   const uploadMediaWithFallback = async (mediaItem, index) => {
     if (mediaItem.existing) return mediaItem.uri; // Already uploaded URL
 
-    const imageUri = mediaItem.uri;
-    const isVideo = mediaItem.type === 'video' || imageUri.endsWith('.mp4');
+    const isVideo = mediaItem.type === 'video' || /\.(mp4|mov)$/i.test(mediaItem.uri);
+    // Full-size photos trip the server's upload size limit (413)
+    const imageUri = isVideo ? mediaItem.uri : await compressImageForUpload(mediaItem.uri);
     const mediaTypeStr = isVideo ? 'video' : 'image';
     // Parse the extension off the filename only. Taking the last dot-segment of
     // the whole URI picked up query strings and iOS' `#<plist>` fragment, which
     // ended up baked into the uploaded filename.
     const fileName = imageUri.split('#')[0].split('?')[0].split('/').pop() || '';
-    const ext = fileName.includes('.')
-      ? fileName.split('.').pop()
-      : (isVideo ? 'mp4' : 'jpg');
+    const ext = isVideo
+      ? (fileName.includes('.') ? fileName.split('.').pop() : 'mp4')
+      : 'jpg';
     
     try {
       // 1. Try Firebase first, but don't let it stall the whole publish: an
@@ -136,7 +138,7 @@ export function PostCreationFlow({ visible, onClose, initialPost = null, allowed
           const url = await uploadMediaWithFallback(m, index);
           return {
             url,
-            type: m.type === 'video' || m.uri.endsWith('.mp4') ? 'video' : 'image'
+            type: m.type === 'video' || /\.(mp4|mov)$/i.test(m.uri) ? 'video' : 'image'
           };
         })
       );
@@ -153,13 +155,13 @@ export function PostCreationFlow({ visible, onClose, initialPost = null, allowed
       // Generate thumbnail if the first media is a video
       let thumbnailUrl = undefined;
       const firstMedia = selectedMedia[0];
-      if (firstMedia && (firstMedia.type === 'video' || firstMedia.uri.endsWith('.mp4'))) {
+      if (firstMedia && !firstMedia.existing && (firstMedia.type === 'video' || /\.(mp4|mov)$/i.test(firstMedia.uri))) {
          try {
            const { uri: thumbUri } = await VideoThumbnails.getThumbnailAsync(firstMedia.uri, { time: 500 });
            // We trick uploadMediaWithFallback by providing a mock media item for the thumbnail
            thumbnailUrl = await uploadMediaWithFallback({ uri: thumbUri, type: 'image' }, 'thumb');
          } catch(e) {
-           console.log("Error generating video thumbnail", e);
+           console.warn('Error generating video thumbnail', e);
          }
       }
 

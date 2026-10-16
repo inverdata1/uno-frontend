@@ -14,6 +14,7 @@ import ProductDetail from '../products/product-detail';
 import VideoViewer from '../social/videos/video-viewer';
 import PostViewer from '../../shared/social/posts/post-viewer';
 import OffersBanner from './offers-banner';
+import { PostThumbnail } from '../../../shared/components/media/post-thumbnail';
 
 const { width } = Dimensions.get('window');
 
@@ -361,8 +362,6 @@ export default function ClientHomeScreen() {
             contentContainerStyle={{ paddingHorizontal: 16, gap: 12 }}
           >
             {trendingPosts.map((post) => {
-              const firstMedia = Array.isArray(post.media) ? post.media[0] : null;
-              const thumbnail = post.thumbnailUrl || (typeof firstMedia === 'string' ? firstMedia : firstMedia?.url);
               return (
                 <TouchableOpacity
                   key={post.id}
@@ -373,13 +372,7 @@ export default function ClientHomeScreen() {
                   }}
                   style={{ width: 120, height: 170, borderRadius: 12, overflow: 'hidden', backgroundColor: '#f8fafc' }}
                 >
-                  {thumbnail ? (
-                    <Image source={{ uri: thumbnail }} style={{ width: '100%', height: '100%' }} resizeMode="cover" />
-                  ) : (
-                    <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center' }}>
-                      <Ionicons name="image-outline" size={32} color="#cbd5e1" />
-                    </View>
-                  )}
+                  <PostThumbnail post={post} iconSize={32} iconColor="#cbd5e1" />
                   {post.type === 'video' && (
                     <View style={{
                       position: 'absolute', top: 8, right: 8,

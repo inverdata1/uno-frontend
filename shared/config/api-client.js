@@ -22,6 +22,13 @@ const axiosClient = axios.create({
   },
 });
 
+// Called when the backend rejects our session (expired/invalid token), so the
+// app can drop back to login instead of firing tokenless requests forever
+let onUnauthorized = null;
+export const setUnauthorizedHandler = (handler) => {
+  onUnauthorized = handler;
+};
+
 // Axios interceptors
 axiosClient.interceptors.request.use(
   async (config) => {
@@ -57,12 +64,14 @@ axiosClient.interceptors.response.use(
   (error) => {
     console.error(`❌ HTTP Error: ${error.response?.status} ${error.config?.url}`, error.response?.data);
 
-    if (error.response?.status === 401) {
+    // A 401 from /auth/* is just a wrong password, not a dead session
+    const isAuthRequest = error.config?.url?.startsWith('/auth/');
+    if (error.response?.status === 401 && !isAuthRequest) {
       console.warn('🔐 Unauthorized - clearing token and redirecting to login');
       // Clear storage so we don't get stuck in a loop of trying to use an invalid token
       AsyncStorage.removeItem('userToken').catch(() => {});
       AsyncStorage.removeItem('userId').catch(() => {});
-      // TODO: Handle unauthorized (e.g. event emitter to logout)
+      onUnauthorized?.();
     }
 
     return Promise.reject(error);

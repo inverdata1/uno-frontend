@@ -11,6 +11,7 @@ import { useAuthStore } from '../../../core/auth/stores/auth-store';
 import ProductDetailModal from '../products/product-detail-modal';
 import PostViewer from '../../shared/social/posts/post-viewer';
 import ConversationModal from '../../shared/chat/conversation-modal';
+import { PostThumbnail } from '../../../shared/components/media/post-thumbnail';
 
 const { width } = Dimensions.get('window');
 
@@ -115,13 +116,6 @@ export default function BusinessProfile({ business, onClose }) {
     if (contentFilter === 'photos') return post.type === 'image';
     return true;
   });
-
-  // Posts are saved without a thumbnail, so fall back to the first media item
-  const getPostThumbnail = (post) => {
-    if (post?.thumbnailUrl) return post.thumbnailUrl;
-    const firstMedia = Array.isArray(post?.media) ? post.media[0] : null;
-    return typeof firstMedia === 'string' ? firstMedia : firstMedia?.url;
-  };
 
   const cardWidth = (width - 48) / 2;
 
@@ -512,21 +506,7 @@ export default function BusinessProfile({ business, onClose }) {
                       height: ((width - 4) / 2) * 1.5,
                     }}
                   >
-                    {getPostThumbnail(content) ? (
-                      <Image
-                        source={{ uri: getPostThumbnail(content) }}
-                        style={{ width: '100%', height: '100%' }}
-                        resizeMode="cover"
-                      />
-                    ) : (
-                      <View className="flex-1 justify-center items-center">
-                        <Ionicons
-                          name={content.type === 'video' ? 'play-circle' : 'image'}
-                          size={48}
-                          color="#d1d5db"
-                        />
-                      </View>
-                    )}
+                    <PostThumbnail post={content} iconSize={48} />
 
                     {/* Video indicator */}
                     {content.type === 'video' && (

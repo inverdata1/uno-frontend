@@ -6,12 +6,12 @@ import { useRouter } from 'expo-router';
 import { Text } from '../../../../shared/components/ui';
 import { useAuthStore } from '../../../../core/auth/stores/auth-store';
 import { colors } from '../../../../shared/utils/colors';
-import { resolveMediaUrl } from '../../../../shared/utils/media-url';
 import {
   useFavorites,
   useToggleFavoritePost,
   useToggleFavoriteProduct,
 } from '../../../shared/social/hooks/use-favorites';
+import { PostThumbnail } from '../../../../shared/components/media/post-thumbnail';
 
 const { width } = Dimensions.get('window');
 
@@ -74,13 +74,6 @@ export default function FavoritesScreen({ onPostPress, onProductPress }) {
   const handleRemoveProduct = (productId) => {
     if (!user?.id) return;
     toggleProduct.mutate({ productId, userId: user.id });
-  };
-
-  const getPostThumbnail = (post) => {
-    if (post.thumbnailUrl) return resolveMediaUrl(post.thumbnailUrl);
-    const firstMedia = Array.isArray(post.media) ? post.media[0] : null;
-    const raw = typeof firstMedia === 'string' ? firstMedia : firstMedia?.url;
-    return resolveMediaUrl(raw);
   };
 
   const postCardWidth = (width - 36) / 3; // 3 columns
@@ -250,17 +243,7 @@ export default function FavoritesScreen({ onPostPress, onProductPress }) {
                         height: postCardWidth * 1.3,
                       }}
                     >
-                      {getPostThumbnail(post) ? (
-                        <Image
-                          source={{ uri: getPostThumbnail(post) }}
-                          className="w-full h-full"
-                          resizeMode="cover"
-                        />
-                      ) : (
-                        <View className="flex-1 justify-center items-center">
-                          <Ionicons name="image-outline" size={28} color="#cbd5e1" />
-                        </View>
-                      )}
+                      <PostThumbnail post={post} iconSize={28} iconColor="#cbd5e1" />
                       {/* Video icon overlay */}
                       {post.type === 'video' && (
                         <View className="absolute bottom-2 left-2 w-6 h-6 rounded-full bg-black/60 justify-center items-center">

@@ -7,7 +7,8 @@ import BusinessChatsModal from '../business-chats-modal';
 
 /**
  * BusinessChatFAB Component
- * Floating Action Button for Business Owners with unread message badge counter
+ * Header button (shown on Pedidos) that opens the business' chats, with an
+ * unread message badge counter
  */
 export default function BusinessChatFAB() {
   const { currentContext } = useCurrentUserType();
@@ -45,44 +46,36 @@ export default function BusinessChatFAB() {
     <>
       <TouchableOpacity
         onPress={() => setModalVisible(true)}
-        activeOpacity={0.85}
+        activeOpacity={0.8}
+        accessibilityLabel="Mensajes"
         style={{
-          position: 'absolute',
-          bottom: 80,
-          right: 20,
-          width: 58,
-          height: 58,
-          borderRadius: 29,
-          backgroundColor: '#ef4444',
+          width: 40,
+          height: 40,
+          borderRadius: 20,
+          backgroundColor: '#fef2f2',
           alignItems: 'center',
           justifyContent: 'center',
-          zIndex: 999,
-          shadowColor: '#ef4444',
-          shadowOffset: { width: 0, height: 4 },
-          shadowOpacity: 0.35,
-          shadowRadius: 8,
-          elevation: 6
         }}
       >
-        <Ionicons name="chatbubble-ellipses" size={26} color="#ffffff" />
+        <Ionicons name="chatbubble-ellipses-outline" size={21} color="#ef4444" />
 
         {/* Unread Count Badge */}
         {unreadCount > 0 && (
           <View style={{
             position: 'absolute',
-            top: -4,
-            right: -4,
-            backgroundColor: '#111827',
-            paddingHorizontal: 7,
-            paddingVertical: 3,
-            borderRadius: 12,
+            top: -3,
+            right: -5,
+            backgroundColor: '#ef4444',
+            paddingHorizontal: 5,
+            paddingVertical: 1,
+            borderRadius: 10,
             borderWidth: 2,
             borderColor: '#ffffff',
-            minWidth: 22,
+            minWidth: 20,
             alignItems: 'center',
             justifyContent: 'center'
           }}>
-            <Text style={{ color: '#ffffff', fontSize: 11, fontWeight: '800' }}>
+            <Text style={{ color: '#ffffff', fontSize: 10, fontWeight: '800' }}>
               {unreadCount > 99 ? '99+' : unreadCount}
             </Text>
           </View>

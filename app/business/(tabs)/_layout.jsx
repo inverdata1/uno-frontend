@@ -1,4 +1,4 @@
-import { Tabs, usePathname } from 'expo-router';
+import { Tabs } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { UserTypeSwitcherModal } from '../../../shared/components/layout/user-type-switcher/user-type-switcher-modal';
 import { theme } from '../../../shared/config/theme';
@@ -7,7 +7,6 @@ import { getTabIcon } from '../../../shared/utils/tab-helpers';
 import { Platform, useWindowDimensions, View } from 'react-native';
 import { WebSidebar } from '../../../shared/components/layout/web-sidebar';
 import { useState, useEffect } from 'react';
-import BusinessChatFAB from '../../../features/business/chat/components/business-chat-fab';
 
 /**
  * Business Tabs Layout
@@ -15,7 +14,6 @@ import BusinessChatFAB from '../../../features/business/chat/components/business
  */
 export default function BusinessTabsLayout() {
   const insets = useSafeAreaInsets();
-  const pathname = usePathname();
   const { userTypeSwitcherVisible, closeUserTypeSwitcher } = useAppStore();
   const { width } = useWindowDimensions();
   
@@ -23,11 +21,6 @@ export default function BusinessTabsLayout() {
   useEffect(() => setIsMounted(true), []);
   
   const isDesktopWeb = isMounted && Platform.OS === 'web' && width > 768;
-
-  // Hide floating action button on Dashboard and Profile
-  const isDashboard = pathname === '/business' || pathname === '/business/' || pathname.endsWith('/index');
-  const isProfile = pathname.endsWith('/profile');
-  const showFAB = !isDashboard && !isProfile;
 
   const businessRoutes = [
     { label: 'Dashboard', path: '/business', icon: 'stats-chart' },
@@ -104,9 +97,6 @@ export default function BusinessTabsLayout() {
 
         </Tabs>
       </View>
-
-      {/* Floating Action Button for Business Chats (Tienda, Crear, Pedidos) */}
-      {showFAB && <BusinessChatFAB />}
 
       {/* Global User Type Switcher Modal */}
       <UserTypeSwitcherModal

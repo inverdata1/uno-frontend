@@ -87,7 +87,7 @@ export const CategoriesList = ({ createModalVisible, setCreateModalVisible }) =>
         <FlatList
           data={categories}
           keyExtractor={(item) => item.id}
-          contentContainerStyle={{ padding: 16 }}
+          contentContainerStyle={{ padding: 16, paddingBottom: 100 }}
           renderItem={({ item }) => (
             <View style={{
               flexDirection: 'row',

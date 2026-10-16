@@ -285,10 +285,10 @@ const PhotoGrid = ({ products, onProductPress, onEditProduct }) => {
             onOptions={(p) => setSelectedProductOptions(p)}
           />
         )}
-        contentContainerStyle={{ paddingVertical: 16, paddingHorizontal: 8 }}
+        // Extra bottom room so the last row isn't hidden behind the + button
+        contentContainerStyle={{ paddingTop: 16, paddingBottom: 100, paddingHorizontal: 8 }}
         showsVerticalScrollIndicator={false}
-        scrollEnabled={false}
-        nestedScrollEnabled={true}
+        style={{ flex: 1 }}
         initialNumToRender={10}
         maxToRenderPerBatch={10}
         windowSize={5}

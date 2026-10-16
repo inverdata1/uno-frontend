@@ -117,27 +117,6 @@ export const AdaptiveHeader = () => {
 
         {/* User Actions */}
         <View style={{ flexDirection: 'row', gap: 8 }}>
-          {/* Balance/Wallet - Only for client and delivery */}
-          {(currentUserType === 'client' || currentUserType === 'delivery') && (
-            <TouchableOpacity style={{
-              backgroundColor: 'rgba(255, 255, 255, 0.2)',
-              paddingHorizontal: 12,
-              paddingVertical: 8,
-              borderRadius: 12,
-              flexDirection: 'row',
-              alignItems: 'center'
-            }}>
-              <Ionicons name="wallet-outline" size={16} color="#ffffff" style={{ marginRight: 6 }} />
-              <Text style={{
-                color: '#ffffff',
-                fontSize: 14,
-                fontWeight: '600'
-              }}>
-                $0.00
-              </Text>
-            </TouchableOpacity>
-          )}
-
           {/* Notifications */}
           <TouchableOpacity style={{
             width: 40,

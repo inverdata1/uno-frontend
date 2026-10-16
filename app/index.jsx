@@ -3,13 +3,12 @@ import { View } from 'react-native';
 import { useAuthStore } from '../core/auth/stores/auth-store';
 import { useCurrentUserType } from '../shared/hooks/use-user-type';
 import { Text } from '../shared/components/ui';
+import { BrandLogo } from '../shared/components/ui/brand-logo';
 
 function LoadingScreen() {
   return (
     <View className="flex-1 bg-card items-center justify-center">
-      <View className="w-16 h-16 bg-primary-500 rounded-full items-center justify-center mb-4">
-        <Text className="text-xl font-bold text-primary-foreground">UNO</Text>
-      </View>
+      <BrandLogo height={44} style={{ marginBottom: 16 }} />
       <Text variant="body" className="text-muted-foreground">
         Cargando...
       </Text>

@@ -6,6 +6,7 @@ import { z } from 'zod';
 import { Button, Input, Text } from '../../../../shared/components/ui';
 import { WebAuthLayout } from '../../../../shared/components/layout/web-auth-layout';
 import { useLogin } from '../../hooks/login/use-login';
+import { BrandLogo } from '../../../../shared/components/ui/brand-logo';
 
 export const LoginForm = () => {
   const { width } = useWindowDimensions();
@@ -25,14 +26,12 @@ export const LoginForm = () => {
         <WebAuthLayout scrollable={false}>
           {/* Logo */}
           <View style={{ alignItems: 'center', marginBottom: 32 }}>
-            <View style={styles.logoContainer}>
-              <Text style={styles.logoText}>UNO</Text>
-            </View>
+            <BrandLogo height={48} style={{ marginBottom: 20 }} />
             <Text variant="heading" style={{ textAlign: 'center' }}>
               Inicia Sesión
             </Text>
             <Text variant="body" style={{ textAlign: 'center', color: '#6b7280', marginTop: 8 }}>
-              Accede a tu cuenta UNO Delivery
+              Accede a tu cuenta UNO AI
             </Text>
           </View>
 
@@ -140,14 +139,12 @@ export const LoginForm = () => {
           <View className="flex-1 px-6 justify-center">
             {/* Logo */}
             <View className="items-center mb-8">
-              <View style={styles.logoContainer}>
-                <Text style={styles.logoText}>UNO</Text>
-              </View>
+              <BrandLogo height={48} style={{ marginBottom: 20 }} />
               <Text variant="heading" className="text-center">
                 Inicia Sesión
               </Text>
               <Text variant="body" className="text-center text-muted-foreground mt-2">
-                Accede a tu cuenta UNO Delivery
+                Accede a tu cuenta UNO AI
               </Text>
             </View>
 

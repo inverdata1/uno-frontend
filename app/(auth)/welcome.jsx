@@ -4,6 +4,7 @@ import { Platform, View, useWindowDimensions } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { WelcomeActions, WelcomeCarousel, WelcomeHeader } from '../../core/auth/components/welcome';
 import { Button, Text } from '../../shared/components/ui';
+import { BrandLogo } from '../../shared/components/ui/brand-logo';
 
 const features = [
   { icon: '🛒', text: 'Miles de productos locales' },
@@ -18,20 +19,7 @@ function WebWelcome() {
       <View style={{ flex: 1, padding: 60, justifyContent: 'center', backgroundColor: '#0f172a' }}>
         {/* Logo */}
         <View style={{ marginBottom: 48 }}>
-          <View style={{
-            width: 72,
-            height: 72,
-            backgroundColor: '#ef4444',
-            borderRadius: 20,
-            alignItems: 'center',
-            justifyContent: 'center',
-            marginBottom: 20,
-          }}>
-            <Text style={{ fontSize: 28, fontWeight: '900', color: '#fff', letterSpacing: 2 }}>UNO</Text>
-          </View>
-          <Text style={{ fontSize: 42, fontWeight: '800', color: '#f1f5f9', marginBottom: 12 }}>
-            UNO Delivery
-          </Text>
+          <BrandLogo height={64} style={{ marginBottom: 24 }} />
           <Text style={{ fontSize: 18, color: '#94a3b8', lineHeight: 28 }}>
             Descubre, compra y recibe{'\n'}todo lo que necesitas
           </Text>

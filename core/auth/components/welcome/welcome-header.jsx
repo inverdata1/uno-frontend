@@ -1,13 +1,11 @@
 import React from 'react';
 import { View } from 'react-native';
-import { Text } from '../../../../shared/components/ui';
+import { BrandLogo } from '../../../../shared/components/ui/brand-logo';
 
 export function WelcomeHeader() {
   return (
     <View className="pt-12 pb-8 items-center">
-      <View className="w-16 h-16 bg-primary-500 rounded-full items-center justify-center">
-        <Text className="text-xl font-bold text-primary-foreground">UNO</Text>
-      </View>
+      <BrandLogo height={52} />
     </View>
   );
 }

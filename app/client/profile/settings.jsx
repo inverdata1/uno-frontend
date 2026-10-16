@@ -130,13 +130,6 @@ export default function ClientSettingsScreen() {
                 showBorder={true}
               />
               <SettingsItem
-                icon="card-outline"
-                title="Métodos de Pago"
-                subtitle="Tarjetas y métodos guardados"
-                onPress={() => Alert.alert('Próximamente', 'Función en desarrollo')}
-                showBorder={true}
-              />
-              <SettingsItem
                 icon="location-outline"
                 title="Direcciones"
                 subtitle="Gestiona tus direcciones"
@@ -146,8 +139,8 @@ export default function ClientSettingsScreen() {
             </View>
           </View>
 
-          {/* Mode Options - Show if user doesn't have these modes */}
-          {(!availableUserTypes.includes('business') || !availableUserTypes.includes('delivery')) && (
+          {/* Mode Options - Show if user doesn't have a business yet */}
+          {!availableUserTypes.includes('business') && (
             <View style={{ marginBottom: 24 }}>
               <Text style={{
                 fontSize: 13,
@@ -171,27 +164,14 @@ export default function ClientSettingsScreen() {
                 shadowRadius: 8,
                 elevation: 2
               }}>
-                {!availableUserTypes.includes('business') && (
-                  <SettingsItem
-                    icon="briefcase-outline"
-                    title="Vende con UNO"
-                    subtitle="Crea tu negocio y vende"
-                    onPress={() => setBusinessUpgradeModalVisible(true)}
-                    showBorder={!availableUserTypes.includes('delivery')}
-                    highlight={true}
-                  />
-                )}
-
-                {!availableUserTypes.includes('delivery') && (
-                  <SettingsItem
-                    icon="bicycle-outline"
-                    title="Entrega con UNO"
-                    subtitle="Conviértete en repartidor"
-                    onPress={() => Alert.alert('Próximamente', 'Función en desarrollo')}
-                    showBorder={false}
-                    highlight={true}
-                  />
-                )}
+                <SettingsItem
+                  icon="briefcase-outline"
+                  title="Vende con UNO"
+                  subtitle="Crea tu negocio y vende"
+                  onPress={() => setBusinessUpgradeModalVisible(true)}
+                  showBorder={false}
+                  highlight={true}
+                />
               </View>
             </View>
           )}

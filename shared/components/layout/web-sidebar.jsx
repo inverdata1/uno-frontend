@@ -3,6 +3,7 @@ import { theme } from '../../config/theme';
 import { Ionicons } from '@expo/vector-icons';
 import { useRouter, usePathname } from 'expo-router';
 import { useState, useRef } from 'react';
+import { BrandLogo } from '../ui/brand-logo';
 
 export const WebSidebar = ({ routes }) => {
   const router = useRouter();
@@ -24,7 +25,11 @@ export const WebSidebar = ({ routes }) => {
     <Animated.View style={[styles.sidebarContainer, { width: widthAnim }]}>
       {/* Brand / Logo Area */}
       <View style={[styles.brandContainer, isCollapsed && styles.brandContainerCollapsed]}>
-        <Text style={styles.brandText}>{isCollapsed ? 'U' : 'UNO'}</Text>
+        {isCollapsed ? (
+          <Text style={styles.brandText}>U</Text>
+        ) : (
+          <BrandLogo height={30} />
+        )}
       </View>
 
       {/* Navigation Links */}

@@ -8,6 +8,7 @@ import { WebAuthLayout } from '../../../../shared/components/layout/web-auth-lay
 import { useRegistration } from '../../hooks/register/use-registration';
 import { useAuthStore } from '../../stores/auth-store';
 import { BasicInfoStep } from './basic-info-step';
+import { BrandLogo } from '../../../../shared/components/ui/brand-logo';
 
 export const RegistrationForm = ({ onComplete }) => {
   const { width } = useWindowDimensions();
@@ -474,9 +475,7 @@ export const RegistrationForm = ({ onComplete }) => {
         <View>
             {/* Logo */}
             <View className="items-center mb-8">
-              <View style={styles.logoContainer}>
-                <Text style={styles.logoText}>UNO</Text>
-              </View>
+              <BrandLogo height={48} style={{ marginBottom: 20 }} />
               <Text variant="heading" className="text-center">
                 Crear Cuenta
               </Text>
@@ -592,9 +591,7 @@ export const RegistrationForm = ({ onComplete }) => {
     <View className="flex-1 px-6 py-8">
       {/* Logo */}
       <View className="items-center mb-8">
-        <View style={styles.logoContainer}>
-          <Text style={styles.logoText}>UNO</Text>
-        </View>
+        <BrandLogo height={48} style={{ marginBottom: 20 }} />
         <Text variant="heading" className="text-center">
           Crear Cuenta
         </Text>

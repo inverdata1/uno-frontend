@@ -1,5 +1,6 @@
 import { useState } from 'react';
-import { Image, Linking, Modal, TouchableOpacity, View } from 'react-native';
+import { Alert, Image, Linking, Modal, TouchableOpacity, View } from 'react-native';
+import * as Clipboard from 'expo-clipboard';
 import { Ionicons } from '@expo/vector-icons';
 import { Text } from '../../../shared/components/ui/text';
 import {
@@ -9,8 +10,9 @@ import {
   getPaymentMethodLabel,
 } from '../../../shared/utils/order-status';
 import { resolveMediaUrl } from '../../../shared/utils/media-url';
+import { getAccountRows, getAccountText, getAccountType } from '../../../shared/utils/payment-accounts';
 
-export const ATTACHMENT_TYPES = ['order', 'order_status', 'location', 'image'];
+export const ATTACHMENT_TYPES = ['order', 'order_status', 'location', 'image', 'payment_account'];
 
 /**
  * Order, location and image messages carry their data as JSON in `mediaUrl`.
@@ -205,5 +207,70 @@ export function ImageCard({ image, isMine }) {
         </View>
       </Modal>
     </>
+  );
+}
+
+const copyToClipboard = async (text, what) => {
+  try {
+    await Clipboard.setStringAsync(String(text));
+    Alert.alert('Copiado', `${what} copiado al portapapeles`);
+  } catch {
+    Alert.alert('Error', 'No se pudo copiar');
+  }
+};
+
+/**
+ * Bank / Pago móvil / Zelle / Binance details sent by the business.
+ * Each value can be copied on its own, or all of them at once.
+ */
+export function PaymentAccountCard({ account, isMine }) {
+  const type = getAccountType(account.accountType);
+  const data = { ...account, type: account.accountType };
+  const rows = getAccountRows(data);
+
+  return (
+    <View style={{
+      width: 260, backgroundColor: '#ffffff', borderRadius: 18, overflow: 'hidden', marginBottom: 6,
+      borderWidth: 1, borderColor: isMine ? '#fecaca' : '#e2e8f0',
+    }}>
+      <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10, padding: 12, backgroundColor: `${type.color}14` }}>
+        <View style={{ width: 34, height: 34, borderRadius: 10, backgroundColor: '#ffffff', alignItems: 'center', justifyContent: 'center' }}>
+          <Ionicons name={type.icon} size={18} color={type.color} />
+        </View>
+        <View style={{ flex: 1 }}>
+          <Text style={{ fontSize: 12, color: '#64748b' }}>Datos para pagar</Text>
+          <Text style={{ fontSize: 15, fontWeight: '800', color: '#0f172a' }}>{type.label}</Text>
+        </View>
+      </View>
+
+      <View style={{ paddingHorizontal: 12, paddingVertical: 6 }}>
+        {rows.map((row) => (
+          <TouchableOpacity
+            key={row.key}
+            onPress={() => copyToClipboard(row.value, row.label)}
+            activeOpacity={0.7}
+            style={{ flexDirection: 'row', alignItems: 'center', paddingVertical: 7, borderBottomWidth: 1, borderBottomColor: '#f1f5f9' }}
+          >
+            <View style={{ flex: 1 }}>
+              <Text style={{ fontSize: 11, color: '#94a3b8' }}>{row.label}</Text>
+              <Text style={{ fontSize: 14, fontWeight: '600', color: '#0f172a' }} selectable>{row.value}</Text>
+            </View>
+            <Ionicons name="copy-outline" size={16} color="#94a3b8" />
+          </TouchableOpacity>
+        ))}
+      </View>
+
+      <TouchableOpacity
+        onPress={() => copyToClipboard(getAccountText(data), 'Datos de pago')}
+        activeOpacity={0.85}
+        style={{
+          flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 6,
+          margin: 12, marginTop: 6, paddingVertical: 9, borderRadius: 12, backgroundColor: '#0f172a',
+        }}
+      >
+        <Ionicons name="copy" size={15} color="#ffffff" />
+        <Text style={{ fontSize: 13, fontWeight: '700', color: '#ffffff' }}>Copiar todo</Text>
+      </TouchableOpacity>
+    </View>
   );
 }

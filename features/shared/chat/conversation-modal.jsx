@@ -20,7 +20,9 @@ import { apiClient } from '../../../shared/config/api-client';
 import { useAuthStore } from '../../../core/auth/stores/auth-store';
 import { useCurrentUserType } from '../../../shared/hooks/use-user-type';
 import { getCurrentLocation } from '../../../shared/utils/current-location';
-import { ImageCard, LocationCard, OrderCard, parseChatAttachment } from './chat-attachments';
+import { ImageCard, LocationCard, OrderCard, PaymentAccountCard, parseChatAttachment } from './chat-attachments';
+import { PaymentAccountsSheet } from '../../business/payments/payment-accounts-sheet';
+import { getAccountSummary, getAccountType, toAccountPayload } from '../../../shared/utils/payment-accounts';
 import * as ImagePicker from 'expo-image-picker';
 import { compressImageForUpload } from '../../../shared/utils/compress-image';
 
@@ -154,6 +156,7 @@ function ConversationContent({
   const [sharingLocationFor, setSharingLocationFor] = useState(null); // orderId | 'free' while locating
   const [dismissedLocationPrompt, setDismissedLocationPrompt] = useState(false);
   const [sendingImage, setSendingImage] = useState(false);
+  const [walletVisible, setWalletVisible] = useState(false);
 
   const scrollViewRef = useRef(null);
 
@@ -456,6 +459,20 @@ function ConversationContent({
     ]);
   };
 
+  // Business sends one of its saved accounts so the client knows where to pay
+  const sendPaymentAccount = async (account) => {
+    setWalletVisible(false);
+    try {
+      await sendAttachmentMessage(
+        `💳 ${getAccountType(account.type).label}: ${getAccountSummary(account)}`,
+        toAccountPayload(account)
+      );
+    } catch (err) {
+      console.error('Error sending payment account:', err);
+      Alert.alert('Error', 'No se pudieron enviar los datos de pago. Intenta de nuevo.');
+    }
+  };
+
   const handleShareLocationPress = () => {
     Alert.alert(
       'Compartir ubicación',
@@ -597,6 +614,10 @@ function ConversationContent({
                       alignItems: isMine ? 'flex-end' : 'flex-start'
                     }}
                   >
+                    {attachment?.type === 'payment_account' && (
+                      <PaymentAccountCard account={attachment} isMine={isMine} />
+                    )}
+
                     {attachment?.type === 'image' && (
                       <ImageCard image={attachment} isMine={isMine} />
                     )}
@@ -827,6 +848,18 @@ function ConversationContent({
           backgroundColor: '#ffffff',
           gap: 6
         }}>
+          {currentSenderType === 'business' && (
+            <TouchableOpacity
+              onPress={() => setWalletVisible(true)}
+              disabled={!conversationId}
+              activeOpacity={0.7}
+              accessibilityLabel="Enviar datos de pago"
+              style={{ width: 32, height: 44, alignItems: 'center', justifyContent: 'center' }}
+            >
+              <Ionicons name="wallet-outline" size={24} color="#ef4444" />
+            </TouchableOpacity>
+          )}
+
           <TouchableOpacity
             onPress={handleImagePress}
             disabled={!conversationId || sendingImage}
@@ -899,6 +932,15 @@ function ConversationContent({
             )}
           </TouchableOpacity>
         </View>
+
+      {currentSenderType === 'business' && (
+        <PaymentAccountsSheet
+          visible={walletVisible}
+          onClose={() => setWalletVisible(false)}
+          businessId={currentContext?.businessId}
+          onSelect={sendPaymentAccount}
+        />
+      )}
       </KeyboardAvoidingView>
     </View>
   );

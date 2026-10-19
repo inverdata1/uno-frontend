@@ -11,14 +11,16 @@ import { useCurrentUserType } from '../../../shared/hooks/use-user-type';
 import { useUserProfile, useUpdateUserProfile } from '../../../shared/hooks/use-user-profile';
 import { colors } from '../../../shared/utils/colors';
 import { EditPersonalInfoModal } from '../../../features/business/profile/components/edit-personal-info-modal';
+import { PaymentAccountsSheet } from '../../../features/business/payments/payment-accounts-sheet';
 
 export default function BusinessSettingsScreen() {
   const router = useRouter();
   const insets = useSafeAreaInsets();
   const { user, signOut } = useAuthStore();
-  const { currentUserType, availableUserTypes = [] } = useCurrentUserType();
+  const { currentUserType, currentContext, availableUserTypes = [] } = useCurrentUserType();
   const [logoutModalVisible, setLogoutModalVisible] = useState(false);
   const [personalInfoModalVisible, setPersonalInfoModalVisible] = useState(false);
+  const [paymentAccountsVisible, setPaymentAccountsVisible] = useState(false);
   const [isLoggingOut, setIsLoggingOut] = useState(false);
 
   const { data: userData } = useUserProfile();
@@ -178,9 +180,9 @@ export default function BusinessSettingsScreen() {
               />
               <SettingsItem
                 icon="wallet-outline"
-                title="Pagos y Facturación"
-                subtitle="Métodos de cobro, facturas"
-                onPress={() => Alert.alert('Próximamente', 'Función en desarrollo')}
+                title="Bancos"
+                subtitle="Pago móvil, Zelle y Binance para cobrar"
+                onPress={() => setPaymentAccountsVisible(true)}
                 showBorder={false}
               />
             </View>
@@ -320,6 +322,12 @@ export default function BusinessSettingsScreen() {
         userData={userData}
         onSave={handleSavePersonalInfo}
         isSaving={updateProfileMutation.isPending}
+      />
+
+      <PaymentAccountsSheet
+        visible={paymentAccountsVisible}
+        onClose={() => setPaymentAccountsVisible(false)}
+        businessId={currentContext?.businessId}
       />
     </SafeAreaView>
   );

@@ -2,6 +2,7 @@ import { create } from 'zustand';
 import { createJSONStorage, persist } from 'zustand/middleware';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { apiClient } from '../config/api-client';
+import { isOwnBusiness, OWN_BUSINESS_MESSAGE } from '../utils/own-business';
 
 /**
  * Cart Store
@@ -75,6 +76,11 @@ export const useCartStore = create(
         }
 
         const bId = businessInfo.businessId || product.businessId || product.business?.id || 'business-general';
+
+        // Owners can't order from their own business
+        if (isOwnBusiness(bId)) {
+          return { success: false, reason: 'OWN_BUSINESS', message: OWN_BUSINESS_MESSAGE };
+        }
         
         const bName =
           businessInfo.businessName ||

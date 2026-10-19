@@ -38,7 +38,7 @@ export const TaggedProductsModal = ({
       );
     } else {
       Alert.alert(
-        'Producto No Disponible',
+        result.reason === 'OWN_BUSINESS' ? 'Es tu negocio' : 'Producto No Disponible',
         result.message || 'Este producto no está disponible en este momento.',
         [{ text: 'Entendido', style: 'default' }]
       );

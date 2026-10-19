@@ -26,6 +26,7 @@ import ConversationModal from '../../shared/chat/conversation-modal';
 import { useAuthStore } from '../../../core/auth/stores/auth-store';
 import { useFollowingBusinesses, useToggleFollowBusiness } from '../../shared/social/hooks/use-businesses';
 import { PostThumbnail } from '../../../shared/components/media/post-thumbnail';
+import { useBusinessContexts } from '../../../shared/hooks/use-user-type';
 
 const { width: SCREEN_WIDTH } = Dimensions.get('window');
 const IMAGE_CONTAINER_HEIGHT = 380;
@@ -117,6 +118,9 @@ export default function ProductDetail({
   // Business info
   const business = product?.business || {};
   const businessId = product?.businessId || business?.id;
+  // The owner sees their own product without the buy bar: only clients order
+  const ownedBusinesses = useBusinessContexts();
+  const isOwnProduct = !!businessId && ownedBusinesses.some((b) => (b.businessId || b.id) === businessId);
   const businessName = business?.businessName || business?.name || product?.businessName || 'Negocio';
   const businessLogo = business?.logoUrl || business?.logo || product?.businessLogo || null;
 
@@ -173,7 +177,7 @@ export default function ProductDetail({
         logoUrl: bLogo,
       });
       if (!res.success) {
-        Alert.alert('Producto No Disponible', res.message);
+        Alert.alert(res.reason === 'OWN_BUSINESS' ? 'Es tu negocio' : 'Producto No Disponible', res.message);
         return;
       }
     }
@@ -710,6 +714,15 @@ export default function ProductDetail({
         shadowRadius: 8,
         elevation: 10
       }}>
+        {isOwnProduct ? (
+          <View style={{ flex: 1, flexDirection: 'row', alignItems: 'center', gap: 10, height: 52 }}>
+            <Ionicons name="storefront" size={20} color="#64748b" />
+            <Text style={{ flex: 1, fontSize: 13, color: '#475569' }}>
+              Este producto es de tu negocio. Tus clientes lo pueden pedir desde su cuenta.
+            </Text>
+          </View>
+        ) : (
+          <>
         {/* Quantity Selector Pill */}
         <View style={{
           backgroundColor: '#0f172a',
@@ -784,6 +797,8 @@ export default function ProductDetail({
             AÑADIR AL CARRITO
           </Text>
         </TouchableOpacity>
+          </>
+        )}
       </View>
 
       {/* Fullscreen Image Viewer Modal */}

@@ -6,8 +6,42 @@ import { LinearGradient } from 'expo-linear-gradient';
 import { Text } from '../../../../shared/components/ui';
 import { useDeleteStory } from '../hooks/use-stories';
 import { useCurrentUserType } from '../../../../shared/hooks/use-user-type';
+import { resolveMediaUrl } from '../../../../shared/utils/media-url';
+import { VideoView, useVideoPlayer } from 'expo-video';
 
 const { width, height } = Dimensions.get('window');
+
+// "12 min", "3 h", "2 d" since the story was posted
+const formatTimeAgo = (date) => {
+  if (!date) return '';
+  const minutes = Math.max(0, Math.floor((Date.now() - new Date(date).getTime()) / 60000));
+  if (minutes < 1) return 'ahora';
+  if (minutes < 60) return `${minutes} min`;
+  const hours = Math.floor(minutes / 60);
+  if (hours < 24) return `${hours} h`;
+  return `${Math.floor(hours / 24)} d`;
+};
+
+// Stories come either flattened ({ businessName, logoUrl }) or with the
+// business nested as the API returns it ({ business: { businessName, logoUrl } })
+const getStoryBusiness = (story) => ({
+  name: story?.businessName || story?.business?.businessName || 'Negocio',
+  logo: resolveMediaUrl(story?.logoUrl || story?.business?.logoUrl || story?.businessLogo),
+});
+
+function StoryVideo({ uri, paused }) {
+  const player = useVideoPlayer(uri, (p) => {
+    p.loop = false;
+    p.play();
+  });
+
+  useEffect(() => {
+    if (paused) player.pause();
+    else player.play();
+  }, [paused, player]);
+
+  return <VideoView player={player} style={styles.media} contentFit="cover" nativeControls={false} />;
+}
 
 /**
  * Full-screen Instagram-style Story Viewer
@@ -223,7 +257,9 @@ export default function StoryViewer({ visible, stories = [], initialIndex = 0, o
     <Modal visible={visible} animationType="fade" onRequestClose={onClose}>
       <View style={styles.container}>
         {/* Story Image/Video */}
-        {currentStory.mediaUrl ? (
+        {currentStory.mediaUrl && currentStory.mediaType === 'video' ? (
+          <StoryVideo key={currentStory.id} uri={resolveMediaUrl(currentStory.mediaUrl)} paused={isPaused || menuVisible} />
+        ) : currentStory.mediaUrl ? (
           <Image
             source={{ uri: currentStory.mediaUrl }}
             style={styles.media}
@@ -266,18 +302,20 @@ export default function StoryViewer({ visible, stories = [], initialIndex = 0, o
         <View style={styles.header}>
           <View style={styles.businessInfo}>
             <View style={styles.avatar}>
-              {currentStory.logoUrl ? (
+              {getStoryBusiness(currentStory).logo ? (
                 <Image
-                  source={{ uri: currentStory.logoUrl }}
+                  source={{ uri: getStoryBusiness(currentStory).logo }}
                   style={{ width: '100%', height: '100%', borderRadius: 18 }}
                   resizeMode="cover"
                 />
               ) : (
-                <Ionicons name="storefront" size={20} color="#ffffff" />
+                <Text style={{ color: '#ffffff', fontSize: 15, fontWeight: '800' }}>
+                  {getStoryBusiness(currentStory).name.charAt(0).toUpperCase()}
+                </Text>
               )}
             </View>
-            <Text style={styles.businessName}>{currentStory.businessName || 'Business'}</Text>
-            <Text style={styles.timeAgo}>12h</Text>
+            <Text style={styles.businessName} numberOfLines={1}>{getStoryBusiness(currentStory).name}</Text>
+            <Text style={styles.timeAgo}>{formatTimeAgo(currentStory.createdAt)}</Text>
           </View>
           <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
             {isOwner && (
@@ -453,14 +491,18 @@ const styles = StyleSheet.create({
     width: 36,
     height: 36,
     borderRadius: 18,
-    backgroundColor: 'rgba(255, 255, 255, 0.2)',
+    borderWidth: 1.5,
+    borderColor: '#ffffff',
+    overflow: 'hidden',
+    backgroundColor: '#ef4444',
     alignItems: 'center',
     justifyContent: 'center'
   },
   businessName: {
     fontSize: 15,
-    fontWeight: '600',
-    color: '#ffffff'
+    fontWeight: '700',
+    color: '#ffffff',
+    maxWidth: width * 0.45
   },
   timeAgo: {
     fontSize: 14,

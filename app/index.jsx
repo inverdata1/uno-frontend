@@ -18,7 +18,7 @@ function LoadingScreen() {
 
 export default function IndexScreen() {
   const navigationState = useRootNavigationState();
-  const { isAuthenticated, isLoading: authLoading } = useAuthStore();
+  const { isAuthenticated, isLoading: authLoading, user } = useAuthStore();
   const { currentUserType, isLoading: userTypeLoading } = useCurrentUserType();
 
   // Wait until the navigator is fully mounted
@@ -34,6 +34,11 @@ export default function IndexScreen() {
   // If not authenticated, redirect to welcome
   if (!isAuthenticated) {
     return <Redirect href="/(auth)/welcome" />;
+  }
+
+  // Super users go straight to the admin dashboard
+  if (user?.role === 'admin') {
+    return <Redirect href="/admin" />;
   }
 
   // If authenticated, wait for user type to load

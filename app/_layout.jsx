@@ -59,6 +59,7 @@ function AppNavigator() {
       <Stack.Screen name="client" />
       <Stack.Screen name="business" />
       <Stack.Screen name="driver" />
+      <Stack.Screen name="admin" />
       <Stack.Screen name="c/[id]" />
     </Stack>
   );

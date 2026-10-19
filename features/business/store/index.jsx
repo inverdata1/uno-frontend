@@ -6,6 +6,8 @@ import { Text } from '../../../shared/components/ui';
 import { colors } from '../../../shared/utils/colors';
 import { ProductsGrid } from '../products/components/products-grid';
 import { CategoriesList } from './components/categories-list';
+import { useBusinessContexts, useCurrentUserType } from '../../../shared/hooks/use-user-type';
+import { shareBusinessCatalog } from '../../../shared/utils/share-catalog';
 
 const TABS = [
   { id: 'products', label: 'Catálogo' },
@@ -16,6 +18,10 @@ export default function BusinessStoreScreen() {
   const [activeTab, setActiveTab] = useState('products');
   const [createProductModalVisible, setCreateProductModalVisible] = useState(false);
   const [createCategoryModalVisible, setCreateCategoryModalVisible] = useState(false);
+  const { currentContext } = useCurrentUserType();
+  const businessContexts = useBusinessContexts();
+  const businessId = currentContext?.businessId;
+  const currentBusiness = businessContexts.find((b) => (b.businessId || b.id) === businessId) || businessContexts[0];
 
   return (
     <SafeAreaView style={{ flex: 1, backgroundColor: colors.bg.secondary }} edges={['top']}>
@@ -38,6 +44,23 @@ export default function BusinessStoreScreen() {
         }}>
           Mi Tienda
         </Text>
+        <TouchableOpacity
+          onPress={() => shareBusinessCatalog({ id: businessId, name: currentBusiness?.name || currentBusiness?.businessName })}
+          activeOpacity={0.8}
+          accessibilityLabel="Compartir catálogo"
+          style={{
+            flexDirection: 'row',
+            alignItems: 'center',
+            gap: 6,
+            paddingHorizontal: 12,
+            height: 36,
+            borderRadius: 18,
+            backgroundColor: '#fef2f2'
+          }}
+        >
+          <Ionicons name="share-social-outline" size={17} color={colors.primary[500]} />
+          <Text style={{ fontSize: 13, fontWeight: '700', color: colors.primary[500] }}>Compartir catálogo</Text>
+        </TouchableOpacity>
       </View>
 
       {/* Tabs */}

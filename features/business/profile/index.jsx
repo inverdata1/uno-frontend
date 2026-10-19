@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { View, ScrollView, TouchableOpacity, Image, ActivityIndicator, Alert, Share } from 'react-native';
+import { View, ScrollView, TouchableOpacity, Image, ActivityIndicator, Alert } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
@@ -16,6 +16,7 @@ import { useBusinessProfile, useUpdateBusinessLogo, useUpdateBusinessBanner, use
 import { useAppStore } from '../../../shared/stores/app-store';
 import { colors } from '../../../shared/utils/colors';
 import { getModeColors } from '../../../shared/utils/colors';
+import { shareBusinessCatalog } from '../../../shared/utils/share-catalog';
 import { EditProfileModal } from './components/edit-profile-modal';
 
 export default function BusinessProfileScreen() {
@@ -44,16 +45,10 @@ export default function BusinessProfileScreen() {
     }
   };
 
-  const handleShare = async () => {
-    try {
-      const bName = businessData?.businessName || businessData?.name || business?.businessName || business?.name || 'este negocio';
-      await Share.share({
-        message: `¡Mira ${bName} en UNO Delivery! Te invito a visitar su perfil y descubrir todo lo que ofrecen.`,
-        title: `Visita ${bName} en UNO`
-      });
-    } catch (error) {
-      console.error('Error sharing profile:', error);
-    }
+  // Shares the public profile + catalog link (/c/[id]) that opens without an account
+  const handleShare = () => {
+    const bName = businessData?.businessName || businessData?.name || business?.businessName || business?.name;
+    shareBusinessCatalog({ id: businessData?.id || business?.businessId || business?.id, name: bName });
   };
 
   // Debug logging

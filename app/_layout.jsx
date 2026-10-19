@@ -42,8 +42,10 @@ function AppNavigator() {
     if (!navigationState?.key || isLoading) return;
 
     const inAuthGroup = segments[0] === '(auth)';
+    // Shared catalog links (/c/[id]) must open for visitors without an account
+    const isPublicRoute = segments[0] === 'c';
 
-    if (!isAuthenticated && !inAuthGroup) {
+    if (!isAuthenticated && !inAuthGroup && !isPublicRoute) {
       // User is not authenticated and not in auth screens, redirect to welcome
       console.log('🚪 User not authenticated, redirecting to welcome');
       router.replace('/(auth)/welcome');
@@ -57,6 +59,7 @@ function AppNavigator() {
       <Stack.Screen name="client" />
       <Stack.Screen name="business" />
       <Stack.Screen name="driver" />
+      <Stack.Screen name="c/[id]" />
     </Stack>
   );
 }

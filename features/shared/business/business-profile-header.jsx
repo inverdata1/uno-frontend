@@ -35,8 +35,10 @@ function DetailRow({ icon, children, onPress }) {
  * @param {Array}  actions  - [{ label, icon, onPress, primary }] buttons under the description
  * @param {Object} edit     - optional { onEditLogo, onEditCover, uploadingLogo, uploadingCover }
  * @param {Node}   coverOverlay - optional buttons drawn over the cover (back, settings…)
+ * @param {Array}  details  - optional custom "Detalles" rows [{ icon, label?, value, onPress? }]
+ *                            used instead of the business ones (e.g. for a client's own profile)
  */
-export function BusinessProfileHeader({ business, stats = [], actions = [], edit, coverOverlay }) {
+export function BusinessProfileHeader({ business, stats = [], actions = [], edit, coverOverlay, details }) {
   const banner = resolveMediaUrl(business?.bannerUrl);
   const logo = resolveMediaUrl(business?.logoUrl);
   const name = business?.name || 'Negocio';
@@ -108,12 +110,18 @@ export function BusinessProfileHeader({ business, stats = [], actions = [], edit
         {stats.length > 0 && (
           <View style={{ flexDirection: 'row', flexWrap: 'wrap', alignItems: 'center', marginTop: 4 }}>
             {stats.map((stat, index) => (
-              <View key={stat.label} style={{ flexDirection: 'row', alignItems: 'center' }}>
+              <TouchableOpacity
+                key={stat.label}
+                onPress={stat.onPress}
+                disabled={!stat.onPress}
+                activeOpacity={0.6}
+                style={{ flexDirection: 'row', alignItems: 'center' }}
+              >
                 {index > 0 && <Text style={{ color: '#94a3b8', marginHorizontal: 6 }}>·</Text>}
                 {stat.icon && <Ionicons name={stat.icon} size={14} color="#f59e0b" style={{ marginRight: 3 }} />}
                 <Text style={{ fontSize: 15, fontWeight: '700', color: '#0f172a' }}>{stat.value}</Text>
                 <Text style={{ fontSize: 15, color: '#64748b' }}> {Number(stat.value) === 1 && stat.singular ? stat.singular : stat.label}</Text>
-              </View>
+              </TouchableOpacity>
             ))}
           </View>
         )}
@@ -151,6 +159,21 @@ export function BusinessProfileHeader({ business, stats = [], actions = [], edit
       <View style={{ height: 8, backgroundColor: '#f1f5f9', marginTop: 16 }} />
       <View style={{ paddingHorizontal: 16, paddingVertical: 12 }}>
         <Text style={{ fontSize: 18, fontWeight: '800', color: '#0f172a', marginBottom: 4 }}>Detalles</Text>
+
+        {details && details.filter((d) => d.value).map((d) => (
+          <DetailRow key={d.icon + d.value} icon={d.icon} onPress={d.onPress}>
+            <Text style={{ fontSize: 15, color: '#334155' }}>
+              {!!d.label && <Text style={{ fontWeight: '700', color: '#0f172a' }}>{d.label} · </Text>}
+              {d.value}
+            </Text>
+          </DetailRow>
+        ))}
+        {details && !details.some((d) => d.value) && (
+          <Text style={{ fontSize: 14, color: '#94a3b8', paddingVertical: 8 }}>Sin datos todavía.</Text>
+        )}
+
+        {!details && (
+        <>
 
         {!!business?.category && (
           <DetailRow icon="pricetag-outline">
@@ -201,6 +224,8 @@ export function BusinessProfileHeader({ business, stats = [], actions = [], edit
 
         {!business?.address && !business?.hours && !phone && !business?.category && (
           <Text style={{ fontSize: 14, color: '#94a3b8', paddingVertical: 8 }}>Sin datos de contacto todavía.</Text>
+        )}
+        </>
         )}
       </View>
       <View style={{ height: 8, backgroundColor: '#f1f5f9' }} />

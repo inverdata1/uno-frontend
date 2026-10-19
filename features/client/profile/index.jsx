@@ -1,12 +1,13 @@
 import { Ionicons } from '@expo/vector-icons';
-import { LinearGradient } from 'expo-linear-gradient';
 import { useRouter } from 'expo-router';
 import { useCallback, useState } from 'react';
-import { ActivityIndicator, Alert, Image, ScrollView, TouchableOpacity, View } from 'react-native';
+import { Alert, ScrollView, TouchableOpacity, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import * as ImagePicker from 'expo-image-picker';
 import { useAuthStore } from '../../../core/auth/stores/auth-store';
 import BusinessUpgradeModal from '../businesses/business-upgrade-modal';
+import { BusinessProfileHeader } from '../../shared/business/business-profile-header';
+import { EditPersonalInfoModal } from '../../business/profile/components/edit-personal-info-modal';
 import { Text } from '../../../shared/components/ui';
 import { getUserTypeConfig } from '../../../shared/config/user-types';
 import { useCurrentUserType } from '../../../shared/hooks/use-user-type';
@@ -37,6 +38,21 @@ export default function ClientProfileScreen() {
   const bannerUrl = profileData?.bannerUrl || user?.bannerUrl || user?.coverImageUrl;
 
   const userTypeInfo = getUserTypeConfig(currentUserType);
+  const [editInfoVisible, setEditInfoVisible] = useState(false);
+  const displayName =
+    [profileData?.firstName || user?.firstName, profileData?.lastName || user?.lastName].filter(Boolean).join(' ') ||
+    profileData?.displayName || user?.displayName || user?.email?.split('@')[0] || 'Usuario';
+
+  const handleSavePersonalInfo = async (data) => {
+    try {
+      await updateUserProfile.mutateAsync(data);
+      setEditInfoVisible(false);
+      Alert.alert('Listo', 'Tu información se actualizó');
+    } catch (error) {
+      console.error('Error updating personal info:', error);
+      Alert.alert('Error', 'No se pudo actualizar la información');
+    }
+  };
 
   const handleOpenUserTypeSwitcher = useCallback(() => {
     openUserTypeSwitcher();
@@ -149,301 +165,63 @@ export default function ClientProfileScreen() {
   const clientColors = getModeColors('client');
 
   return (
-    <SafeAreaView style={{ flex: 1, backgroundColor: colors.bg.secondary }} edges={['top']}>
+    <SafeAreaView style={{ flex: 1, backgroundColor: colors.bg.primary }} edges={['top']}>
       <ScrollView showsVerticalScrollIndicator={false}>
-        {/* Cover Photo */}
-        <View style={{ position: 'relative', height: 200 }}>
-          {bannerUrl ? (
-            <Image
-              source={{ uri: bannerUrl }}
-              style={{ width: '100%', height: '100%' }}
-              resizeMode="cover"
-            />
-          ) : (
-            <LinearGradient
-              colors={clientColors.gradient}
-              start={{ x: 0, y: 0 }}
-              end={{ x: 1, y: 1 }}
-              style={{ width: '100%', height: '100%' }}
-            />
-          )}
-
-          {/* Edit Banner Button */}
-          <TouchableOpacity
-            onPress={handlePickBanner}
-            disabled={uploadingBanner}
-            style={{
-              position: 'absolute',
-              bottom: 56,
-              right: 16,
-              width: 40,
-              height: 40,
-              borderRadius: 12,
-              backgroundColor: 'rgba(0, 0, 0, 0.6)',
-              alignItems: 'center',
-              justifyContent: 'center',
-              zIndex: 10
-            }}
-          >
-            {uploadingBanner ? (
-              <ActivityIndicator size="small" color="#fff" />
-            ) : (
-              <Ionicons name="camera" size={20} color="#fff" />
-            )}
-          </TouchableOpacity>
-
-          {/* User Type Switcher Button - Top Left */}
-          {availableUserTypes.length > 1 && (
-            <TouchableOpacity
-              onPress={handleOpenUserTypeSwitcher}
-              style={{
-                position: 'absolute',
-                top: 16,
-                left: 16,
-                paddingHorizontal: 16,
-                paddingVertical: 10,
-                borderRadius: 12,
-                backgroundColor: 'rgba(0, 0, 0, 0.6)',
-                flexDirection: 'row',
-                alignItems: 'center',
-                gap: 8
-              }}
-            >
-              <Ionicons name={userTypeInfo.icon} size={18} color="#fff" />
-              <Text style={{
-                fontSize: 13,
-                fontWeight: '600',
-                color: '#fff'
-              }}>
-                {userTypeInfo.title}
-              </Text>
-              <Ionicons name="chevron-down" size={16} color="#fff" />
-            </TouchableOpacity>
-          )}
-        </View>
-
-        {/* Profile Info */}
-        <View style={{
-          backgroundColor: colors.bg.primary,
-          marginTop: -40,
-          borderTopLeftRadius: 32,
-          borderTopRightRadius: 32,
-          paddingTop: 24,
-          paddingHorizontal: 20
-        }}>
-          {/* Avatar */}
-          <View style={{ alignItems: 'center', marginBottom: 20 }}>
-            <View style={{
-              position: 'relative',
-              marginTop: -60,
-            }}>
-              <View style={{
-                width: 100,
-                height: 100,
-                borderRadius: 50,
-                backgroundColor: clientColors.primary,
-                borderWidth: 4,
-                borderColor: colors.bg.primary,
-                alignItems: 'center',
-                justifyContent: 'center',
-                shadowColor: '#000',
-                shadowOffset: { width: 0, height: 4 },
-                shadowOpacity: 0.2,
-                shadowRadius: 12,
-                elevation: 8,
-                overflow: 'hidden'
-              }}>
-                {avatarUrl ? (
-                  <Image
-                    source={{ uri: avatarUrl }}
-                    style={{ width: '100%', height: '100%' }}
-                    resizeMode="cover"
-                  />
-                ) : (
-                  <Text style={{
-                    fontSize: 40,
-                    fontWeight: '700',
-                    color: colors.text.inverse
-                  }}>
-                    {user?.firstName?.charAt(0) || user?.displayName?.charAt(0) || user?.email?.charAt(0) || 'U'}
-                  </Text>
-                )}
-              </View>
-
-              {/* Edit Avatar Button */}
+        <BusinessProfileHeader
+          business={{
+            name: displayName,
+            logoUrl: avatarUrl,
+            bannerUrl,
+          }}
+          stats={[
+            { label: 'pedidos', singular: 'pedido', value: profileData?.ordersCount ?? user?.ordersCount ?? 0, onPress: () => router.push('/client/orders') },
+            {
+              label: 'favoritos',
+              singular: 'favorito',
+              value: profileData?.favoritesCount ?? profileData?.favoriteStores?.length ?? user?.favoriteStores?.length ?? 0,
+              onPress: () => router.push('/client/favorites'),
+            },
+            { label: 'seguidos', singular: 'seguido', value: profileData?.followingCount ?? followedBusinesses.length, onPress: () => router.push('/client/following') },
+          ]}
+          actions={[
+            { label: 'Editar perfil', icon: 'create-outline', onPress: () => setEditInfoVisible(true), primary: true },
+            { label: 'Configuración', icon: 'settings-outline', onPress: () => router.push('/client/profile/settings'), iconOnly: true },
+          ]}
+          edit={{
+            onEditLogo: handlePickAvatar,
+            onEditCover: handlePickBanner,
+            uploadingLogo: uploadingAvatar,
+            uploadingCover: uploadingBanner,
+          }}
+          details={[
+            { icon: 'mail-outline', value: profileData?.email || user?.email },
+            { icon: 'call-outline', value: profileData?.phone || user?.phone },
+            {
+              icon: 'calendar-outline',
+              label: 'Miembro desde',
+              value: (profileData?.createdAt || user?.createdAt)
+                ? new Date(profileData?.createdAt || user?.createdAt).toLocaleDateString('es-ES', { month: 'long', year: 'numeric' })
+                : null,
+            },
+          ]}
+          coverOverlay={
+            availableUserTypes.length > 1 ? (
               <TouchableOpacity
-                onPress={handlePickAvatar}
-                disabled={uploadingAvatar}
+                onPress={handleOpenUserTypeSwitcher}
                 style={{
-                  position: 'absolute',
-                  bottom: 0,
-                  right: 0,
-                  width: 34,
-                  height: 34,
-                  borderRadius: 17,
-                  backgroundColor: '#ef4444',
-                  borderWidth: 3,
-                  borderColor: colors.bg.primary,
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  shadowColor: '#000',
-                  shadowOffset: { width: 0, height: 2 },
-                  shadowOpacity: 0.25,
-                  shadowRadius: 4,
-                  elevation: 5,
-                  zIndex: 10
+                  position: 'absolute', top: 16, left: 16, paddingHorizontal: 14, paddingVertical: 9, borderRadius: 12,
+                  backgroundColor: 'rgba(0, 0, 0, 0.6)', flexDirection: 'row', alignItems: 'center', gap: 8,
                 }}
               >
-                {uploadingAvatar ? (
-                  <ActivityIndicator size="small" color="#fff" />
-                ) : (
-                  <Ionicons name="camera" size={16} color="#fff" />
-                )}
+                <Ionicons name={userTypeInfo.icon} size={18} color="#fff" />
+                <Text style={{ fontSize: 13, fontWeight: '600', color: '#fff' }}>{userTypeInfo.title}</Text>
+                <Ionicons name="chevron-down" size={16} color="#fff" />
               </TouchableOpacity>
-            </View>
-          </View>
+            ) : null
+          }
+        />
 
-          {/* Name & Verified Badge */}
-          <View style={{ alignItems: 'center', marginBottom: 20 }}>
-            <Text style={{
-              fontSize: 24,
-              fontWeight: '700',
-              color: colors.text.primary,
-              marginBottom: 4
-            }}>
-              {user?.firstName && user?.lastName ? `${user.firstName} ${user.lastName}`.trim() : user?.displayName || user?.email?.split('@')[0] || 'Usuario'}
-            </Text>
-
-            <View style={{
-              flexDirection: 'row',
-              alignItems: 'center',
-              backgroundColor: 'rgba(59, 130, 246, 0.1)',
-              paddingHorizontal: 10,
-              paddingVertical: 4,
-              borderRadius: 8
-            }}>
-              <Ionicons name="shield-checkmark" size={12} color="#3b82f6" style={{ marginRight: 4 }} />
-              <Text style={{ fontSize: 12, fontWeight: '600', color: '#3b82f6' }}>
-                Verificado
-              </Text>
-            </View>
-          </View>
-
-          {/* Stats */}
-          <View style={{
-            flexDirection: 'row',
-            backgroundColor: colors.bg.secondary,
-            borderRadius: 16,
-            padding: 16,
-            marginBottom: 20,
-            gap: 12
-          }}>
-            {/* Pedidos */}
-            <TouchableOpacity
-              onPress={() => router.push('/client/orders')}
-              activeOpacity={0.7}
-              style={{ flex: 1, alignItems: 'center' }}
-            >
-              <Text style={{
-                fontSize: 20,
-                fontWeight: '700',
-                color: colors.text.primary,
-                marginBottom: 2
-              }}>
-                {profileData?.ordersCount ?? user?.ordersCount ?? 0}
-              </Text>
-              <Text style={{
-                fontSize: 12,
-                color: colors.text.secondary
-              }}>
-                Pedidos
-              </Text>
-            </TouchableOpacity>
-
-            <View style={{ width: 1, backgroundColor: colors.border.light }} />
-
-            {/* Favoritos */}
-            <TouchableOpacity
-              onPress={() => router.push('/client/favorites')}
-              activeOpacity={0.7}
-              style={{ flex: 1, alignItems: 'center' }}
-            >
-              <Text style={{
-                fontSize: 20,
-                fontWeight: '700',
-                color: colors.text.primary,
-                marginBottom: 2
-              }}>
-                {profileData?.favoritesCount ?? profileData?.favoriteStores?.length ?? user?.favoriteStores?.length ?? 0}
-              </Text>
-              <Text style={{
-                fontSize: 12,
-                color: colors.text.secondary
-              }}>
-                Favoritos
-              </Text>
-            </TouchableOpacity>
-
-            <View style={{ width: 1, backgroundColor: colors.border.light }} />
-
-            {/* Seguidos */}
-            <TouchableOpacity
-              onPress={() => router.push('/client/following')}
-              activeOpacity={0.7}
-              style={{ flex: 1, alignItems: 'center' }}
-            >
-              <Text style={{
-                fontSize: 20,
-                fontWeight: '700',
-                color: colors.text.primary,
-                marginBottom: 2
-              }}>
-                {profileData?.followingCount ?? followedBusinesses.length}
-              </Text>
-              <Text style={{
-                fontSize: 12,
-                color: colors.text.secondary
-              }}>
-                Seguidos
-              </Text>
-            </TouchableOpacity>
-          </View>
-
-          {/* Action Buttons */}
-          <View style={{
-            flexDirection: 'row',
-            gap: 12,
-            marginBottom: 24
-          }}>
-            <TouchableOpacity
-              onPress={() => Alert.alert('Próximamente', 'Función en desarrollo')}
-              style={{
-                flex: 1,
-                backgroundColor: clientColors.primary,
-                paddingVertical: 12,
-                borderRadius: 12,
-                flexDirection: 'row',
-                alignItems: 'center',
-                justifyContent: 'center',
-                gap: 8,
-                shadowColor: clientColors.primary,
-                shadowOffset: { width: 0, height: 4 },
-                shadowOpacity: 0.3,
-                shadowRadius: 8,
-                elevation: 4
-              }}
-            >
-              <Ionicons name="create" size={18} color={colors.text.inverse} />
-              <Text style={{
-                fontSize: 14,
-                fontWeight: '600',
-                color: colors.text.inverse
-              }}>
-                Editar Perfil
-              </Text>
-            </TouchableOpacity>
-          </View>
-
+        <View style={{ backgroundColor: colors.bg.primary, paddingTop: 16, paddingHorizontal: 20 }}>
           {/* Quick Actions */}
           <View style={{
             backgroundColor: colors.bg.secondary,
@@ -655,6 +433,13 @@ export default function ClientProfileScreen() {
         onSuccess={() => {
           setBusinessUpgradeModalVisible(false);
         }}
+      />
+      <EditPersonalInfoModal
+        visible={editInfoVisible}
+        onClose={() => setEditInfoVisible(false)}
+        userData={profileData || user}
+        onSave={handleSavePersonalInfo}
+        isSaving={updateUserProfile.isPending}
       />
     </SafeAreaView>
   );

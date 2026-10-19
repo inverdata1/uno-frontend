@@ -21,6 +21,7 @@ import {
 } from '../../../shared/utils/order-status';
 import BusinessChatFAB from '../chat/components/business-chat-fab';
 import ConversationModal from '../../shared/chat/conversation-modal';
+import { CommissionsPanel } from './commissions-panel';
 
 const TABS = [
   { id: 'in_progress', label: 'En proceso', statuses: ACTIVE_STATUSES },
@@ -340,6 +341,8 @@ export default function BusinessOrdersScreen() {
           contentContainerStyle={{ padding: 16, gap: 12, paddingBottom: 32, flexGrow: 1 }}
           refreshControl={<RefreshControl refreshing={isRefetching} onRefresh={refetch} tintColor={colors.primary[500]} />}
         >
+          {activeTab === 'completed' && <CommissionsPanel businessId={businessId} />}
+
           {visibleOrders.length === 0 ? (
             <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center', padding: 32 }}>
               <View style={{

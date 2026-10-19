@@ -8,6 +8,7 @@ import { apiClient } from '../../../../../shared/config/api-client';
 import { TaggedProductsModal } from './tagged-products-modal';
 import { PostOptionsModal } from './post-options-modal';
 import { colors } from '../../../../../shared/utils/colors';
+import { PostThumbnail } from '../../../../../shared/components/media/post-thumbnail';
 
 const { width: SCREEN_WIDTH } = Dimensions.get('window');
 const CARD_MARGIN = 12;
@@ -193,20 +194,19 @@ export const PostCard = ({
               scrollEventThrottle={16}
             >
               {media.map((item, index) => (
-                <Image
-                  key={index}
-                  source={{ uri: item.url || item }}
-                  style={{ width: CARD_WIDTH, height: CARD_WIDTH * 0.95 }}
-                  resizeMode="cover"
-                />
+                // Videos can't be shown by Image; PostThumbnail uses the thumbnail or grabs a frame
+                <View key={index} style={{ width: CARD_WIDTH, height: CARD_WIDTH * 0.95, backgroundColor: '#0f172a' }}>
+                  <PostThumbnail
+                    post={{ type: item?.type === 'video' ? 'video' : 'image', media: [item], thumbnailUrl: index === 0 ? post.thumbnailUrl : item?.thumbnailUrl }}
+                    iconColor="#ffffff"
+                  />
+                </View>
               ))}
             </ScrollView>
           ) : (
-            <Image
-              source={{ uri: media[0]?.url || media[0] }}
-              style={{ width: CARD_WIDTH, height: CARD_WIDTH * 0.95 }}
-              resizeMode="cover"
-            />
+            <View style={{ width: CARD_WIDTH, height: CARD_WIDTH * 0.95, backgroundColor: '#0f172a' }}>
+              <PostThumbnail post={post} iconColor="#ffffff" />
+            </View>
           )}
         </Pressable>
 

@@ -64,14 +64,16 @@ export function BusinessProfileViewer({ businessId, onClose }) {
   const businessWithData = {
     ...business,
     name: business.businessName,
-    category: business.businessType,
+    category: business.category || business.businessType,
     products: products,
     contentPosts: contentPosts,
     isFollowing: Boolean(business.isFollowing),
     followersCount: business.followersCount || 0,
     description: business.description || 'Bienvenido a nuestro negocio',
     address: business.address || null,
-    hours: business.hours || null,
+    // The API calls it businessHours; `hours` was never filled
+    hours: business.businessHours || business.hours || null,
+    phone: business.phone || null,
     // Pass through existing fields that BusinessProfile expects
     bannerUrl: business.bannerUrl || business.coverImageUrl,
     logoUrl: business.logoUrl,

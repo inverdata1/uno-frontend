@@ -12,6 +12,8 @@ import ProductDetailModal from '../products/product-detail-modal';
 import PostViewer from '../../shared/social/posts/post-viewer';
 import ConversationModal from '../../shared/chat/conversation-modal';
 import { PostThumbnail } from '../../../shared/components/media/post-thumbnail';
+import { BusinessProfileHeader } from '../../shared/business/business-profile-header';
+import { shareBusinessCatalog } from '../../../shared/utils/share-catalog';
 
 const { width } = Dimensions.get('window');
 
@@ -123,177 +125,48 @@ export default function BusinessProfile({ business, onClose }) {
     <SafeAreaView className="flex-1 bg-white" edges={['top', 'bottom']}>
       <StatusBar barStyle="dark-content" backgroundColor="#ffffff" />
 
-      {/* Floating Header Buttons - Instagram Style */}
-      <View style={{ position: 'absolute', left: 0, right: 0, top: 0, zIndex: 50 }}>
-        <SafeAreaView edges={['top']}>
-          {/* Dark pills keep these readable over any cover photo */}
-          <View className="flex-row items-center justify-between px-3 py-2">
-            <TouchableOpacity
-              onPress={handleBack}
-              className="w-10 h-10 items-center justify-center rounded-full"
-              style={{ backgroundColor: 'rgba(0, 0, 0, 0.45)' }}
-              activeOpacity={0.6}
-              hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
-            >
-              <Ionicons name="arrow-back" size={24} color="#ffffff" />
-            </TouchableOpacity>
-
-            <View className="flex-row items-center" style={{ gap: 16 }}>
-              <TouchableOpacity
-                className="w-10 h-10 items-center justify-center rounded-full"
-                style={{ backgroundColor: 'rgba(0, 0, 0, 0.45)' }}
-                activeOpacity={0.6}
-                hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
-              >
-                <Ionicons name="ellipsis-vertical" size={20} color="#ffffff" />
-              </TouchableOpacity>
-            </View>
-          </View>
-        </SafeAreaView>
-      </View>
-
       <ScrollView
         className="flex-1 bg-white"
         showsVerticalScrollIndicator={false}
         overScrollMode="never"
       >
-        {/* Full-Bleed Cover Image */}
-        <View className="relative" style={{ width, height: 240, backgroundColor: '#f3f4f6' }}>
-          {business?.bannerUrl || business?.coverImageUrl ? (
-            <Image
-              source={{ uri: business.bannerUrl || business.coverImageUrl }}
-              style={{ width: '100%', height: '100%' }}
-              resizeMode="cover"
-            />
-          ) : (
-            <View className="flex-1 justify-center items-center" style={{ backgroundColor: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)' }}>
-              <Ionicons name="business" size={64} color="rgba(255, 255, 255, 0.3)" />
-            </View>
-          )}
-        </View>
-
-        {/* Profile Header Section */}
-        <View className="px-4 pt-4">
-
-          {/* Logo - Overlapping the cover image */}
-          <View
-            className="rounded-full bg-white overflow-hidden"
-            style={{
-              width: 96,
-              height: 96,
-              marginTop: -48,
-              borderWidth: 4,
-              borderColor: '#ffffff',
-              shadowColor: '#000',
-              shadowOffset: { width: 0, height: 4 },
-              shadowOpacity: 0.15,
-              shadowRadius: 8,
-              elevation: 5
-            }}
-          >
-            {business?.logoUrl ? (
-              <Image
-                source={{ uri: business.logoUrl }}
-                style={{ width: '100%', height: '100%' }}
-                resizeMode="cover"
-              />
-            ) : (
-              <View className="flex-1 justify-center items-center bg-gray-100">
-                <Ionicons name="storefront" size={40} color="#9ca3af" />
+        <BusinessProfileHeader
+          business={business}
+          stats={[
+            { label: 'seguidores', singular: 'seguidor', value: followersCount },
+            { label: 'productos', singular: 'producto', value: products.length || 0 },
+            { label: '', value: averageProductRating, icon: 'star' },
+          ]}
+          actions={[
+            {
+              label: isFollowing ? 'Siguiendo' : 'Seguir',
+              icon: isFollowing ? 'checkmark' : 'add',
+              onPress: handleFollowToggle,
+              primary: !isFollowing,
+            },
+            { label: 'Mensaje', icon: 'chatbubble-ellipses-outline', onPress: () => setChatModalVisible(true) },
+            {
+              label: 'Compartir',
+              icon: 'share-social-outline',
+              onPress: () => shareBusinessCatalog({ id: business?.id, name: business?.name }),
+              iconOnly: true,
+            },
+          ]}
+          coverOverlay={
+            <SafeAreaView edges={['top']} style={{ position: 'absolute', left: 0, right: 0, top: 0 }}>
+              <View style={{ paddingHorizontal: 12, paddingVertical: 8 }}>
+                <TouchableOpacity
+                  onPress={handleBack}
+                  activeOpacity={0.6}
+                  hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+                  style={{ width: 40, height: 40, borderRadius: 20, alignItems: 'center', justifyContent: 'center', backgroundColor: 'rgba(0, 0, 0, 0.45)' }}
+                >
+                  <Ionicons name="arrow-back" size={24} color="#ffffff" />
+                </TouchableOpacity>
               </View>
-            )}
-          </View>
-
-          {/* Business Name & Category */}
-          <Text className="text-2xl font-bold text-gray-900 mt-3 mb-1">
-            {business?.name || 'Nombre del Negocio'}
-          </Text>
-          <Text className="text-sm text-gray-500 mb-2">
-            {business?.category || 'Categoria'}
-          </Text>
-
-          {/* Stats Row */}
-          <View className="flex-row items-center mb-4 gap-4">
-            <View className="flex-row items-center">
-              <Ionicons name="star" size={16} color="#fbbf24" />
-              <Text className="text-sm font-semibold text-gray-900 ml-1">
-                {averageProductRating}
-              </Text>
-            </View>
-            <View className="w-1 h-1 rounded-full bg-gray-300" />
-            <Text className="text-sm text-gray-600">
-              {String(products.length || 0)} Productos
-            </Text>
-            <View className="w-1 h-1 rounded-full bg-gray-300" />
-            <Text className="text-sm text-gray-600">
-              {String(followersCount)} Seguidores
-            </Text>
-          </View>
-
-          {/* Description */}
-          <Text className="text-base text-gray-700 leading-6 mb-4">
-            {business?.description || 'Descripcion del negocio'}
-          </Text>
-
-          {/* Contact Info */}
-          {(business?.address || business?.hours) && (
-            <View className="mb-4 gap-2">
-              {business?.address && (
-                <View className="flex-row items-center">
-                  <Ionicons name="location-outline" size={16} color="#6b7280" />
-                  <Text className="text-sm text-gray-600 ml-2">
-                    {business.address}
-                  </Text>
-                </View>
-              )}
-              {business?.hours && (
-                <View className="flex-row items-center">
-                  <Ionicons name="time-outline" size={16} color="#6b7280" />
-                  <Text className="text-sm text-gray-600 ml-2">
-                    {business.hours}
-                  </Text>
-                </View>
-              )}
-            </View>
-          )}
-
-          {/* Action Buttons */}
-          <View className="flex-row mb-6" style={{ gap: 12 }}>
-            <TouchableOpacity
-              onPress={handleFollowToggle}
-              className="flex-1 rounded-xl"
-              style={{
-                backgroundColor: isFollowing ? '#f3f4f6' : '#ef4444',
-                paddingVertical: 14,
-                alignItems: 'center',
-                shadowColor: isFollowing ? 'transparent' : '#ef4444',
-                shadowOffset: { width: 0, height: 2 },
-                shadowOpacity: 0.2,
-                shadowRadius: 4,
-                elevation: isFollowing ? 0 : 2
-              }}
-              activeOpacity={0.8}
-            >
-              <Text
-                className="text-base font-bold"
-                style={{ color: isFollowing ? '#1f2937' : '#ffffff' }}
-              >
-                {isFollowing ? 'Siguiendo' : 'Seguir'}
-              </Text>
-            </TouchableOpacity>
-
-            <TouchableOpacity
-              onPress={() => setChatModalVisible(true)}
-              className="flex-1 bg-gray-100 rounded-xl items-center justify-center"
-              style={{ paddingVertical: 14 }}
-              activeOpacity={0.8}
-            >
-              <Text className="text-base font-bold text-gray-900">
-                Mensaje
-              </Text>
-            </TouchableOpacity>
-          </View>
-        </View>
+            </SafeAreaView>
+          }
+        />
 
         {/* Tab Switcher */}
         <View className="flex-row bg-white border-y border-gray-100 px-4 mb-2">

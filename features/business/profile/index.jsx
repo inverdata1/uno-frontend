@@ -1,8 +1,7 @@
 import React, { useState } from 'react';
-import { View, ScrollView, TouchableOpacity, Image, ActivityIndicator, Alert } from 'react-native';
+import { View, ScrollView, ActivityIndicator, Alert } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
-import { LinearGradient } from 'expo-linear-gradient';
 import { useRouter } from 'expo-router';
 import * as ImagePicker from 'expo-image-picker';
 import * as DocumentPicker from 'expo-document-picker';
@@ -18,6 +17,7 @@ import { colors } from '../../../shared/utils/colors';
 import { getModeColors } from '../../../shared/utils/colors';
 import { shareBusinessCatalog } from '../../../shared/utils/share-catalog';
 import { EditProfileModal } from './components/edit-profile-modal';
+import { BusinessProfileHeader } from '../../shared/business/business-profile-header';
 
 export default function BusinessProfileScreen() {
   const router = useRouter();
@@ -151,419 +151,39 @@ export default function BusinessProfileScreen() {
   }
 
   return (
-    <SafeAreaView style={{ flex: 1, backgroundColor: colors.bg.secondary }} edges={['top']}>
+    <SafeAreaView style={{ flex: 1, backgroundColor: colors.bg.primary }} edges={['top']}>
       <ScrollView showsVerticalScrollIndicator={false}>
-        {/* Cover Photo */}
-        <View style={{ position: 'relative', height: 200 }}>
-          {businessData?.bannerUrl || business?.bannerUrl ? (
-            <Image
-              source={{ uri: businessData?.bannerUrl || business?.bannerUrl }}
-              style={{ width: '100%', height: '100%' }}
-              resizeMode="cover"
-            />
-          ) : (
-            <LinearGradient
-              colors={businessColors.gradient}
-              start={{ x: 0, y: 0 }}
-              end={{ x: 1, y: 1 }}
-              style={{ width: '100%', height: '100%' }}
-            />
-          )}
+        <BusinessProfileHeader
+          business={{
+            name: businessData?.businessName || businessData?.name || business?.businessName || business?.name || 'Mi Negocio',
+            category: businessData?.category || businessData?.businessType || business?.businessType,
+            isVerified: businessData?.isVerified,
+            description: businessData?.description,
+            logoUrl: businessData?.logoUrl || business?.logoUrl,
+            bannerUrl: businessData?.bannerUrl || business?.bannerUrl,
+            address: businessData?.address || business?.address,
+            hours: businessData?.businessHours || business?.businessHours,
+            phone: businessData?.phone || business?.phone,
+          }}
+          stats={[
+            { label: 'seguidores', singular: 'seguidor', value: stats.followers },
+            { label: 'productos', singular: 'producto', value: stats.products },
+            { label: `(${stats.reviews})`, value: Number(stats.rating || 0).toFixed(1), icon: 'star' },
+          ]}
+          actions={[
+            { label: 'Editar perfil', icon: 'create-outline', onPress: () => setEditModalVisible(true), primary: true },
+            { label: 'Compartir', icon: 'share-social-outline', onPress: handleShare },
+            { label: 'Configuración', icon: 'settings-outline', onPress: () => router.push('/business/profile/settings'), iconOnly: true },
+          ]}
+          edit={{
+            onEditLogo: handlePickLogo,
+            onEditCover: handlePickBanner,
+            uploadingLogo,
+            uploadingCover: uploadingBanner,
+          }}
+        />
 
-          {/* Edit Banner Button */}
-          <TouchableOpacity
-            onPress={handlePickBanner}
-            disabled={uploadingBanner}
-            style={{
-              position: 'absolute',
-              bottom: 56,
-              right: 16,
-              width: 40,
-              height: 40,
-              borderRadius: 12,
-              backgroundColor: 'rgba(0, 0, 0, 0.6)',
-              alignItems: 'center',
-              justifyContent: 'center',
-              zIndex: 10
-            }}
-          >
-            {uploadingBanner ? (
-              <ActivityIndicator size="small" color="#fff" />
-            ) : (
-              <Ionicons name="camera" size={20} color="#fff" />
-            )}
-          </TouchableOpacity>
-
-          {/* Settings Button - Top Right */}
-          <TouchableOpacity
-            onPress={() => router.push('/business/profile/settings')}
-            style={{
-              position: 'absolute',
-              top: 16,
-              right: 16,
-              width: 40,
-              height: 40,
-              borderRadius: 12,
-              backgroundColor: 'rgba(0, 0, 0, 0.6)',
-              alignItems: 'center',
-              justifyContent: 'center'
-            }}
-          >
-            <Ionicons name="settings" size={20} color="#fff" />
-          </TouchableOpacity>
-        </View>
-
-        {/* Profile Info */}
-        <View style={{
-          backgroundColor: colors.bg.primary,
-          marginTop: -40,
-          borderTopLeftRadius: 32,
-          borderTopRightRadius: 32,
-          paddingTop: 24,
-          paddingHorizontal: 20
-        }}>
-          {/* Logo/Avatar */}
-          <View style={{ alignItems: 'center', marginBottom: 20 }}>
-            <View style={{
-              width: 100,
-              height: 100,
-              borderRadius: 24,
-              backgroundColor: businessColors.primary,
-              borderWidth: 4,
-              borderColor: colors.bg.primary,
-              marginTop: -60,
-              alignItems: 'center',
-              justifyContent: 'center',
-              shadowColor: '#000',
-              shadowOffset: { width: 0, height: 4 },
-              shadowOpacity: 0.2,
-              shadowRadius: 12,
-              elevation: 8,
-              overflow: 'hidden'
-            }}>
-              {businessData?.logoUrl || business?.logoUrl ? (
-                <Image
-                  source={{ uri: businessData?.logoUrl || business?.logoUrl }}
-                  style={{ width: '100%', height: '100%' }}
-                  resizeMode="cover"
-                />
-              ) : (
-                <Text style={{
-                  fontSize: 40,
-                  fontWeight: '700',
-                  color: colors.text.inverse
-                }}>
-                  {(businessData?.businessName || businessData?.name || business?.businessName || business?.name || 'N').charAt(0)}
-                </Text>
-              )}
-            </View>
-
-            {/* Edit Logo Button */}
-            <TouchableOpacity
-              onPress={handlePickLogo}
-              disabled={uploadingLogo}
-              style={{
-                position: 'absolute',
-                bottom: -8,
-                width: 32,
-                height: 32,
-                borderRadius: 10,
-                backgroundColor: businessColors.primary,
-                alignItems: 'center',
-                justifyContent: 'center',
-                borderWidth: 2,
-                borderColor: colors.bg.primary
-              }}
-            >
-              {uploadingLogo ? (
-                <ActivityIndicator size="small" color={colors.text.inverse} />
-              ) : (
-                <Ionicons name="camera" size={16} color={colors.text.inverse} />
-              )}
-            </TouchableOpacity>
-          </View>
-
-          {/* Business Name & Type */}
-          <View style={{ alignItems: 'center', marginBottom: 20 }}>
-            <Text style={{
-              fontSize: 24,
-              fontWeight: '700',
-              color: colors.text.primary,
-              marginBottom: 4
-            }}>
-              {businessData?.businessName || businessData?.name || business?.businessName || business?.name || 'Mi Negocio'}
-            </Text>
-
-            <View style={{
-              flexDirection: 'row',
-              alignItems: 'center',
-              gap: 8
-            }}>
-              <View style={{
-                backgroundColor: businessColors.background,
-                paddingHorizontal: 12,
-                paddingVertical: 4,
-                borderRadius: 8,
-                borderWidth: 1,
-                borderColor: businessColors.primary + '40'
-              }}>
-                <Text style={{
-                  fontSize: 12,
-                  fontWeight: '600',
-                  color: businessColors.primary
-                }}>
-                  {businessData?.businessType || businessData?.type || business?.businessType || business?.type || 'Restaurante'}
-                </Text>
-              </View>
-
-              <View style={{
-                flexDirection: 'row',
-                alignItems: 'center',
-                backgroundColor: 'rgba(59, 130, 246, 0.1)',
-                paddingHorizontal: 10,
-                paddingVertical: 4,
-                borderRadius: 8
-              }}>
-                <Ionicons name="shield-checkmark" size={12} color="#3b82f6" style={{ marginRight: 4 }} />
-                <Text style={{ fontSize: 12, fontWeight: '600', color: '#3b82f6' }}>
-                  Verificado
-                </Text>
-              </View>
-            </View>
-          </View>
-
-          {/* Stats */}
-          <View style={{
-            flexDirection: 'row',
-            backgroundColor: colors.bg.secondary,
-            borderRadius: 16,
-            padding: 16,
-            marginBottom: 20,
-            gap: 12
-          }}>
-            <View style={{ flex: 1, alignItems: 'center' }}>
-              <View style={{
-                flexDirection: 'row',
-                alignItems: 'center',
-                gap: 4,
-                marginBottom: 2
-              }}>
-                <Text style={{
-                  fontSize: 20,
-                  fontWeight: '700',
-                  color: colors.text.primary
-                }}>
-                  {stats.rating}
-                </Text>
-                <Ionicons name="star" size={16} color="#f59e0b" />
-              </View>
-              <Text style={{
-                fontSize: 12,
-                color: colors.text.secondary
-              }}>
-                {stats.reviews} reseñas
-              </Text>
-            </View>
-
-            <View style={{ width: 1, backgroundColor: colors.border.light }} />
-
-            <View style={{ flex: 1, alignItems: 'center' }}>
-              <Text style={{
-                fontSize: 20,
-                fontWeight: '700',
-                color: colors.text.primary,
-                marginBottom: 2
-              }}>
-                {stats.followers}
-              </Text>
-              <Text style={{
-                fontSize: 12,
-                color: colors.text.secondary
-              }}>
-                Seguidores
-              </Text>
-            </View>
-
-            <View style={{ width: 1, backgroundColor: colors.border.light }} />
-
-            <View style={{ flex: 1, alignItems: 'center' }}>
-              <Text style={{
-                fontSize: 20,
-                fontWeight: '700',
-                color: colors.text.primary,
-                marginBottom: 2
-              }}>
-                {stats.products}
-              </Text>
-              <Text style={{
-                fontSize: 12,
-                color: colors.text.secondary
-              }}>
-                Productos
-              </Text>
-            </View>
-          </View>
-
-          {/* Action Buttons */}
-          <View style={{
-            flexDirection: 'row',
-            gap: 12,
-            marginBottom: 24
-          }}>
-            <TouchableOpacity
-              onPress={() => setEditModalVisible(true)}
-              style={{
-                flex: 1,
-                backgroundColor: businessColors.primary,
-                paddingVertical: 12,
-                borderRadius: 12,
-                flexDirection: 'row',
-                alignItems: 'center',
-                justifyContent: 'center',
-                gap: 8,
-                shadowColor: businessColors.primary,
-                shadowOffset: { width: 0, height: 4 },
-                shadowOpacity: 0.3,
-                shadowRadius: 8,
-                elevation: 4
-              }}
-            >
-              <Ionicons name="create" size={18} color={colors.text.inverse} />
-              <Text style={{
-                fontSize: 14,
-                fontWeight: '600',
-                color: colors.text.inverse
-              }}>
-                Editar Perfil
-              </Text>
-            </TouchableOpacity>
-
-            <TouchableOpacity
-              onPress={handleShare}
-              style={{
-                flex: 1,
-                backgroundColor: colors.bg.secondary,
-                paddingVertical: 12,
-                borderRadius: 12,
-                flexDirection: 'row',
-                alignItems: 'center',
-                justifyContent: 'center',
-                gap: 8,
-                borderWidth: 1.5,
-                borderColor: colors.border.light
-              }}
-            >
-              <Ionicons name="share-social" size={18} color={colors.text.primary} />
-              <Text style={{
-                fontSize: 14,
-                fontWeight: '600',
-                color: colors.text.primary
-              }}>
-                Compartir
-              </Text>
-            </TouchableOpacity>
-          </View>
-
-          {/* Business Info */}
-          <View style={{
-            backgroundColor: colors.bg.secondary,
-            borderRadius: 16,
-            padding: 16,
-            marginBottom: 24,
-            gap: 12
-          }}>
-            <View style={{ flexDirection: 'row', alignItems: 'flex-start', gap: 12 }}>
-              <View style={{
-                width: 40,
-                height: 40,
-                borderRadius: 12,
-                backgroundColor: colors.bg.primary,
-                alignItems: 'center',
-                justifyContent: 'center'
-              }}>
-                <Ionicons name="location" size={20} color={businessColors.primary} />
-              </View>
-              <View style={{ flex: 1 }}>
-                <Text style={{
-                  fontSize: 14,
-                  fontWeight: '600',
-                  color: colors.text.primary,
-                  marginBottom: 2
-                }}>
-                  Dirección
-                </Text>
-                <Text style={{
-                  fontSize: 14,
-                  color: colors.text.secondary
-                }}>
-                  {businessData?.address || business?.address || 'No especificada'}
-                </Text>
-              </View>
-            </View>
-
-            <View style={{ height: 1, backgroundColor: colors.border.light }} />
-
-            <View style={{ flexDirection: 'row', alignItems: 'flex-start', gap: 12 }}>
-              <View style={{
-                width: 40,
-                height: 40,
-                borderRadius: 12,
-                backgroundColor: colors.bg.primary,
-                alignItems: 'center',
-                justifyContent: 'center'
-              }}>
-                <Ionicons name="time" size={20} color={businessColors.primary} />
-              </View>
-              <View style={{ flex: 1 }}>
-                <Text style={{
-                  fontSize: 14,
-                  fontWeight: '600',
-                  color: colors.text.primary,
-                  marginBottom: 2
-                }}>
-                  Horario
-                </Text>
-                <Text style={{
-                  fontSize: 14,
-                  color: colors.text.secondary
-                }}>
-                  {businessData?.businessHours || business?.businessHours || 'Lun - Dom: 9:00 AM - 10:00 PM'}
-                </Text>
-              </View>
-            </View>
-
-            <View style={{ height: 1, backgroundColor: colors.border.light }} />
-
-            <View style={{ flexDirection: 'row', alignItems: 'flex-start', gap: 12 }}>
-              <View style={{
-                width: 40,
-                height: 40,
-                borderRadius: 12,
-                backgroundColor: colors.bg.primary,
-                alignItems: 'center',
-                justifyContent: 'center'
-              }}>
-                <Ionicons name="call" size={20} color={businessColors.primary} />
-              </View>
-              <View style={{ flex: 1 }}>
-                <Text style={{
-                  fontSize: 14,
-                  fontWeight: '600',
-                  color: colors.text.primary,
-                  marginBottom: 2
-                }}>
-                  Teléfono
-                </Text>
-                <Text style={{
-                  fontSize: 14,
-                  color: colors.text.secondary
-                }}>
-                  {businessData?.phone || business?.phone || 'No especificado'}
-                </Text>
-              </View>
-            </View>
-          </View>
-
+        <View style={{ backgroundColor: colors.bg.primary, paddingHorizontal: 20, paddingTop: 16 }}>
           {/* Content Area - Reviews Only */}
           <View style={{ paddingBottom: 32 }}>
             <View style={{

@@ -68,24 +68,24 @@ function StatCard({ icon, color, label, value, hint }) {
 
 const CHART_BAR_MAX = 100;
 
-function ActivityChart({ activity }) {
-  const max = Math.max(1, ...activity.map((a) => a.activeUsers));
+function MonthlyChart({ title, subtitle, data, valueKey, color = '#ef4444', lightColor = '#fecaca' }) {
+  const max = Math.max(1, ...data.map((a) => a[valueKey]));
   return (
     <View style={card}>
-      <Text style={{ fontSize: 16, fontWeight: '700', color: '#0f172a' }}>Usuarios activos por mes</Text>
-      <Text style={{ fontSize: 12, color: '#64748b', marginTop: 2 }}>Personas distintas que usaron la app cada mes</Text>
-      <View style={{ flexDirection: 'row', alignItems: 'flex-end', marginTop: 16, gap: 8 }}>
-        {activity.map((item, index) => {
-          const isLast = index === activity.length - 1;
+      <Text style={{ fontSize: 16, fontWeight: '700', color: '#0f172a' }}>{title}</Text>
+      <Text style={{ fontSize: 12, color: '#64748b', marginTop: 2 }}>{subtitle}</Text>
+      <View style={{ flexDirection: 'row', alignItems: 'flex-end', marginTop: 20, gap: 8 }}>
+        {data.map((item, index) => {
+          const isLast = index === data.length - 1;
           return (
             <View key={item.period} style={{ flex: 1, alignItems: 'center', justifyContent: 'flex-end' }}>
-              <Text style={{ fontSize: 11, fontWeight: '700', color: isLast ? '#ef4444' : '#475569', marginBottom: 4 }}>
-                {count(item.activeUsers)}
+              <Text style={{ fontSize: 11, fontWeight: '700', color: isLast ? color : '#475569', marginBottom: 4 }}>
+                {count(item[valueKey])}
               </Text>
               <View style={{
                 width: '100%', maxWidth: 34, borderRadius: 8,
-                height: Math.max(4, (item.activeUsers / max) * CHART_BAR_MAX),
-                backgroundColor: isLast ? '#ef4444' : '#fecaca',
+                height: Math.max(4, (item[valueKey] / max) * CHART_BAR_MAX),
+                backgroundColor: isLast ? color : lightColor,
               }} />
               <Text style={{ fontSize: 11, color: '#64748b', marginTop: 6 }}>{shortMonth(item.period)}</Text>
             </View>
@@ -95,6 +95,18 @@ function ActivityChart({ activity }) {
     </View>
   );
 }
+
+const SECTIONS = [
+  { id: 'dashboard', label: 'Dashboard', icon: 'grid' },
+  { id: 'businesses', label: 'Comercios', icon: 'storefront' },
+  { id: 'users', label: 'Usuarios', icon: 'people' },
+];
+
+const BUSINESS_FILTERS = [
+  { id: 'all', label: 'Todos' },
+  { id: 'sales', label: 'Con ventas' },
+  { id: 'review', label: 'Por revisar' },
+];
 
 function BusinessRow({ business, rate, onReview, reviewing }) {
   const logo = resolveMediaUrl(business.logoUrl);
@@ -198,19 +210,23 @@ export default function AdminDashboard() {
   const { signOut } = useAuthStore();
   const [period, setPeriod] = useState(null); // null = current month
   const [search, setSearch] = useState('');
+  const [section, setSection] = useState('dashboard');
+  const [businessFilter, setBusinessFilter] = useState('all');
   const [reviewingId, setReviewingId] = useState(null);
 
   const { data, isLoading, isRefetching, refetch, error } = useAdminOverview(period);
   const review = useReviewCommissionPayment();
 
   const businesses = useMemo(() => {
-    const list = data?.businesses || [];
+    let list = data?.businesses || [];
+    if (businessFilter === 'sales') list = list.filter((b) => b.sales > 0);
+    if (businessFilter === 'review') list = list.filter((b) => b.payment?.status === 'reported');
     const q = search.trim().toLowerCase();
     if (!q) return list;
     return list.filter((b) =>
       [b.businessName, b.ownerEmail, b.ownerName, b.category].some((v) => v?.toLowerCase().includes(q))
     );
-  }, [data, search]);
+  }, [data, search, businessFilter]);
 
   const handleLogout = async () => {
     await signOut();
@@ -310,88 +326,208 @@ export default function AdminDashboard() {
             </TouchableOpacity>
           </View>
 
-          {/* Commission highlight */}
-          <View style={[card, { backgroundColor: '#0f172a' }]}>
-            <Text style={{ fontSize: 13, color: '#94a3b8' }}>Comisión de la app ({Math.round(data.rate * 100)}%)</Text>
-            <Text style={{ fontSize: 36, fontWeight: '800', color: '#ffffff', marginTop: 2 }}>{money(totals.commission)}</Text>
-            <Text style={{ fontSize: 13, color: '#94a3b8' }}>sobre {money(totals.sales)} en ventas entregadas</Text>
-            <View style={{ flexDirection: 'row', marginTop: 14, backgroundColor: 'rgba(255,255,255,0.08)', borderRadius: 12, padding: 12 }}>
-              <View style={{ flex: 1 }}>
-                <Text style={{ fontSize: 11, color: '#94a3b8' }}>COBRADO</Text>
-                <Text style={{ fontSize: 17, fontWeight: '800', color: '#34d399' }}>{money(totals.commissionCollected)}</Text>
-              </View>
-              <View style={{ width: 1, backgroundColor: 'rgba(255,255,255,0.15)', marginHorizontal: 12 }} />
-              <View style={{ flex: 1 }}>
-                <Text style={{ fontSize: 11, color: '#94a3b8' }}>POR COBRAR</Text>
-                <Text style={{ fontSize: 17, fontWeight: '800', color: '#f87171' }}>
-                  {money(Math.max(0, totals.commission - totals.commissionCollected))}
-                </Text>
-              </View>
-            </View>
+          {/* Section buttons */}
+          <View style={{ flexDirection: 'row', gap: 8 }}>
+            {SECTIONS.map((item) => {
+              const active = section === item.id;
+              const badge = item.id === 'businesses' && pendingReview > 0 ? pendingReview : null;
+              return (
+                <TouchableOpacity
+                  key={item.id}
+                  onPress={() => setSection(item.id)}
+                  activeOpacity={0.85}
+                  style={{
+                    flex: 1, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 6,
+                    paddingVertical: 11, borderRadius: 14,
+                    backgroundColor: active ? '#0f172a' : '#ffffff',
+                    borderWidth: 1, borderColor: active ? '#0f172a' : '#e2e8f0',
+                  }}
+                >
+                  <Ionicons name={item.icon} size={16} color={active ? '#ffffff' : '#475569'} />
+                  <Text style={{ fontSize: 13, fontWeight: '700', color: active ? '#ffffff' : '#475569' }}>{item.label}</Text>
+                  {badge && (
+                    <View style={{ minWidth: 18, height: 18, borderRadius: 9, paddingHorizontal: 4, backgroundColor: '#f59e0b', alignItems: 'center', justifyContent: 'center' }}>
+                      <Text style={{ fontSize: 11, fontWeight: '800', color: '#ffffff' }}>{badge}</Text>
+                    </View>
+                  )}
+                </TouchableOpacity>
+              );
+            })}
           </View>
 
-          {/* KPIs */}
-          <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 12 }}>
-            <StatCard icon="people" color="#3b82f6" label="Usuarios registrados" value={count(totals.users)} hint={totals.newUsers ? `+${count(totals.newUsers)} este mes` : null} />
-            <StatCard icon="storefront" color="#ef4444" label="Comercios" value={count(totals.businesses)} hint={totals.newBusinesses ? `+${count(totals.newBusinesses)} este mes` : null} />
-            <StatCard
-              icon="pulse"
-              color="#8b5cf6"
-              label="Activos en el mes"
-              value={count(totals.activeUsers)}
-              hint={totals.activeToday != null ? `${count(totals.activeToday)} hoy` : null}
-            />
-            <StatCard icon="bag-check" color="#10b981" label="Ventas del mes" value={money(totals.sales)} />
-          </View>
-
-          <ActivityChart activity={data.activity} />
-
-          {/* Businesses */}
-          <View style={card}>
-            <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }}>
-              <Text style={{ fontSize: 16, fontWeight: '700', color: '#0f172a' }}>Comercios ({data.businesses.length})</Text>
-              {pendingReview > 0 && (
-                <View style={{ backgroundColor: '#fef3c7', paddingHorizontal: 8, paddingVertical: 3, borderRadius: 999 }}>
-                  <Text style={{ fontSize: 12, fontWeight: '700', color: '#b45309' }}>{pendingReview} pagos por revisar</Text>
+          {section === 'dashboard' && (
+            <>
+              {/* Commission highlight */}
+              <View style={[card, { backgroundColor: '#0f172a' }]}>
+                <Text style={{ fontSize: 13, color: '#94a3b8' }}>Comisión de la app ({Math.round(data.rate * 100)}%)</Text>
+                <Text style={{ fontSize: 36, fontWeight: '800', color: '#ffffff', marginTop: 2 }}>{money(totals.commission)}</Text>
+                <Text style={{ fontSize: 13, color: '#94a3b8' }}>sobre {money(totals.sales)} en ventas entregadas</Text>
+                <View style={{ flexDirection: 'row', marginTop: 14, backgroundColor: 'rgba(255,255,255,0.08)', borderRadius: 12, padding: 12 }}>
+                  <View style={{ flex: 1 }}>
+                    <Text style={{ fontSize: 11, color: '#94a3b8' }}>COBRADO</Text>
+                    <Text style={{ fontSize: 17, fontWeight: '800', color: '#34d399' }}>{money(totals.commissionCollected)}</Text>
+                  </View>
+                  <View style={{ width: 1, backgroundColor: 'rgba(255,255,255,0.15)', marginHorizontal: 12 }} />
+                  <View style={{ flex: 1 }}>
+                    <Text style={{ fontSize: 11, color: '#94a3b8' }}>POR COBRAR</Text>
+                    <Text style={{ fontSize: 17, fontWeight: '800', color: '#f87171' }}>
+                      {money(Math.max(0, totals.commission - totals.commissionCollected))}
+                    </Text>
+                  </View>
                 </View>
+              </View>
+
+              {pendingReview > 0 && (
+                <TouchableOpacity
+                  onPress={() => {
+                    setBusinessFilter('review');
+                    setSection('businesses');
+                  }}
+                  activeOpacity={0.85}
+                  style={{ flexDirection: 'row', alignItems: 'center', gap: 10, backgroundColor: '#fef3c7', borderRadius: 14, padding: 14 }}
+                >
+                  <Ionicons name="alert-circle" size={20} color="#b45309" />
+                  <Text style={{ flex: 1, fontSize: 14, fontWeight: '700', color: '#92400e' }}>
+                    {pendingReview} {pendingReview === 1 ? 'pago de comisión por revisar' : 'pagos de comisión por revisar'}
+                  </Text>
+                  <Ionicons name="chevron-forward" size={18} color="#b45309" />
+                </TouchableOpacity>
+              )}
+
+              <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 12 }}>
+                <StatCard icon="bag-check" color="#10b981" label="Ventas del mes" value={money(totals.sales)} />
+                <StatCard icon="storefront" color="#ef4444" label="Comercios" value={count(totals.businesses)} hint={totals.newBusinesses ? `+${count(totals.newBusinesses)} este mes` : null} />
+                <StatCard icon="people" color="#3b82f6" label="Usuarios" value={count(totals.users)} hint={totals.newUsers ? `+${count(totals.newUsers)} este mes` : null} />
+                <StatCard icon="pulse" color="#8b5cf6" label="Activos en el mes" value={count(totals.activeUsers)} />
+              </View>
+
+              {/* Top businesses */}
+              <View style={card}>
+                <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: 4 }}>
+                  <Text style={{ fontSize: 16, fontWeight: '700', color: '#0f172a' }}>Comercios que más venden</Text>
+                  <TouchableOpacity onPress={() => setSection('businesses')}>
+                    <Text style={{ fontSize: 13, fontWeight: '700', color: '#ef4444' }}>Ver todos</Text>
+                  </TouchableOpacity>
+                </View>
+                {data.businesses.filter((b) => b.sales > 0).length === 0 ? (
+                  <Text style={{ color: '#64748b', paddingVertical: 12 }}>Todavía no hay ventas entregadas este mes.</Text>
+                ) : (
+                  data.businesses.filter((b) => b.sales > 0).slice(0, 5).map((b, index) => (
+                    <View key={b.id} style={{ flexDirection: 'row', alignItems: 'center', gap: 10, paddingVertical: 10, borderTopWidth: index === 0 ? 0 : 1, borderTopColor: '#f1f5f9' }}>
+                      <Text style={{ width: 20, fontSize: 14, fontWeight: '800', color: '#94a3b8' }}>{index + 1}</Text>
+                      <Text style={{ flex: 1, fontSize: 14, fontWeight: '600', color: '#0f172a' }} numberOfLines={1}>{b.businessName}</Text>
+                      <View style={{ alignItems: 'flex-end' }}>
+                        <Text style={{ fontSize: 14, fontWeight: '800', color: '#0f172a' }}>{money(b.sales)}</Text>
+                        <Text style={{ fontSize: 11, color: '#ef4444' }}>{money(b.commission)} comisión</Text>
+                      </View>
+                    </View>
+                  ))
+                )}
+              </View>
+
+              {/* All time */}
+              <View style={[card, { flexDirection: 'row' }]}>
+                <View style={{ flex: 1 }}>
+                  <Text style={{ fontSize: 12, color: '#64748b' }}>Ventas históricas</Text>
+                  <Text style={{ fontSize: 17, fontWeight: '800', color: '#0f172a' }}>{money(totals.allTimeSales)}</Text>
+                </View>
+                <View style={{ flex: 1 }}>
+                  <Text style={{ fontSize: 12, color: '#64748b' }}>Comisión histórica</Text>
+                  <Text style={{ fontSize: 17, fontWeight: '800', color: '#ef4444' }}>{money(totals.allTimeCommission)}</Text>
+                </View>
+              </View>
+            </>
+          )}
+
+          {section === 'businesses' && (
+            <View style={card}>
+              <Text style={{ fontSize: 16, fontWeight: '700', color: '#0f172a' }}>Comercios ({data.businesses.length})</Text>
+              <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8, backgroundColor: '#f1f5f9', borderRadius: 12, paddingHorizontal: 12, marginTop: 12 }}>
+                <Ionicons name="search" size={16} color="#94a3b8" />
+                <TextInput
+                  value={search}
+                  onChangeText={setSearch}
+                  placeholder="Buscar comercio o correo"
+                  placeholderTextColor="#94a3b8"
+                  style={{ flex: 1, paddingVertical: 10, fontSize: 14, color: '#0f172a' }}
+                />
+              </View>
+              <View style={{ flexDirection: 'row', gap: 8, marginTop: 10, marginBottom: 4 }}>
+                {BUSINESS_FILTERS.map((f) => {
+                  const active = businessFilter === f.id;
+                  return (
+                    <TouchableOpacity
+                      key={f.id}
+                      onPress={() => setBusinessFilter(f.id)}
+                      style={{ paddingHorizontal: 12, paddingVertical: 6, borderRadius: 999, backgroundColor: active ? '#ef4444' : '#f1f5f9' }}
+                    >
+                      <Text style={{ fontSize: 12, fontWeight: '700', color: active ? '#ffffff' : '#475569' }}>
+                        {f.label}{f.id === 'review' && pendingReview ? ` (${pendingReview})` : ''}
+                      </Text>
+                    </TouchableOpacity>
+                  );
+                })}
+              </View>
+              {businesses.length === 0 ? (
+                <Text style={{ textAlign: 'center', color: '#64748b', paddingVertical: 20 }}>Sin resultados</Text>
+              ) : (
+                businesses.map((business) => (
+                  <BusinessRow
+                    key={business.id}
+                    business={business}
+                    rate={data.rate}
+                    onReview={handleReview}
+                    reviewing={reviewingId === business.id}
+                  />
+                ))
               )}
             </View>
-            <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8, backgroundColor: '#f1f5f9', borderRadius: 12, paddingHorizontal: 12, marginTop: 12, marginBottom: 4 }}>
-              <Ionicons name="search" size={16} color="#94a3b8" />
-              <TextInput
-                value={search}
-                onChangeText={setSearch}
-                placeholder="Buscar comercio o correo"
-                placeholderTextColor="#94a3b8"
-                style={{ flex: 1, paddingVertical: 10, fontSize: 14, color: '#0f172a' }}
-              />
-            </View>
-            {businesses.length === 0 ? (
-              <Text style={{ textAlign: 'center', color: '#64748b', paddingVertical: 20 }}>Sin resultados</Text>
-            ) : (
-              businesses.map((business) => (
-                <BusinessRow
-                  key={business.id}
-                  business={business}
-                  rate={data.rate}
-                  onReview={handleReview}
-                  reviewing={reviewingId === business.id}
-                />
-              ))
-            )}
-          </View>
+          )}
 
-          {/* All time */}
-          <View style={[card, { flexDirection: 'row' }]}>
-            <View style={{ flex: 1 }}>
-              <Text style={{ fontSize: 12, color: '#64748b' }}>Ventas históricas</Text>
-              <Text style={{ fontSize: 17, fontWeight: '800', color: '#0f172a' }}>{money(totals.allTimeSales)}</Text>
-            </View>
-            <View style={{ flex: 1 }}>
-              <Text style={{ fontSize: 12, color: '#64748b' }}>Comisión histórica</Text>
-              <Text style={{ fontSize: 17, fontWeight: '800', color: '#ef4444' }}>{money(totals.allTimeCommission)}</Text>
-            </View>
-          </View>
+          {section === 'users' && (
+            <>
+              <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 12 }}>
+                <StatCard icon="people" color="#3b82f6" label="Usuarios registrados" value={count(totals.users)} />
+                <StatCard icon="person-add" color="#10b981" label="Nuevos este mes" value={count(totals.newUsers)} />
+                <StatCard
+                  icon="pulse"
+                  color="#8b5cf6"
+                  label="Activos en el mes"
+                  value={count(totals.activeUsers)}
+                  hint={totals.users ? `${Math.round((totals.activeUsers / totals.users) * 100)}% de los registrados` : null}
+                />
+                <StatCard
+                  icon="today"
+                  color="#f59e0b"
+                  label="Activos hoy"
+                  value={totals.activeToday != null ? count(totals.activeToday) : '—'}
+                />
+              </View>
+
+              <MonthlyChart
+                title="Usuarios activos por mes"
+                subtitle="Personas distintas que usaron la app cada mes"
+                data={data.activity}
+                valueKey="activeUsers"
+              />
+              <MonthlyChart
+                title="Nuevos usuarios por mes"
+                subtitle="Cuentas creadas cada mes"
+                data={data.activity}
+                valueKey="newUsers"
+                color="#3b82f6"
+                lightColor="#bfdbfe"
+              />
+              <MonthlyChart
+                title="Nuevos comercios por mes"
+                subtitle="Negocios registrados cada mes"
+                data={data.activity}
+                valueKey="newBusinesses"
+                color="#10b981"
+                lightColor="#a7f3d0"
+              />
+            </>
+          )}
         </ScrollView>
       )}
     </SafeAreaView>

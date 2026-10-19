@@ -63,13 +63,69 @@ export const getAccountSummary = (account) =>
  * Plain text with every detail, for copying all at once.
  */
 export const getAccountText = (account) =>
-  [getAccountType(account?.type).label, ...getAccountRows(account).map((r) => `${r.label}: ${r.value}`)].join('\n');
+  [
+    getAccountType(account?.type).label,
+    ...(account?.amount ? [`Monto: ${formatAmount(account.amount, account.currency)}`] : []),
+    ...getAccountRows(account).map((r) => `${r.label}: ${r.value}`),
+  ].join('\n');
+
+// Pago móvil is paid in bolívares; Zelle and Binance in dollars
+export const getAccountCurrency = (type) => (type === 'pago_movil' ? 'VES' : 'USD');
+
+export const CURRENCY_SYMBOL = { VES: 'Bs', USD: '$' };
+
+/**
+ * "Bs 1.234,56" or "$1,234.56".
+ */
+export const formatAmount = (amount, currency) => {
+  const n = Number(amount) || 0;
+  if (currency === 'VES') {
+    return `Bs ${n.toLocaleString('es-VE', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+  }
+  return `$${n.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+};
+
+/**
+ * The amount as banks expect it typed: "1234,56" for Bs, "1234.56" for $.
+ */
+export const amountForCopy = (amount, currency) => {
+  const fixed = (Number(amount) || 0).toFixed(2);
+  return currency === 'VES' ? fixed.replace('.', ',') : fixed;
+};
+
+/**
+ * Reads what the user typed. Bs follows the Venezuelan format ("1.234,56"),
+ * dollars the US one ("1,234.56"), and a lone separator followed by one or two
+ * digits is read as decimals either way ("25,5" / "25.5").
+ * Returns null when it is not a positive amount.
+ */
+export const parseAmountInput = (text, currency = 'USD') => {
+  const clean = String(text || '').trim().replace(/[^\d.,]/g, '');
+  const [thousands, decimal] = currency === 'VES' ? ['.', ','] : [',', '.'];
+
+  let normalized;
+  if (clean.includes(decimal)) {
+    normalized = clean.split(thousands).join('').replace(decimal, '.');
+  } else {
+    const groups = clean.split(thousands);
+    const last = groups.pop();
+    // "25.5" in Bs or "25,50" in $: the thousands mark used as a decimal point
+    normalized = groups.length && /^\d{1,2}$/.test(last) ? `${groups.join('')}.${last}` : `${groups.join('')}${last}`;
+  }
+
+  const n = Number(normalized);
+  return Number.isFinite(n) && n > 0 ? Math.round(n * 100) / 100 : null;
+};
 
 /**
  * The fields of an account worth sending in a chat message.
  */
-export const toAccountPayload = (account) => {
+export const toAccountPayload = (account, amount) => {
   const payload = { type: 'payment_account', accountType: account.type };
+  if (amount) {
+    payload.amount = amount;
+    payload.currency = getAccountCurrency(account.type);
+  }
   getAccountType(account.type).fields.forEach((f) => {
     if (account[f.key]) payload[f.key] = account[f.key];
   });

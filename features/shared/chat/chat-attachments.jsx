@@ -10,7 +10,7 @@ import {
   getPaymentMethodLabel,
 } from '../../../shared/utils/order-status';
 import { resolveMediaUrl } from '../../../shared/utils/media-url';
-import { getAccountRows, getAccountText, getAccountType } from '../../../shared/utils/payment-accounts';
+import { amountForCopy, formatAmount, getAccountRows, getAccountText, getAccountType } from '../../../shared/utils/payment-accounts';
 
 export const ATTACHMENT_TYPES = ['order', 'order_status', 'location', 'image', 'payment_account'];
 
@@ -242,6 +242,25 @@ export function PaymentAccountCard({ account, isMine }) {
           <Text style={{ fontSize: 15, fontWeight: '800', color: '#0f172a' }}>{type.label}</Text>
         </View>
       </View>
+
+      {!!account.amount && (
+        <TouchableOpacity
+          onPress={() => copyToClipboard(amountForCopy(account.amount, account.currency), 'Monto')}
+          activeOpacity={0.7}
+          style={{
+            flexDirection: 'row', alignItems: 'center', marginHorizontal: 12, marginTop: 10, padding: 12,
+            borderRadius: 12, backgroundColor: '#fef2f2',
+          }}
+        >
+          <View style={{ flex: 1 }}>
+            <Text style={{ fontSize: 11, color: '#991b1b' }}>Monto a pagar</Text>
+            <Text style={{ fontSize: 22, fontWeight: '800', color: '#ef4444' }} selectable>
+              {formatAmount(account.amount, account.currency)}
+            </Text>
+          </View>
+          <Ionicons name="copy-outline" size={18} color="#ef4444" />
+        </TouchableOpacity>
+      )}
 
       <View style={{ paddingHorizontal: 12, paddingVertical: 6 }}>
         {rows.map((row) => (

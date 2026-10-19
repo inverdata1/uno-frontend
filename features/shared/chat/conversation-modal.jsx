@@ -22,7 +22,7 @@ import { useCurrentUserType } from '../../../shared/hooks/use-user-type';
 import { getCurrentLocation } from '../../../shared/utils/current-location';
 import { ImageCard, LocationCard, OrderCard, PaymentAccountCard, parseChatAttachment } from './chat-attachments';
 import { PaymentAccountsSheet } from '../../business/payments/payment-accounts-sheet';
-import { getAccountSummary, getAccountType, toAccountPayload } from '../../../shared/utils/payment-accounts';
+import { formatAmount, getAccountCurrency, getAccountSummary, getAccountType, toAccountPayload } from '../../../shared/utils/payment-accounts';
 import * as ImagePicker from 'expo-image-picker';
 import { compressImageForUpload } from '../../../shared/utils/compress-image';
 
@@ -459,13 +459,23 @@ function ConversationContent({
     ]);
   };
 
+  // Total of the latest order in this chat, offered as the amount for $ accounts
+  const latestOrderTotal = (() => {
+    for (let i = messages.length - 1; i >= 0; i--) {
+      const a = parseChatAttachment(messages[i]);
+      if (a?.type === 'order' || a?.type === 'order_status') return a.total;
+    }
+    return null;
+  })();
+
   // Business sends one of its saved accounts so the client knows where to pay
-  const sendPaymentAccount = async (account) => {
+  const sendPaymentAccount = async (account, amount) => {
     setWalletVisible(false);
     try {
+      const amountText = amount ? ` · ${formatAmount(amount, getAccountCurrency(account.type))}` : '';
       await sendAttachmentMessage(
-        `💳 ${getAccountType(account.type).label}: ${getAccountSummary(account)}`,
-        toAccountPayload(account)
+        `💳 ${getAccountType(account.type).label}${amountText}: ${getAccountSummary(account)}`,
+        toAccountPayload(account, amount)
       );
     } catch (err) {
       console.error('Error sending payment account:', err);
@@ -939,6 +949,7 @@ function ConversationContent({
           onClose={() => setWalletVisible(false)}
           businessId={currentContext?.businessId}
           onSelect={sendPaymentAccount}
+          suggestedUsdAmount={latestOrderTotal}
         />
       )}
       </KeyboardAvoidingView>

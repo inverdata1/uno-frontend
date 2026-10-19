@@ -14,7 +14,16 @@ import { Ionicons } from '@expo/vector-icons';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Text } from '../../../shared/components/ui/text';
 import { useDeletePaymentAccount, usePaymentAccounts, useSavePaymentAccount } from '../../../shared/hooks/use-payments';
-import { ACCOUNT_TYPE_IDS, ACCOUNT_TYPES, getAccountSummary, getAccountType } from '../../../shared/utils/payment-accounts';
+import {
+  ACCOUNT_TYPE_IDS,
+  ACCOUNT_TYPES,
+  CURRENCY_SYMBOL,
+  formatAmount,
+  getAccountCurrency,
+  getAccountSummary,
+  getAccountType,
+  parseAmountInput,
+} from '../../../shared/utils/payment-accounts';
 
 function AccountForm({ initialType, saving, onCancel, onSave }) {
   const [type, setType] = useState(initialType || 'pago_movil');
@@ -98,20 +107,98 @@ function AccountForm({ initialType, saving, onCancel, onSave }) {
 }
 
 /**
- * "Bancos": the business' payment accounts.
- * With `onSelect` (chat wallet) tapping an account sends it, and a newly added
- * account is sent right away. Without it the sheet just manages the list.
+ * Last step before sending an account in the chat: how much to pay, in Bs for
+ * Pago móvil and in dollars for Zelle and Binance.
  */
-export function PaymentAccountsSheet({ visible, onClose, businessId, onSelect }) {
+function AmountStep({ account, suggestedUsdAmount, onBack, onSend }) {
+  const currency = getAccountCurrency(account.type);
+  const type = getAccountType(account.type);
+  const suggestion = currency === 'USD' && suggestedUsdAmount ? Number(suggestedUsdAmount) : null;
+  const [text, setText] = useState(suggestion ? suggestion.toFixed(2) : '');
+  const amount = parseAmountInput(text, currency);
+
+  return (
+    <View style={{ gap: 14 }}>
+      <View style={{ flexDirection: 'row', alignItems: 'center', gap: 12, padding: 12, borderRadius: 14, backgroundColor: '#ffffff', borderWidth: 1, borderColor: '#e5e7eb' }}>
+        <View style={{ width: 38, height: 38, borderRadius: 10, backgroundColor: `${type.color}1A`, alignItems: 'center', justifyContent: 'center' }}>
+          <Ionicons name={type.icon} size={20} color={type.color} />
+        </View>
+        <View style={{ flex: 1 }}>
+          <Text style={{ fontSize: 14, fontWeight: '700', color: '#111827' }}>{type.label}</Text>
+          <Text style={{ fontSize: 12, color: '#6b7280' }} numberOfLines={1}>{getAccountSummary(account)}</Text>
+        </View>
+      </View>
+
+      <View style={{ gap: 6 }}>
+        <Text style={{ fontSize: 13, fontWeight: '600', color: '#374151' }}>
+          Monto a pagar en {currency === 'VES' ? 'bolívares (Bs)' : 'dólares ($)'}
+        </Text>
+        <View style={{
+          flexDirection: 'row', alignItems: 'center', borderWidth: 2, borderColor: amount ? '#ef4444' : '#e5e7eb',
+          borderRadius: 14, paddingHorizontal: 14, backgroundColor: '#ffffff',
+        }}>
+          <Text style={{ fontSize: 22, fontWeight: '800', color: '#6b7280', marginRight: 6 }}>{CURRENCY_SYMBOL[currency]}</Text>
+          <TextInput
+            value={text}
+            onChangeText={setText}
+            placeholder={currency === 'VES' ? '0,00' : '0.00'}
+            placeholderTextColor="#d1d5db"
+            keyboardType="decimal-pad"
+            autoFocus
+            style={{ flex: 1, fontSize: 26, fontWeight: '800', color: '#111827', paddingVertical: 12 }}
+          />
+        </View>
+        {currency === 'VES' ? (
+          <Text style={{ fontSize: 12, color: '#6b7280' }}>Calcula el monto en bolívares con la tasa del día.</Text>
+        ) : suggestion ? (
+          <Text style={{ fontSize: 12, color: '#6b7280' }}>Total del pedido: {formatAmount(suggestion, 'USD')}</Text>
+        ) : null}
+      </View>
+
+      <View style={{ flexDirection: 'row', gap: 10, marginTop: 4 }}>
+        <TouchableOpacity
+          onPress={onBack}
+          style={{ flex: 1, height: 46, borderRadius: 12, borderWidth: 1, borderColor: '#e5e7eb', alignItems: 'center', justifyContent: 'center' }}
+        >
+          <Text style={{ fontSize: 14, fontWeight: '700', color: '#6b7280' }}>Atrás</Text>
+        </TouchableOpacity>
+        <TouchableOpacity
+          onPress={() => onSend(account, amount)}
+          disabled={!amount}
+          activeOpacity={0.85}
+          style={{
+            flex: 2, height: 46, borderRadius: 12, backgroundColor: '#ef4444', flexDirection: 'row',
+            alignItems: 'center', justifyContent: 'center', gap: 6, opacity: amount ? 1 : 0.5,
+          }}
+        >
+          <Ionicons name="paper-plane" size={16} color="#ffffff" />
+          <Text style={{ fontSize: 14, fontWeight: '700', color: '#ffffff' }}>
+            {amount ? `Enviar ${formatAmount(amount, currency)}` : 'Enviar'}
+          </Text>
+        </TouchableOpacity>
+      </View>
+    </View>
+  );
+}
+
+/**
+ * "Bancos": the business' payment accounts.
+ * With `onSelect` (chat wallet) tapping an account, or saving a new one, asks
+ * for the amount and then sends it: onSelect(account, amount). Without it the
+ * sheet just manages the list.
+ */
+export function PaymentAccountsSheet({ visible, onClose, businessId, onSelect, suggestedUsdAmount }) {
   const insets = useSafeAreaInsets();
   const { data: accounts = [], isLoading } = usePaymentAccounts(visible ? businessId : null);
   const saveAccount = useSavePaymentAccount();
   const deleteAccount = useDeletePaymentAccount();
   const [formType, setFormType] = useState(null); // null = list view
+  const [pendingAccount, setPendingAccount] = useState(null); // account waiting for its amount
 
   // Reopening the sheet always starts from the list
   const close = () => {
     setFormType(null);
+    setPendingAccount(null);
     onClose();
   };
 
@@ -122,7 +209,7 @@ export function PaymentAccountsSheet({ visible, onClose, businessId, onSelect })
     try {
       const saved = await saveAccount.mutateAsync({ businessId, ...account });
       setFormType(null);
-      if (onSelect) onSelect(saved);
+      if (onSelect) setPendingAccount(saved);
     } catch (error) {
       const message = error?.response?.data?.message;
       Alert.alert('No se pudo guardar', typeof message === 'string' ? message : 'Revisa los datos e intenta de nuevo.');
@@ -153,10 +240,12 @@ export function PaymentAccountsSheet({ visible, onClose, businessId, onSelect })
               </View>
               <View style={{ flex: 1 }}>
                 <Text style={{ fontSize: 18, fontWeight: '800', color: '#111827' }}>
-                  {showForm ? 'Agregar cuenta' : 'Bancos'}
+                  {pendingAccount ? 'Monto a pagar' : showForm ? 'Agregar cuenta' : 'Bancos'}
                 </Text>
                 <Text style={{ fontSize: 12, color: '#6b7280' }}>
-                  {showForm
+                  {pendingAccount
+                    ? 'Se enviará al cliente con los datos de la cuenta'
+                    : showForm
                     ? onSelect ? 'Se guardará y se enviará al cliente' : 'Se guardará para usarla en tus chats'
                     : onSelect ? 'Toca una cuenta para enviarla al cliente' : 'Cuentas donde recibes tus pagos'}
                 </Text>
@@ -167,7 +256,18 @@ export function PaymentAccountsSheet({ visible, onClose, businessId, onSelect })
             </View>
 
             <ScrollView keyboardShouldPersistTaps="handled" showsVerticalScrollIndicator={false}>
-              {isLoading ? (
+              {pendingAccount ? (
+                <AmountStep
+                  key={pendingAccount.id}
+                  account={pendingAccount}
+                  suggestedUsdAmount={suggestedUsdAmount}
+                  onBack={() => setPendingAccount(null)}
+                  onSend={(account, amount) => {
+                    setPendingAccount(null);
+                    onSelect(account, amount);
+                  }}
+                />
+              ) : isLoading ? (
                 <ActivityIndicator color="#ef4444" style={{ marginVertical: 24 }} />
               ) : showForm ? (
                 <AccountForm
@@ -199,7 +299,7 @@ export function PaymentAccountsSheet({ visible, onClose, businessId, onSelect })
                           list.map((account) => (
                             <TouchableOpacity
                               key={account.id}
-                              onPress={() => (onSelect ? onSelect(account) : null)}
+                              onPress={() => (onSelect ? setPendingAccount(account) : null)}
                               activeOpacity={onSelect ? 0.8 : 1}
                               style={{
                                 flexDirection: 'row', alignItems: 'center', gap: 12, padding: 12, borderRadius: 14,
